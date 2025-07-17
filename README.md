@@ -2,28 +2,30 @@
 
 ## 1. Overview
 
-This project is a voice-activated news recommendation agent for iOS, designed for drivers. It provides a safe, hands-free way to consume news briefs covering global, US, and tech stories, as well as personalized stock market updates. The agent is designed to be interactive, responding to voice commands like "tell me more" or "skip," and it learns from user behavior to personalize the news feed.
+This project is a voice-activated news recommendation agent, initially developed as a CLI application, with a future vision for an iOS app. It provides a safe, hands-free way for drivers to consume personalized news briefs covering global, US, and tech stories, as well as stock market updates. The agent is designed for natural, interruptible voice interaction and continuously learns from user behavior to personalize the news feed.
 
 ## 2. Features (MVP)
 
-- **Voice-First Interface**: All interactions are designed to be hands-free, using a wake-word and natural language commands.
+- **Voice-First & Interruptible Interface**: All interactions are hands-free, using a wake-word and natural language commands. Users can interrupt the agent at any time to issue new commands.
+- **High-Quality TTS**: Utilizes a natural-sounding Text-to-Speech (TTS) engine (initially Edge-TTS) for a pleasant listening experience.
+- **Intelligent News Rephrasing**: News summaries from APIs are rephrased and condensed by an AI agent for concise voice briefings. Deep-dive explanations are also pre-generated for instant access.
 - **Multi-Source Aggregation**: Fetches news and sentiment from **AlphaVantage** and stock data from **yfinance**.
 - **Personalized Content**:
     - Covers global news, US news, and tech news.
     - Tracks a user-defined watchlist of stocks.
 - **Interactive Playback**: Users can ask for a deeper dive on a topic or skip to the next item.
 - **Adaptive Ranking**: The agent continuously learns from explicit and implicit feedback to rank and prioritize news items.
-- **Platform**: iOS
 
 ## 3. System Architecture
 
 The system is composed of three main layers:
 
-1.  **Voice Layer**: Handles all user audio interaction, from wake-word detection and Automatic Speech Recognition (ASR) to intent classification and Text-to-Speech (TTS) responses.
+1.  **Voice Layer**: Handles all user audio interaction, from wake-word detection and Automatic Speech Recognition (ASR) to intent classification and interruptible Text-to-Speech (TTS) responses.
 2.  **Agent Layer**:
-    - **Aggregator Agent**: Fetches and summarizes news and stock data using the GLM-4-Flash model.
+    - **Aggregator Agent**: Fetches raw news and stock data.
+    - **Rephraser Agent**: Utilizes the GLM-4-Flash model to rephrase and summarize news for voice delivery (both brief and deep-dive versions, with deep-dives pre-generated asynchronously).
     - **Ranker Agent**: Scores and ranks the summarized items based on user preferences.
-3.  **Memory Layer**: Maintains short-term and long-term user preferences to inform the Ranker Agent.
+3.  **Memory Layer**: Maintains short-term and long-term user preferences to inform the Ranker Agent and store cached deep-dive summaries.
 
 ```mermaid
 flowchart LR
@@ -31,27 +33,31 @@ flowchart LR
     A[Wake-Word] --> B[ASR]
     B --> C[Intent & Slot Filler]
     C --> D[Dialog Manager]
-    D --> E[TTS]
+    D --> E[TTS (Interruptible)]
   end
 
   subgraph Agents
     subgraph Aggregator Agent
       F[Fetch: AlphaVantage news & sentiment]
       G[Fetch: yfinance tickers]
-      H[Summarize via GLM-4-Flash]
-      F & G --> H
+      F & G --> H[Raw News/Data]
+    end
+    subgraph Rephraser Agent
+      H --> I[Summarize/Rephrase via GLM-4-Flash (Brief)]
+      H --> J[Summarize/Rephrase via GLM-4-Flash (Deep-Dive, Async)]
     end
     subgraph Ranker Agent
-      I[Score & rank summaries]
+      I & J --> K[Score & rank summaries]
     end
-    H --> I --> D
+    K --> D
   end
 
   subgraph Memory
-    J[Short-Term (128 KB)]
-    K[Long-Term (128 KB)]
-    D --> J
-    D --> K
+    L[Short-Term (128 KB)]
+    M[Long-Term (128 KB)]
+    D --> L
+    D --> M
+    J --> L
   end
 ```
 
@@ -59,6 +65,6 @@ flowchart LR
 
 | Milestone | Scope                                                                     |
 | :-------- | :------------------------------------------------------------------------ |
-| **M1**    | iOS app shell, wake-word + ASR + TTS pipeline, Aggregator Agent prototype |
-| **M2**    | GLM-4-Flash summarization, memory mgmt, “more/skip” commands              |
-| **M3**    | Ranker Agent, preference logging & feedback loop, KPI dashboards          |
+| **M1**    | CLI app shell, wake-word + ASR + TTS pipeline (Edge-TTS), Aggregator Agent prototype, Rephraser Agent (briefs only) |
+| **M2**    | GLM-4-Flash summarization, memory mgmt, “more/skip” commands, Async deep-dive caching, Interruptible TTS |
+| **M3**    | Ranker Agent, preference logging & feedback loop, KPI dashboards, iOS app shell |

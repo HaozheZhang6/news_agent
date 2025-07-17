@@ -5,4 +5,5 @@ speechrecognition
 pyttsx3
 yfinance
 alpha-vantage
-pyaudio
+edge-tts
+pygame

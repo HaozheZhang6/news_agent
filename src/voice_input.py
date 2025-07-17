@@ -1,23 +1,49 @@
 import speech_recognition as sr
+import threading
+import queue
+import time
 
-def listen_for_command():
-    """Listens for a voice command and returns the transcribed text."""
-    r = sr.Recognizer()
-    with sr.Microphone() as source:
-        print("Listening...")
-        r.pause_threshold = 1
-        r.adjust_for_ambient_noise(source)
-        audio = r.listen(source)
+class VoiceListener:
+    def __init__(self, command_queue: queue.Queue):
+        self.recognizer = sr.Recognizer()
+        self.command_queue = command_queue
+        self._stop_event = threading.Event()
+        self._thread = None
 
-    try:
-        print("Recognizing...")
-        command = r.recognize_google(audio, language='en-us')
-        print(f"User said: {command}\n")
-        return command
-    except sr.UnknownValueError:
-        print("Sorry, I did not understand that.")
-        return None
-    except sr.RequestError as e:
-        print(f"Could not request results from Google Speech Recognition service; {e}")
-        return None
+    def _listen_loop(self):
+        with sr.Microphone() as source:
+            self.recognizer.adjust_for_ambient_noise(source) # Adjust for ambient noise once
+            print("VoiceListener: Adjusting for ambient noise...")
+            time.sleep(1) # Give it a moment to adjust
+            print("VoiceListener: Listening in background...")
 
+            while not self._stop_event.is_set():
+                try:
+                    # Listen for audio for a short duration to allow for interruption
+                    audio = self.recognizer.listen(source, phrase_time_limit=5) # Listen for up to 5 seconds
+                    if self._stop_event.is_set():
+                        break # Check stop event again after listening
+
+                    print("VoiceListener: Recognizing...")
+                    command = self.recognizer.recognize_google(audio, language='en-us')
+                    print(f"VoiceListener: User said: {command}")
+                    self.command_queue.put(command)
+                except sr.UnknownValueError:
+                    # print("VoiceListener: Could not understand audio")
+                    pass # Ignore if nothing is understood, keep listening
+                except sr.RequestError as e:
+                    print(f"VoiceListener: Could not request results from Google Speech Recognition service; {e}")
+                except Exception as e:
+                    print(f"VoiceListener: An unexpected error occurred: {e}")
+
+    def start(self):
+        if self._thread is None or not self._thread.is_alive():
+            self._thread = threading.Thread(target=self._listen_loop)
+            self._thread.daemon = True # Allow main program to exit even if thread is still running
+            self._thread.start()
+
+    def stop(self):
+        self._stop_event.set()
+        if self._thread and self._thread.is_alive():
+            self._thread.join() # Wait for the thread to finish
+        print("VoiceListener: Stopped.")
