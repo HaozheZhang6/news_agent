@@ -68,3 +68,70 @@ flowchart LR
 | **M1**    | CLI app shell, wake-word + ASR + TTS pipeline (Edge-TTS), Aggregator Agent prototype, Rephraser Agent (briefs only) |
 | **M2**    | GLM-4-Flash summarization, memory mgmt, “more/skip” commands, Async deep-dive caching, Interruptible TTS |
 | **M3**    | Ranker Agent, preference logging & feedback loop, KPI dashboards, iOS app shell |
+
+## 5. How to Use
+
+### 5.1. Setup
+
+1.  **Clone the repository:**
+    ```bash
+    git clone <repository_url>
+    cd News_agent
+    ```
+2.  **Create a virtual environment and install dependencies:**
+    ```bash
+    uv venv
+    source .venv/bin/activate
+    uv pip install -r requirements.txt
+    ```
+3.  **Configure API Keys:**
+    Create a `.env` file in the root directory of the project with your API keys:
+    ```
+    ZHIPUAI_API_KEY="YOUR_ZHIPUAI_API_KEY"
+    ALPHAVANTAGE_API_KEY="YOUR_ALPHAVANTAGE_API_KEY"
+    ```
+    Replace `YOUR_ZHIPUAI_API_KEY` and `YOUR_ALPHAVANTAGE_API_KEY` with your actual keys.
+
+### 5.2. Running the Agent
+
+To start the voice-activated news agent, run the following command from the project root:
+
+```bash
+source .venv/bin/activate
+python -m src.main
+```
+
+### 5.3. Voice Commands
+
+Once the agent starts, it will greet you. You can then use the following voice commands:
+
+*   **General News:**
+    *   "What's the news?"
+    *   "Tell me what's happening."
+    *   "Latest news."
+
+*   **News by Topic:**
+    *   "Tell me the news about technology."
+    *   "Any news on financial markets?"
+    *   "What's happening in the economy?"
+
+*   **Stock Prices:**
+    *   "What's the stock price of Apple?"
+    *   "How much is NVDA?"
+    *   "Tell me about Tesla stock."
+
+*   **News Interaction:**
+    *   "Tell me more" (while a news brief is playing, to get a deep-dive summary).
+    *   "Skip" (to move to the next news brief).
+
+*   **Preference Management:**
+    *   "Add [topic] to my preferred topics." (e.g., "Add sports to my preferred topics.")
+    *   "Remove [topic] from my preferred topics." (e.g., "Remove politics from my preferred topics.")
+    *   "What are my preferred topics?"
+    *   "Add [stock ticker] to my watchlist." (e.g., "Add GOOG to my watchlist.")
+    *   "Remove [stock ticker] from my watchlist." (e.g., "Remove MSFT from my watchlist.")
+    *   "What are my watchlist stocks?"
+
+*   **Exiting:**
+    *   "Exit"
+    *   "Quit"
