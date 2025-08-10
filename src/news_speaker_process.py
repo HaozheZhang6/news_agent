@@ -1,20 +1,20 @@
-"""News speaker process for TTS output and content management."""
-import multiprocessing as mp
+"""News speaker thread for TTS output and content management."""
+import threading
 import time
 import asyncio
 
-async def handle_interrupt_command(command, shared_state, agent):
+async def handle_interrupt_command(command, ipc_manager, agent):
     """Handle immediate interrupt commands."""
     from . import voice_output
     from .ipc import CommandType
     
-    shared_state['is_speaking'] = False
+    ipc_manager.set_state('is_speaking', False)
     
     if command.type == CommandType.STOP:
         await voice_output.say("Stopped.", None)
         
     elif command.type == CommandType.DEEP_DIVE:
-        current_index = shared_state['current_news_index']
+        current_index = ipc_manager.get_state('current_news_index')
         if current_index >= 0:
             deep_dive = agent.get_deep_dive(current_index)
             await voice_output.say(deep_dive, None)
@@ -22,10 +22,10 @@ async def handle_interrupt_command(command, shared_state, agent):
             await voice_output.say("No news item to dive deeper into.", None)
             
     elif command.type == CommandType.SKIP:
-        current_index = shared_state['current_news_index'] 
+        current_index = ipc_manager.get_state('current_news_index') 
         if current_index >= 0 and current_index + 1 < len(agent.current_news_items):
             next_index = current_index + 1
-            shared_state['current_news_index'] = next_index
+            ipc_manager.set_state('current_news_index', next_index)
             brief = await agent._rephrase_news_item(
                 agent.current_news_items[next_index], "brief"
             )
@@ -33,7 +33,7 @@ async def handle_interrupt_command(command, shared_state, agent):
         else:
             await voice_output.say("No more news to skip to.", None)
 
-async def handle_content_command(command, shared_state, agent):
+async def handle_content_command(command, ipc_manager, agent):
     """Handle content requests (news, stocks)."""
     from . import voice_output
     
@@ -42,15 +42,15 @@ async def handle_content_command(command, shared_state, agent):
         
         # Update shared state
         if "news headlines" in response.lower():
-            shared_state['current_news_index'] = 0
+            ipc_manager.set_state('current_news_index', 0)
             
         await voice_output.say(response, None)
-        shared_state['is_speaking'] = False
+        ipc_manager.set_state('is_speaking', False)
         
     except Exception as e:
         print(f"Error handling content: {e}")
 
-async def news_speaker_worker_async(command_queue, interrupt_event, shared_state):
+async def news_speaker_worker_async(command_queue, interrupt_event, ipc_manager):
     """Async worker function for news speaker process."""
     from .agent import NewsAgent
     from .ipc import CommandType
@@ -67,28 +67,28 @@ async def news_speaker_worker_async(command_queue, interrupt_event, shared_state
             
             # Clear interrupt flag
             interrupt_event.clear()
-            shared_state['interrupt_requested'] = False
+            ipc_manager.set_state('interrupt_requested', False)
             
             # Handle command based on type
             if command.type in [CommandType.STOP, CommandType.DEEP_DIVE, CommandType.SKIP]:
-                await handle_interrupt_command(command, shared_state, agent)
+                await handle_interrupt_command(command, ipc_manager, agent)
             else:
-                await handle_content_command(command, shared_state, agent)
+                await handle_content_command(command, ipc_manager, agent)
                 
         except:
             # No command, small sleep to prevent busy waiting
             await asyncio.sleep(0.01)
 
-def news_speaker_worker(command_queue, interrupt_event, shared_state):
+def news_speaker_worker(command_queue, interrupt_event, ipc_manager):
     """Sync wrapper for async speaker worker."""
-    asyncio.run(news_speaker_worker_async(command_queue, interrupt_event, shared_state))
+    asyncio.run(news_speaker_worker_async(command_queue, interrupt_event, ipc_manager))
 
-def start_speaker_process(ipc_manager):
-    """Start the news speaker in a separate process.""" 
-    process = mp.Process(
+def start_speaker_thread(ipc_manager):
+    """Start the news speaker in a separate thread."""
+    thread = threading.Thread(
         target=news_speaker_worker,
-        args=(ipc_manager.command_queue, ipc_manager.interrupt_event, ipc_manager.shared_state)
+        args=(ipc_manager.command_queue, ipc_manager.interrupt_event, ipc_manager),
+        daemon=True
     )
-    process.daemon = True
-    process.start()
-    return process
+    thread.start()
+    return thread

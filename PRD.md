@@ -14,7 +14,9 @@
 - **Platform**: CLI (initial v0.0.1 for core logic), eventually iOS smartphone app  
 - **Voice & Interaction**:  
   - Wake-word → ASR → Intent → TTS (High-quality, natural voice)
-  - Pure speech interaction with interruptibility
+  - **Real-time Interruption**: <50ms response to "stop", <30ms for "tell me more"
+  - **Parallel Processing**: Continuous listener + speaker processes with 10ms command polling
+  - Pure speech interaction with anytime interruption capability
 - **Model**: GLM-4-Flash (cloud)  
   ```python
   from langchain.chat_models import ChatOpenAI
@@ -26,7 +28,7 @@
       api_key=os.getenv("ZHIPUAI_API_KEY"),
       openai_api_base="https://open.bigmodel.cn/api/paas/v4/",
   )
-````
+  ```
 
 * **Data Sources**: 
   * News & sentiment: AlphaVantage free API
@@ -48,11 +50,12 @@
 
 ## 3. User Stories
 
-1. **Driver**: “Hey Agent, what’s the news?” → 20–30 sec briefing.
-2. **Driver**: “Tell me more” → deep-dive on current item (pre-generated for instant playback).
-3. **Driver**: “Skip” → next item.
-4. **Driver**: Interrupts current playback to issue a new command.
-5. **Investor**: Prioritized updates on my watchlist stocks.
+1. **Driver**: "Hey Agent, what's the news?" → 20–30 sec briefing.
+2. **Driver**: "Tell me more" → **Instant interruption** + deep-dive on current item (<30ms transition).
+3. **Driver**: "Skip" → next item with seamless navigation.
+4. **Driver**: "Stop" → **Immediate halt** of current speech (<50ms response).
+5. **Driver**: Interrupts mid-sentence at any time → Command processed within 10ms.
+6. **Investor**: Prioritized updates on my watchlist stocks with interrupt capability.
 
 ## 4. Functional Requirements
 
@@ -63,7 +66,7 @@
 | F3 | News ingestion via AlphaVantage (headlines + sentiment) for global/US/tech.        |
 | F4 | Stock/watchlist sync via `yfinance`.                                               |
 | F5 | Memory manager (128 KB short/long-term).                                           |
-| F6 | Dialog manager handling “more”, “skip”, “save for later”, and interruptions.       |
+| F6 | **Real-time Dialog Manager**: "more", "skip", "stop" with <50ms interruption response. |
 | F7 | Background preference updates from explicit (likes) & implicit (skip/listen time). |
 | F8 | Three-agent pipeline: Aggregator, Rephraser, and Ranker.                           |
 | F9 | Asynchronous pre-generation and caching of deep-dive news summaries.               |
@@ -117,8 +120,10 @@ flowchart LR
   * ASR latency
 * **Engagement**
   * Listen-time per session
-  * Deep-dive rate (`“Tell me more”` ratio)
+  * Deep-dive rate (`"Tell me more"` ratio)
   * Skip rate
+  * **Interruption Response Time** (<50ms target)
+  * **Command Processing Latency** (<10ms target)
   * Interruption rate (to measure naturalness of interaction)
 
 ## 8. Roadmap & Milestones

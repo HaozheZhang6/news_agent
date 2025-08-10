@@ -3,8 +3,13 @@ langchain-openai
 openai
 python-dotenv
 speechrecognition
-pyttsx3
 yfinance
 alpha-vantage
 edge-tts
 pygame
+funasr
+webrtcvad
+pyaudio
+pydub
+langid
+langdetect

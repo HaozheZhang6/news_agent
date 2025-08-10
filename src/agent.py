@@ -8,7 +8,7 @@ import asyncio
 import json
 
 from . import config
-from .memory import load_preferences, save_preferences
+from .memory import load_preferences, save_preferences, conversation_memory
 
 @tool
 def get_stock_price(ticker: str) -> str:
@@ -172,6 +172,20 @@ class NewsAgent:
 
     async def get_response(self, user_input: str) -> str:
         """Generates a response from the agent based on user input."""
+        # Check if user wants to dive deeper based on conversation memory
+        deep_dive_context = conversation_memory.get_deep_dive_context(user_input)
+        if deep_dive_context:
+            # User wants deep dive - get detailed explanation of specific news item
+            deep_dive_response = await self._rephrase_news_item(
+                deep_dive_context['news_item'], "deep_dive"
+            )
+            # Add to conversation memory
+            conversation_memory.add_context(
+                user_input, deep_dive_response, 
+                [deep_dive_context['news_item']], deep_dive_context['topic']
+            )
+            return deep_dive_response
+        
         # Add user input to memory
         self.memory.append(HumanMessage(content=user_input))
 
@@ -213,12 +227,36 @@ class NewsAgent:
                         break
             
             if raw_news_data:
-                return await self.process_fetched_news(raw_news_data)
+                processed_response = await self.process_fetched_news(raw_news_data)
+                # Add to conversation memory with news context
+                conversation_memory.add_context(
+                    user_input, processed_response, 
+                    raw_news_data, self._extract_topic_from_input(user_input)
+                )
+                return processed_response
             else:
                 return response['output'] # Fallback if news tool was called but no data extracted
         
+        # Add regular conversation to memory (non-news responses)
+        conversation_memory.add_context(user_input, response['output'])
         return response['output']
 
+    def _extract_topic_from_input(self, user_input: str) -> str:
+        """Extract the topic from user input for better context."""
+        user_lower = user_input.lower()
+        topic_keywords = {
+            'technology': ['tech', 'technology', 'ai', 'artificial intelligence', 'nvidia', 'apple', 'google'],
+            'finance': ['stock', 'price', 'trading', 'market', 'financial'],
+            'energy': ['oil', 'gas', 'energy', 'renewable'],
+            'politics': ['trump', 'pelosi', 'congress', 'government'],
+            'crypto': ['crypto', 'bitcoin', 'blockchain', 'binance']
+        }
+        
+        for topic, keywords in topic_keywords.items():
+            if any(keyword in user_lower for keyword in keywords):
+                return topic
+        return 'general'
+    
     def get_deep_dive(self, index: int) -> str:
         """Retrieves a cached deep-dive summary by index."""
         return self.news_cache.get(index, "Deep-dive not available for this item.")
