@@ -1,7 +1,7 @@
 from langchain_openai import ChatOpenAI
 from langchain.agents import tool, AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
 import yfinance as yf
 from alpha_vantage.alphaintelligence import AlphaIntelligence
 import asyncio
@@ -124,7 +124,8 @@ class NewsAgent:
             get_watchlist_stocks
         ]
         self.prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are a helpful assistant that provides news and stock prices. You can also manage user preferences for news topics and stock watchlists. When asked for news, use the 'get_news_headlines' tool. After getting the raw news, you will rephrase it for the user. Use the preference management tools when the user asks to add, remove, or list their preferred topics or watchlist stocks."),
+            ("system", "You are a helpful assistant that provides news and stock prices. You can also manage user preferences for news topics and stock watchlists. When asked for news, use the 'get_news_headlines' tool. After getting the raw news, you will rephrase it for the user. Use the preference management tools when the user asks to add, remove, or list their preferred topics or watchlist stocks.\n\nIMPORTANT: You have access to conversation history. When users say 'tell me more', 'dive deeper', 'explain that', 'the first one', etc., refer to recent news items you provided. Pay attention to the conversation context to understand what the user is referring to."),
+            ("placeholder", "{chat_history}"),
             ("user", "{input}"),
             ("placeholder", "{agent_scratchpad}"),
         ])
@@ -132,7 +133,7 @@ class NewsAgent:
         self.agent_executor = AgentExecutor(agent=agent, tools=self.tools, verbose=True)
         self.news_cache = {} # Cache for deep-dive summaries: {index: deep_dive_text}
         self.current_news_items = [] # Store raw news items for processing
-        self.memory = [] # Short-term memory for conversational context
+        # Note: Using conversation_memory from memory.py for conversation context
 
     async def _rephrase_news_item(self, news_item: dict, rephrase_type: str) -> str:
         """Rephrases a news item for either a brief or deep-dive summary using the LLM."""
@@ -182,18 +183,18 @@ class NewsAgent:
             # Add to conversation memory
             conversation_memory.add_context(
                 user_input, deep_dive_response, 
-                [deep_dive_context['news_item']], deep_dive_context['topic']
+                [deep_dive_context['news_item']], deep_dive_context.get('topic', 'general')
             )
             return deep_dive_response
         
-        # Add user input to memory
-        self.memory.append(HumanMessage(content=user_input))
-
-        # Pass memory to the agent executor
-        response = await self.agent_executor.ainvoke({"input": user_input, "chat_history": self.memory})
+        # Format conversation history for LLM context
+        conversation_history = self._format_conversation_history()
         
-        # Add agent response to memory
-        self.memory.append(AIMessage(content=response['output']))
+        # Pass conversation history to agent executor
+        response = await self.agent_executor.ainvoke({
+            "input": user_input, 
+            "chat_history": conversation_history
+        })
 
         # Check if the agent used the get_news_headlines tool
         # This is a heuristic based on the verbose output. A more robust way would be custom callbacks.
@@ -235,12 +236,30 @@ class NewsAgent:
                 )
                 return processed_response
             else:
-                return response['output'] # Fallback if news tool was called but no data extracted
+                # Add to memory even if news tool was called but no data extracted
+                conversation_memory.add_context(user_input, response['output'])
+                return response['output']
         
-        # Add regular conversation to memory (non-news responses)
+        # Add ALL regular conversations to memory (non-news responses)
         conversation_memory.add_context(user_input, response['output'])
         return response['output']
 
+    def _format_conversation_history(self) -> list:
+        """Format conversation history for LLM context as list of LangChain messages."""
+        if not conversation_memory.context_history:
+            return []
+            
+        # Get the last 5 conversation exchanges for context (not too much to avoid token limits)
+        recent_context = conversation_memory.context_history[-5:]
+        
+        formatted_history = []
+        for context in recent_context:
+            # Only include actual user input and agent responses, not internal reasoning
+            formatted_history.append(HumanMessage(content=context.user_input))
+            formatted_history.append(AIMessage(content=context.agent_response))
+            
+        return formatted_history
+    
     def _extract_topic_from_input(self, user_input: str) -> str:
         """Extract the topic from user input for better context."""
         user_lower = user_input.lower()

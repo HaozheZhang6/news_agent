@@ -39,7 +39,7 @@ async def handle_content_command(command, ipc_manager, agent):
     
     try:
         response = await agent.get_response(command.data)
-        
+        print(f"Response: {response}")
         # Update shared state
         if "news headlines" in response.lower():
             ipc_manager.set_state('current_news_index', 0)
