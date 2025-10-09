@@ -4,8 +4,8 @@ services:
     name: voice-news-agent-api
     env: docker
     plan: free
-    rootDir: backend
-    dockerContext: backend
+    rootDir: .
+    dockerContext: .
     dockerfilePath: backend/Dockerfile
     healthCheckPath: /health
     envVars:

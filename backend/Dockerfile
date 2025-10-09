@@ -12,16 +12,17 @@ RUN apt-get update && apt-get install -y \
     libasound2-dev \
     libsndfile1-dev \
     ffmpeg \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+# Copy dependency definitions from the repository root for better caching
+COPY requirements.txt ./requirements.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies with hash verification for reproducibility
+RUN pip install --no-cache-dir --require-hashes -r requirements.txt
 
-# Copy application code
-COPY . .
+# Copy backend application source
+COPY backend/ ./
 
 # Create necessary directories
 RUN mkdir -p /app/storage/audio /app/storage/logs /app/models
