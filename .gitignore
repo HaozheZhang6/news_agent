@@ -64,11 +64,14 @@ coverage.xml
 *.py,cover
 .hypothesis/
 
-# Environments
-.env
-.venv
+# Environments & secrets
+.venv/
 venv/
 env/
+.env
+backend/.env
+env_files/*.env
+.env.*
 
 # IDEs
 .idea/

@@ -6,7 +6,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load environment file if present (don't error if missing during tests)
-dotenv_path = BASE_DIR / '.env'
+dotenv_path = BASE_DIR / "env_files" / ".env"
 if dotenv_path.exists():
     load_dotenv(dotenv_path=dotenv_path)
 else:

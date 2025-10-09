@@ -1,0 +1,52 @@
+# Render.com deployment configuration (root-level blueprint)
+services:
+  - type: web
+    name: voice-news-agent-api
+    env: docker
+    plan: free
+    rootDir: backend
+    dockerContext: backend
+    dockerfilePath: backend/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 10000
+      - key: WORKERS
+        value: 1
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
+      - key: ZHIPUAI_API_KEY
+        sync: false
+      - key: ALPHAVANTAGE_API_KEY
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: '["http://localhost:3000"]'
+      - key: MAX_WEBSOCKET_CONNECTIONS
+        value: 50
+      - key: WEBSOCKET_HEARTBEAT_INTERVAL
+        value: 30
+      - key: WEBSOCKET_TIMEOUT
+        value: 300
+      - key: CACHE_DEFAULT_TTL_SECONDS
+        value: 900
+      - key: RATE_LIMIT_REQUESTS_PER_MINUTE
+        value: 100
+      - key: LOG_LEVEL
+        value: INFO
+

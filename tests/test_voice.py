@@ -3,7 +3,8 @@ from unittest.mock import MagicMock, patch, AsyncMock, mock_open
 import asyncio
 import queue
 import os
-import pygame
+# Do not import pygame directly; tests will patch src.voice_output.pygame
+pygame = None  # noqa: F401
 import tempfile
 import threading
 from pathlib import Path

@@ -3,7 +3,25 @@ import os
 import wave
 from datetime import datetime
 from pathlib import Path
-from pydub import AudioSegment
+try:
+    from pydub import AudioSegment
+except Exception:  # pragma: no cover - optional in CI
+    class AudioSegment:  # minimal stub
+        @staticmethod
+        def from_wav(path: str):
+            class _Seg:
+                def export(self, *_args, **_kwargs):
+                    return None
+
+            return _Seg()
+
+        @staticmethod
+        def from_file(path: str):
+            class _Seg:
+                def export(self, *_args, **_kwargs):
+                    return None
+
+            return _Seg()
 from .config import AUDIO_LOGS_DIR, OUTPUT_DIR, AUDIO_RATE, AUDIO_CHANNELS
 
 

@@ -126,10 +126,93 @@ flowchart LR
   * **Command Processing Latency** (<10ms target)
   * Interruption rate (to measure naturalness of interaction)
 
-## 8. Roadmap & Milestones
+## 8. Deployment & App Tool Opportunities
+
+### 8.1 Primary Deployment Platforms
+
+#### **Mobile App (iOS/Android) - HIGHEST PRIORITY**
+- **Target**: iOS app as specified in original PRD
+- **Tech Stack**: React Native + Python backend API
+- **Features**: Voice-first interaction, real-time interruption, CarPlay integration
+- **Revenue**: Freemium model ($9.99/month premium)
+
+#### **Web Application - IMMEDIATE MVP**
+- **Tech Stack**: Next.js frontend + FastAPI backend
+- **Features**: Cross-platform voice interaction, no installation required
+- **Deployment**: Vercel (frontend) + Railway/Render (backend)
+- **Timeline**: 2-3 weeks for MVP
+
+#### **Desktop Application - QUICK WIN**
+- **Tech Stack**: Electron wrapper around Python core
+- **Features**: Native desktop experience, full system resources
+- **Target**: Office workers, traders, researchers
+- **Timeline**: 1-2 weeks
+
+### 8.2 App Tool Integration Opportunities
+
+#### **Trading Platforms**
+- **TradingView**: Custom indicator/alert integration
+- **MetaTrader**: Expert Advisor development
+- **Interactive Brokers**: TWS API integration
+- **Value**: Voice-controlled trading alerts
+
+#### **Productivity Suites**
+- **Microsoft Teams**: Bot framework integration
+- **Slack**: Custom app development
+- **Discord**: Bot integration
+- **Value**: Meeting summaries, real-time news updates
+
+#### **Smart Home/Car Integration**
+- **Home Assistant**: Python integration
+- **Apple CarPlay**: iOS app integration
+- **Android Auto**: Android app integration
+- **Amazon Alexa**: Custom skill development
+
+### 8.3 Monetization Strategies
+
+#### **B2C (Consumer)**
+- **Freemium**: Basic news free, premium voice features paid
+- **Subscription**: $9.99/month for advanced features
+- **One-time**: $49.99 for desktop app
+
+#### **B2B (Enterprise)**
+- **API Licensing**: $500/month for trading firms
+- **White-label**: Custom deployment for companies
+- **Integration Services**: $5,000+ for custom platform integration
+
+## 9. MVP Next Steps & Implementation Roadmap
+
+### **Phase 1: Web App MVP (2-3 weeks)**
+1. **Week 1**: 
+   - Create Next.js frontend with voice capabilities
+   - Build FastAPI backend wrapper around existing agent
+   - Implement WebSocket for real-time voice streaming
+2. **Week 2**:
+   - Deploy to free platforms (Vercel + Railway)
+   - Add basic voice UI components
+   - Test voice interaction in browser
+3. **Week 3**:
+   - Polish UI/UX, add error handling
+   - Create demo video and documentation
+   - Gather user feedback
+
+### **Phase 2: Mobile Development (6-8 weeks)**
+1. **Weeks 4-6**: React Native app development
+2. **Weeks 7-8**: Backend API optimization for mobile
+3. **Weeks 9-10**: App store submission and testing
+
+### **Phase 3: Platform Integrations (8-12 weeks)**
+1. **Weeks 11-14**: Trading platform integrations
+2. **Weeks 15-18**: Smart home/car connectivity
+3. **Weeks 19-22**: Enterprise features and partnerships
+
+## 10. Roadmap & Milestones
 
 | Milestone | Scope                                                                     | Timeline |
 | :-------- | :------------------------------------------------------------------------ | :------- |
-| **M1**    | CLI app shell, wake-word + ASR + TTS pipeline (Edge-TTS), Aggregator Agent prototype, Rephraser Agent (briefs only) | 4 weeks  |
-| **M2**    | GLM-4-Flash summarization, memory mgmt, “more/skip” commands, Async deep-dive caching, Interruptible TTS | 6 weeks  |
-| **M3**    | Ranker Agent, preference logging & feedback loop, KPI dashboards, iOS app shell | 8 weeks  |
+| **M1**    | CLI app shell, wake-word + ASR + TTS pipeline (Edge-TTS), Aggregator Agent prototype, Rephraser Agent (briefs only) | ✅ Complete |
+| **M2**    | GLM-4-Flash summarization, memory mgmt, "more/skip" commands, Async deep-dive caching, Interruptible TTS | ✅ Complete |
+| **M3**    | Ranker Agent, preference logging & feedback loop, KPI dashboards, iOS app shell | ✅ Complete |
+| **M4**    | **NEW**: Web App MVP with Next.js frontend + FastAPI backend | 2-3 weeks |
+| **M5**    | **NEW**: Mobile app (React Native) with voice integration | 6-8 weeks |
+| **M6**    | **NEW**: Platform integrations (TradingView, Teams, CarPlay) | 8-12 weeks |

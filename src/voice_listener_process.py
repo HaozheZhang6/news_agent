@@ -1,10 +1,11 @@
 """Voice listener thread for continuous speech recognition with SenseVoice."""
 import threading
 import time
-import pyaudio
-import wave
+try:
+    import pyaudio
+except Exception:  # pragma: no cover - optional dependency for CI/test envs
+    pyaudio = None  # type: ignore
 import os
-from queue import Queue
 from .config import (
     AUDIO_RATE, AUDIO_CHANNELS, CHUNK, NO_SPEECH_THRESHOLD,
     SENSEVOICE_MODEL_PATH
@@ -87,13 +88,18 @@ def audio_recorder_worker(command_queue, interrupt_event, ipc_manager):
     global recording_active, last_active_time, segments_to_save, last_vad_end_time
     
     conversation_logger.log_system_event("Audio recording started with SenseVoice")
-    
+    if pyaudio is None:
+        conversation_logger.log_error("PyAudio not available; skipping live recording in tests")
+        return
+
     p = pyaudio.PyAudio()
-    stream = p.open(format=pyaudio.paInt16,
-                    channels=AUDIO_CHANNELS,
-                    rate=AUDIO_RATE,
-                    input=True,
-                    frames_per_buffer=CHUNK)
+    stream = p.open(
+        format=pyaudio.paInt16,
+        channels=AUDIO_CHANNELS,
+        rate=AUDIO_RATE,
+        input=True,
+        frames_per_buffer=CHUNK,
+    )
     
     audio_buffer = []
     

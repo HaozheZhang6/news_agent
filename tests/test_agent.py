@@ -2,6 +2,15 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 import asyncio
 import json
+import pytest
+
+# Skip these tests if langchain_openai is not available and our fallback isn't acceptable
+try:
+    import langchain_openai  # noqa: F401
+    _HAS_LC = True
+except Exception:
+    _HAS_LC = False
+
 from src.agent import NewsAgent, get_stock_price, get_news_headlines
 
 # Mock external dependencies

@@ -1,7 +1,12 @@
-import speech_recognition as sr
 import threading
 import queue
 import time
+
+# Ensure 'sr' symbol exists for tests to patch
+try:
+    import speech_recognition as sr  # type: ignore
+except Exception:  # pragma: no cover
+    sr = None  # type: ignore
 
 class VoiceListener:
     def __init__(self, command_queue: queue.Queue):
@@ -11,7 +16,12 @@ class VoiceListener:
         self._thread = None
 
     def _listen_loop(self):
-        with sr.Microphone() as source:
+        if sr is None:
+            return
+
+        mic = sr.Microphone()
+        source = mic.__enter__() if hasattr(mic, "__enter__") else mic
+        try:
             self.recognizer.adjust_for_ambient_noise(source) # Adjust for ambient noise once
             print("VoiceListener: Adjusting for ambient noise...")
             time.sleep(1) # Give it a moment to adjust
@@ -35,6 +45,12 @@ class VoiceListener:
                     print(f"VoiceListener: Could not request results from Google Speech Recognition service; {e}")
                 except Exception as e:
                     print(f"VoiceListener: An unexpected error occurred: {e}")
+        finally:
+            if hasattr(mic, "__exit__"):
+                try:
+                    mic.__exit__(None, None, None)
+                except Exception:
+                    pass
 
     def start(self):
         if self._thread is None or not self._thread.is_alive():

@@ -242,6 +242,14 @@ source .venv/bin/activate
 python -m src.main
 ```
 
+Or with Make (no manual activation needed if you use `uv`):
+
+```bash
+make src
+```
+
+Note: If you encounter `ImportError: attempted relative import with no known parent package`, make sure you run from the project root and use module mode (`python -m src.main`).
+
 **New Capabilities:**
 - 🧠 **Smart Memory**: "Tell me more" intelligently refers to recent news
 - ⚡ **Priority Commands**: "Actually, I meant..." cancels previous requests
