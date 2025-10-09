@@ -18,20 +18,20 @@ class Settings(BaseSettings):
     workers: int = Field(default=1, env="WORKERS")
     
     # Database Configuration (Supabase)
-    supabase_url: str = Field(env="SUPABASE_URL")
-    supabase_key: str = Field(env="SUPABASE_KEY")
-    supabase_service_key: str = Field(env="SUPABASE_SERVICE_KEY")
+    supabase_url: str = Field(default="", env="SUPABASE_URL")
+    supabase_key: str = Field(default="", env="SUPABASE_KEY")
+    supabase_service_key: str = Field(default="", env="SUPABASE_SERVICE_KEY")
     supabase_db_password: Optional[str] = Field(default=None, env="SUPABASE_DB_PASSWORD")
     
     # Cache Configuration (Upstash Redis)
-    upstash_redis_rest_url: str = Field(env="UPSTASH_REDIS_REST_URL")
-    upstash_redis_rest_token: str = Field(env="UPSTASH_REDIS_REST_TOKEN")
+    upstash_redis_rest_url: str = Field(default="", env="UPSTASH_REDIS_REST_URL")
+    upstash_redis_rest_token: str = Field(default="", env="UPSTASH_REDIS_REST_TOKEN")
     upstash_redis_rest_read_only_url: Optional[str] = Field(default=None, env="UPSTASH_REDIS_REST_READ_ONLY_URL")
     upstash_redis_rest_read_only_token: Optional[str] = Field(default=None, env="UPSTASH_REDIS_REST_READ_ONLY_TOKEN")
     
     # AI Services
-    zhipuai_api_key: str = Field(env="ZHIPUAI_API_KEY")
-    alphavantage_api_key: str = Field(env="ALPHAVANTAGE_API_KEY")
+    zhipuai_api_key: str = Field(default="placeholder", env="ZHIPUAI_API_KEY")
+    alphavantage_api_key: str = Field(default="placeholder", env="ALPHAVANTAGE_API_KEY")
     openai_api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
     
     # Voice Services
@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     cors_credentials: bool = Field(default=True, env="CORS_CREDENTIALS")
     
     # Security
-    secret_key: str = Field(env="SECRET_KEY")
+    secret_key: str = Field(default="dev-secret-key-change-in-production", env="SECRET_KEY")
     access_token_expire_minutes: int = Field(default=30, env="ACCESS_TOKEN_EXPIRE_MINUTES")
     refresh_token_expire_days: int = Field(default=7, env="REFRESH_TOKEN_EXPIRE_DAYS")
     
@@ -101,7 +101,7 @@ class Settings(BaseSettings):
     render_external_url: Optional[str] = Field(default=None, env="RENDER_EXTERNAL_URL")
     
     class Config:
-        env_file = ".env"
+        env_file = [".env", "../env_files/supabase.env", "../env_files/upstash.env", "../env_files/render.env"]
         env_file_encoding = "utf-8"
         case_sensitive = False
         extra = "ignore"  # Ignore extra fields from .env

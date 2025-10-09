@@ -4,11 +4,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from backend.app.config import get_settings
-from backend.app.database import get_database
-from backend.app.cache import get_cache
-from backend.app.core.websocket_manager import get_websocket_manager
-from backend.app.api import voice, news, conversation, user
+from .config import get_settings
+from .database import get_database
+from .cache import get_cache
+from .core.websocket_manager import get_websocket_manager
+from .api import voice, news, conversation, user
 
 settings = get_settings()
 

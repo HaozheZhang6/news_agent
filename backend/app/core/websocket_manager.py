@@ -2,12 +2,14 @@
 import asyncio
 import json
 import uuid
+import base64
 from typing import Dict, Any, Optional, Set
 from datetime import datetime
 from fastapi import WebSocket, WebSocketDisconnect
-from app.core.agent_wrapper import get_agent
-from app.database import get_database
-from app.cache import get_cache
+from ..core.agent_wrapper import get_agent
+from ..database import get_database
+from ..cache import get_cache
+from .streaming_handler import get_streaming_handler
 
 
 class WebSocketManager:
@@ -17,6 +19,7 @@ class WebSocketManager:
         self.active_connections: Dict[str, WebSocket] = {}
         self.user_sessions: Dict[str, str] = {}  # user_id -> session_id
         self.session_data: Dict[str, Dict[str, Any]] = {}  # session_id -> data
+        self.streaming_handler = None
         self._initialized = False
     
     async def initialize(self):
@@ -27,6 +30,7 @@ class WebSocketManager:
         self.db = await get_database()
         self.cache = await get_cache()
         self.agent = await get_agent()
+        self.streaming_handler = get_streaming_handler()
         self._initialized = True
         print("✅ WebSocketManager initialized successfully")
     
@@ -91,6 +95,10 @@ class WebSocketManager:
                 user_id = self.session_data.get(session_id, {}).get("user_id")
                 if user_id and user_id in self.user_sessions:
                     del self.user_sessions[user_id]
+                
+                # Clean up streaming buffers
+                if self.streaming_handler:
+                    self.streaming_handler.clear_session_buffer(session_id)
                 
                 # Clean up session data
                 if session_id in self.session_data:
@@ -163,20 +171,25 @@ class WebSocketManager:
             result = await self.agent.process_voice_command(command, user_id, session_id)
             processing_time = (datetime.now() - start_time).total_seconds() * 1000
             
-            # Send response
+            # Send text response first
+            response_text = result["response_text"]
             await self.send_message(session_id, {
                 "event": "voice_response",
                 "data": {
-                    "text": result["response_text"],
+                    "text": response_text,
                     "audio_url": result.get("audio_url"),
                     "response_type": result["response_type"],
                     "processing_time_ms": int(processing_time),
                     "session_id": session_id,
                     "news_items": result.get("news_items", []),
                     "stock_data": result.get("stock_data"),
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
+                    "streaming": True  # Indicate streaming TTS will follow
                 }
             })
+            
+            # Stream TTS audio chunks
+            await self.stream_tts_response(session_id, response_text)
             
         except Exception as e:
             print(f"❌ Error handling voice command: {e}")
@@ -190,12 +203,13 @@ class WebSocketManager:
             })
     
     async def handle_voice_data(self, session_id: str, data: Dict[str, Any]):
-        """Handle voice audio data from client."""
+        """Handle voice audio data from client (streaming mode)."""
         try:
             if not self._initialized:
                 await self.initialize()
             
-            audio_chunk = data.get("audio_chunk", "")
+            audio_chunk_b64 = data.get("audio_chunk", "")
+            is_final = data.get("is_final", False)
             user_id = self.session_data.get(session_id, {}).get("user_id")
             
             if not user_id:
@@ -209,15 +223,52 @@ class WebSocketManager:
                 })
                 return
             
-            # For now, just acknowledge receipt
-            # In a full implementation, you would process the audio chunk
-            await self.send_message(session_id, {
-                "event": "audio_received",
-                "data": {
-                    "session_id": session_id,
-                    "timestamp": datetime.now().isoformat()
-                }
-            })
+            # Decode audio chunk
+            try:
+                audio_chunk = base64.b64decode(audio_chunk_b64)
+            except Exception as e:
+                print(f"⚠️ Failed to decode audio chunk: {e}")
+                audio_chunk = b""
+            
+            # Buffer and process audio
+            full_buffer = await self.streaming_handler.buffer_audio_chunk(
+                session_id, audio_chunk, is_final
+            )
+            
+            if full_buffer:
+                # Transcribe buffered audio
+                transcribed_text = await self.streaming_handler.transcribe_chunk(
+                    full_buffer,
+                    format=data.get("format", "wav"),
+                    sample_rate=data.get("sample_rate", 16000)
+                )
+                
+                # Send partial transcription
+                await self.send_message(session_id, {
+                    "event": "partial_transcription",
+                    "data": {
+                        "text": transcribed_text,
+                        "is_final": is_final,
+                        "session_id": session_id,
+                        "timestamp": datetime.now().isoformat()
+                    }
+                })
+                
+                # If final, process as command
+                if is_final:
+                    await self.handle_voice_command(session_id, {
+                        "command": transcribed_text,
+                        "confidence": 0.90
+                    })
+            else:
+                # Just acknowledge receipt for buffering
+                await self.send_message(session_id, {
+                    "event": "audio_received",
+                    "data": {
+                        "session_id": session_id,
+                        "timestamp": datetime.now().isoformat()
+                    }
+                })
             
         except Exception as e:
             print(f"❌ Error handling voice data: {e}")
@@ -319,6 +370,57 @@ class WebSocketManager:
     def get_user_session(self, user_id: str) -> Optional[str]:
         """Get session ID for user."""
         return self.user_sessions.get(user_id)
+    
+    async def stream_tts_response(self, session_id: str, text: str):
+        """Stream TTS audio back to client in chunks."""
+        try:
+            if not self.streaming_handler:
+                print("⚠️ Streaming handler not initialized")
+                return
+            
+            chunk_index = 0
+            total_chunks_sent = 0
+            
+            async for audio_chunk in self.streaming_handler.stream_tts_audio(text):
+                # Send audio chunk
+                await self.send_message(session_id, {
+                    "event": "tts_chunk",
+                    "data": {
+                        "audio_chunk": base64.b64encode(audio_chunk).decode(),
+                        "chunk_index": chunk_index,
+                        "format": "mp3",
+                        "session_id": session_id,
+                        "timestamp": datetime.now().isoformat()
+                    }
+                })
+                chunk_index += 1
+                total_chunks_sent += 1
+                
+                # Small delay to prevent overwhelming the client
+                await asyncio.sleep(0.01)
+            
+            # Send streaming complete event
+            await self.send_message(session_id, {
+                "event": "streaming_complete",
+                "data": {
+                    "total_chunks_sent": total_chunks_sent,
+                    "session_id": session_id,
+                    "timestamp": datetime.now().isoformat()
+                }
+            })
+            
+            print(f"✅ Streamed {total_chunks_sent} TTS chunks to {session_id}")
+            
+        except Exception as e:
+            print(f"❌ Error streaming TTS: {e}")
+            await self.send_message(session_id, {
+                "event": "error",
+                "data": {
+                    "error_type": "tts_streaming_failed",
+                    "message": str(e),
+                    "session_id": session_id
+                }
+            })
 
 
 # Global WebSocket manager instance
