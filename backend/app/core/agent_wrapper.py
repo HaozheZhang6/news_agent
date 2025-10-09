@@ -12,7 +12,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 try:
     from src.agent import NewsAgent
     from src.memory import conversation_memory
-    from src.config import config
+    import src.config as config
 except ImportError as e:
     print(f"Warning: Could not import existing agent modules: {e}")
     NewsAgent = None

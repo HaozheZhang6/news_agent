@@ -1,8 +1,12 @@
 """Database connection and management for Supabase."""
 import asyncio
 from typing import Optional, Dict, Any, List
-from supabase import create_client, Client
-from app.config import get_settings
+try:
+    from supabase import create_client, Client
+except ImportError:
+    create_client = None
+    Client = None
+from .config import get_settings
 
 settings = get_settings()
 

@@ -4,7 +4,7 @@ import hashlib
 import asyncio
 from typing import Optional, Any, Dict, List
 import httpx
-from app.config import get_settings
+from .config import get_settings
 
 settings = get_settings()
 
