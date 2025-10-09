@@ -265,7 +265,16 @@ python-dotenv                # Environment configuration
     ```bash
     python -m venv .venv
     source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-    pip install -r requirements.txt
+    pip install --require-hashes -r requirements.txt
+    ```
+
+    The `requirements.txt` file is generated from `uv.lock` using
+    [`uv`](https://github.com/astral-sh/uv) to guarantee reproducible
+    installs. If you need to refresh the lockfile (for example after
+    modifying `pyproject.toml`), re-export the pinned requirements with:
+
+    ```bash
+    uv export --format requirements-txt --no-dev --no-editable --no-emit-project --output-file requirements.txt
     ```
     
     **Optional - SenseVoice Model Setup:**
