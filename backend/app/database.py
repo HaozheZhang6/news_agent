@@ -1,11 +1,6 @@
 """Database connection and management for Supabase."""
-import asyncio
 from typing import Optional, Dict, Any, List
-try:
-    from supabase import create_client, Client
-except ImportError:
-    create_client = None
-    Client = None
+from supabase import create_client
 from .config import get_settings
 
 settings = get_settings()
@@ -14,7 +9,7 @@ class DatabaseManager:
     """Supabase database manager."""
     
     def __init__(self):
-        self.client: Optional[Client] = None
+        self.client = None
         self._initialized = False
     
     async def initialize(self):
@@ -23,6 +18,7 @@ class DatabaseManager:
             return
             
         try:
+            # Simple client creation without proxy or extra options
             self.client = create_client(
                 settings.supabase_url,
                 settings.supabase_key

@@ -12,7 +12,7 @@ PYTHON := $(shell command -v python3 || command -v python)
 endif
 endif
 
-.PHONY: help install install-dev install-test run-server src run-tests test-backend test-src test-integration test-coverage test-fast clean lint format check-deps setup-env db-apply schema-apply upstash-test
+.PHONY: help install install-dev install-test run-server src run-tests test-backend test-src test-integration test-coverage test-fast clean lint format check-deps setup-env db-apply schema-apply db-seed upstash-test
 
 # Default target
 help:
@@ -76,6 +76,13 @@ db-apply:
 	@psql $$DATABASE_URL -f database/schema.sql
 
 schema-apply: db-apply
+
+# Seed demo data (requires DATABASE_URL and DEMO_USER_ID)
+db-seed:
+	@if [ -z "$$DATABASE_URL" ]; then echo "DATABASE_URL is not set"; exit 1; fi
+	@if [ -z "$$DEMO_USER_ID" ]; then echo "DEMO_USER_ID is not set"; exit 1; fi
+	@echo "Seeding demo data with DEMO_USER_ID=$$DEMO_USER_ID..."
+	@psql $$DATABASE_URL -v demo_user_id="$$DEMO_USER_ID" -f database/create_demo_data.sql
 
 upstash-test:
 	@echo "Pinging Upstash REST API..."

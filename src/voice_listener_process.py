@@ -151,6 +151,7 @@ def process_audio_segments(command_queue, interrupt_event, ipc_manager):
         # Initialize SenseVoice model (lazy loading)
         if not hasattr(process_audio_segments, 'sensevoice_model'):
             try:
+                # TODO: Remove this once we have a proper model
                 from funasr import AutoModel
                 process_audio_segments.sensevoice_model = AutoModel(
                     model=SENSEVOICE_MODEL_PATH,

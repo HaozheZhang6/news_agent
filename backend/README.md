@@ -85,32 +85,40 @@ backend/
 # POST /api/analytics/track
 ```
 
-## WebSocket Events
+## Real-Time Voice Streaming Architecture
 
-### Client → Server
+**🚀 NEW: Marmadi Real-Time Voice Processing**
+
+We're implementing true real-time voice communication with instant interruption capabilities. See detailed documentation:
+
+- **[design.md](./design.md)** - Complete architecture design and implementation details
+- **[marmadi.md](./marmadi.md)** - Project implementation plan and technical specifications
+
+### Key Features
+- **Continuous Audio Streaming**: Frontend streams audio chunks to backend
+- **Server-Side VAD**: Backend detects voice activity and speech patterns
+- **Instant Interruption**: Agent stops immediately when user starts speaking
+- **Natural Conversation Flow**: No button pressing required
+
+### Current WebSocket Events
+
+#### Client → Server
 ```json
 {
-  "event": "start_listening",
+  "event": "audio_chunk",
+  "data": {
+    "audio_chunk": "base64_encoded_audio",
+    "session_id": "uuid",
+    "timestamp": 1234567890
+  }
+}
+
+{
+  "event": "start_session",
   "data": {
     "user_id": "uuid",
     "session_id": "uuid",
     "audio_settings": {...}
-  }
-}
-
-{
-  "event": "voice_data",
-  "data": {
-    "audio_chunk": "base64_encoded_audio",
-    "session_id": "uuid"
-  }
-}
-
-{
-  "event": "voice_command",
-  "data": {
-    "command": "tell me the news",
-    "session_id": "uuid"
   }
 }
 ```
@@ -122,25 +130,35 @@ backend/
   "data": {
     "text": "tell me the news",
     "confidence": 0.95,
-    "session_id": "uuid"
+    "session_id": "uuid",
+    "timestamp": 1234567890
   }
 }
 
 {
-  "event": "voice_response",
+  "event": "agent_response",
   "data": {
     "text": "Here are today's headlines...",
-    "audio_url": "https://...",
     "news_items": [...],
     "session_id": "uuid"
   }
 }
 
 {
-  "event": "voice_interrupted",
+  "event": "tts_chunk",
+  "data": {
+    "audio_chunk": "base64_encoded_audio",
+    "chunk_index": 0,
+    "session_id": "uuid"
+  }
+}
+
+{
+  "event": "agent_interrupted",
   "data": {
     "session_id": "uuid",
-    "reason": "user_interruption"
+    "reason": "user_speech_detected",
+    "timestamp": 1234567890
   }
 }
 ```
