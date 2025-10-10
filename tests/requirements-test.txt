@@ -1,0 +1,13 @@
+# Test dependencies for Voice News Agent
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.11.0
+pytest-cov>=4.1.0
+httpx>=0.24.0
+fastapi>=0.100.0
+uvicorn>=0.23.0
+websockets>=11.0.0
+pytest-xdist>=3.3.0  # For parallel test execution
+pytest-benchmark>=4.0.0  # For performance testing
+pytest-html>=3.2.0  # For HTML test reports
+pytest-json-report>=1.5.0  # For JSON test reports

@@ -9,8 +9,8 @@
 *.m4r
 *.m4v
 *.m4a
-*.txt
 *.log
+/logs
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

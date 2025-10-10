@@ -175,17 +175,21 @@ flowchart TB
 - **Text Command API**: Send transcribed text from iOS Speech Framework
 - **WebSocket Protocol**: Documented message format for Swift integration
 - **Audio Streaming**: Base64-encoded audio chunk support
-- **Example Code**: Swift snippets for integration (see VOICE_INPUT_TESTING.md)
+- **Example Code**: See reference documentation for integration details
 
 ## 6. 📚 Documentation
 
 - **[MVP.md](MVP.md)** - Current MVP status, architecture, and deployment guide
 - **[TODO.md](TODO.md)** - Task tracker and roadmap
-- **[VOICE_INPUT_TESTING.md](VOICE_INPUT_TESTING.md)** - WebSocket testing and iOS integration
-- **[STREAMING_AND_DEPLOYMENT.md](STREAMING_AND_DEPLOYMENT.md)** - Streaming implementation and Render deployment
-- **[STREAMING_IMPLEMENTATION_STATUS.md](STREAMING_IMPLEMENTATION_STATUS.md)** - Implementation checklist
-- **[API_DESIGN.md](API_DESIGN.md)** - REST and WebSocket API documentation
-- **[PRD.md](PRD.md)** - Product requirements and roadmap
+- **[PRD.md](PRD.md)** - Product Requirements Document
+- **[reference/](reference/)** - Technical documentation (API design, database setup, streaming guide)
+
+### 🧪 Testing
+
+- **[voice_continuous.html](voice_continuous.html)** - Browser-based continuous voice interface with real-time interruption
+  - Uses Web Speech API for client-side ASR
+  - Continuous listening with automatic interruption
+  - Connect to local backend: `make run-server` then open the HTML file
 
 ## 7. 🚀 Previous Enhancements (v2.0)
 
@@ -330,11 +334,12 @@ python -m src.main
 
 **Browser test (easiest):**
 ```bash
-open test_websocket.html
+make run-server
+open voice_continuous.html
 ```
 
-**Manual test (Postman, websocat):**
-See [VOICE_INPUT_TESTING.md](VOICE_INPUT_TESTING.md) for detailed instructions.
+**Manual test:**
+See reference documentation for WebSocket API details.
 
 **Expected capabilities:**
 - 🌐 **WebSocket Streaming**: Real-time voice communication
