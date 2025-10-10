@@ -1,16 +1,19 @@
-# 🎙️ Voice-Activated News Agent with Smart Memory & Interruption
+# 🎙️ Voice-Activated News Agent with Smart Memory & Streaming
 
 ## 1. Overview
 
-An advanced voice-activated news recommendation agent that provides **contextual, intelligent conversations** with **real-time interruption** capabilities. Built with **threading architecture**, **SenseVoice ASR**, and **smart memory systems** for natural voice interactions. Perfect for hands-free news consumption while driving or multitasking.
+An advanced voice-activated news recommendation agent with **real-time voice streaming**, **WebSocket API**, and **cloud deployment** capabilities. Built with **FastAPI backend**, **SenseVoice ASR**, **smart memory systems**, and **streaming TTS** for natural voice interactions across web and mobile platforms.
+
+**🎯 Current Status:** Backend MVP complete with streaming WebSocket API, ready for Render deployment and iOS integration.
 
 ### 🚀 **Key Innovations**
-- **Smart Memory System**: Remembers conversation context - "tell me more" intelligently refers to recent news
+- **Real-time Streaming**: WebSocket-based voice streaming with chunked TTS responses
+- **Cloud-Ready Backend**: FastAPI + Supabase + Upstash Redis, deployable on Render free tier
+- **Smart Memory System**: Context-aware conversations with Supabase persistence
 - **Priority Command Queue**: Handles "actually, I meant..." and command corrections naturally
-- **Real-time Voice Interruption**: <100ms response to voice commands during speech
-- **Threading Architecture**: Lightweight, efficient parallel processing
-- **SenseVoice Integration**: Multilingual, offline-capable voice recognition
-- **Comprehensive Logging**: Complete MP3 audio logs and conversation history
+- **iOS Integration Ready**: Text-based voice command API for client-side ASR
+- **SenseVoice Integration**: Multilingual, offline-capable voice recognition (local + API modes)
+- **Comprehensive Logging**: MP3 audio logs + conversation history + analytics
 
 ## 2. ✨ Features
 
@@ -133,18 +136,58 @@ flowchart TB
 
 | Feature | Status | Details |
 |---------|--------|----------|
-| **🎙️ Voice Recognition** | ✅ Complete | SenseVoice ASR + fallback to Google Speech |
-| **🧠 Smart Memory** | ✅ Complete | Context-aware conversations with 10-item history |
-| **⚡ Priority Queue** | ✅ Complete | Smart command handling with refinement support |
-| **🔄 Threading Architecture** | ✅ Complete | Lightweight threading replacing multiprocessing |
-| **📊 Comprehensive Logging** | ✅ Complete | MP3 audio logs + daily conversation history |
-| **🤖 GLM-4-Flash Integration** | ✅ Complete | News summarization and conversation management |
+| **🎙️ Voice Recognition** | ✅ Complete | SenseVoice ASR + Google Speech fallback |
+| **🌐 WebSocket API** | ✅ Complete | Real-time streaming voice communication |
+| **🎵 Streaming TTS** | ✅ Complete | Chunked audio streaming with edge-tts |
+| **🧠 Smart Memory** | ✅ Complete | Context-aware with Supabase persistence |
+| **⚡ Priority Queue** | ✅ Complete | Smart command handling with refinement |
+| **🔄 Threading Architecture** | ✅ Complete | Lightweight threading + async FastAPI |
+| **📊 Comprehensive Logging** | ✅ Complete | Audio logs + conversation history + analytics |
+| **🤖 GLM-4-Flash Integration** | ✅ Complete | News summarization and conversation |
 | **📰 Multi-source News** | ✅ Complete | AlphaVantage + yfinance integration |
-| **🎛️ Preference Management** | ✅ Complete | Voice-controlled topics and watchlist |
-| **⚡ Real-time Interruption** | ✅ Complete | <100ms voice interruption during TTS |
-| **📱 iOS App** | 🚧 Planned | Future mobile implementation |
+| **☁️ Cloud Backend** | ✅ Complete | FastAPI + Supabase + Upstash Redis |
+| **🐳 Docker Ready** | ✅ Complete | Dockerfile + render.yaml for deployment |
+| **🧪 Testing Suite** | ✅ Complete | WebSocket test client + manual test docs |
+| **🚀 Render Deployment** | ⏳ Pending | Blueprint ready, awaiting manual test |
+| **📱 iOS App** | 🚧 Planned | Voice command API ready for integration |
 
-## 5. 🚀 Recent Enhancements (v2.0)
+## 5. 🚀 Latest Updates (v3.0 - Cloud MVP)
+
+### 🌐 **WebSocket Streaming API**
+- **Real-time Communication**: Bidirectional WebSocket for voice streaming
+- **Chunked TTS**: Audio sent in 4KB chunks for low-latency playback
+- **Partial Transcriptions**: Real-time ASR feedback events
+- **Event-driven**: `voice_command`, `tts_chunk`, `partial_transcription`, `streaming_complete`
+
+### ☁️ **Cloud-Ready Backend**
+- **FastAPI Framework**: Async WebSocket + REST API endpoints
+- **Supabase PostgreSQL**: User profiles, preferences, conversation history
+- **Upstash Redis**: 5-layer caching (news, AI, sessions, voice, stocks)
+- **Edge-TTS**: Lightweight streaming TTS (no local model needed)
+
+### 🐳 **Deployment Infrastructure**
+- **Docker**: Production-ready Dockerfile for containerization
+- **Render Blueprint**: One-click deployment configuration (render.yaml)
+- **Free Tier Optimized**: 512MB RAM, WebSocket streaming, auto-scaling
+- **Environment Management**: Multi-file env configuration (env_files/)
+
+### 📱 **iOS Integration Ready**
+- **Text Command API**: Send transcribed text from iOS Speech Framework
+- **WebSocket Protocol**: Documented message format for Swift integration
+- **Audio Streaming**: Base64-encoded audio chunk support
+- **Example Code**: Swift snippets for integration (see VOICE_INPUT_TESTING.md)
+
+## 6. 📚 Documentation
+
+- **[MVP.md](MVP.md)** - Current MVP status, architecture, and deployment guide
+- **[TODO.md](TODO.md)** - Task tracker and roadmap
+- **[VOICE_INPUT_TESTING.md](VOICE_INPUT_TESTING.md)** - WebSocket testing and iOS integration
+- **[STREAMING_AND_DEPLOYMENT.md](STREAMING_AND_DEPLOYMENT.md)** - Streaming implementation and Render deployment
+- **[STREAMING_IMPLEMENTATION_STATUS.md](STREAMING_IMPLEMENTATION_STATUS.md)** - Implementation checklist
+- **[API_DESIGN.md](API_DESIGN.md)** - REST and WebSocket API documentation
+- **[PRD.md](PRD.md)** - Product requirements and roadmap
+
+## 7. 🚀 Previous Enhancements (v2.0)
 
 ### ✨ **Smart Memory System**
 - **Context Tracking**: Remembers last 10 conversation exchanges
@@ -202,9 +245,16 @@ langid, langdetect           # Language detection
 python-dotenv                # Environment configuration
 ```
 
-## 7. How to Use
+## 8. 🚀 Quick Start
 
-### 7.1. Setup
+### 8.1. Local Development (Voice Agent)
+
+**Prerequisites:**
+- Python 3.9+
+- Virtual environment (we use `uv` for package management)
+- API keys: ZhipuAI, AlphaVantage
+
+**Setup:**
 
 1.  **Clone the repository:**
     ```bash
@@ -233,31 +283,58 @@ python-dotenv                # Environment configuration
     ```
     Replace `YOUR_ZHIPUAI_API_KEY` and `YOUR_ALPHAVANTAGE_API_KEY` with your actual keys.
 
-### 7.2. Running the Agent
+### 8.2. Running the Backend API
 
-To start the voice-activated news agent with **smart memory and real-time interruption**:
+**Start the FastAPI server with WebSocket streaming:**
 
 ```bash
 source .venv/bin/activate
-python -m src.main
+make run-server
 ```
 
-Or with Make (no manual activation needed if you use `uv`):
+Or manually:
+```bash
+cd backend
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+**Access:**
+- API Docs: http://localhost:8000/docs
+- Health Check: http://localhost:8000/health
+- WebSocket Test: Open `test_websocket.html` in browser
+
+### 8.3. Running the Local Voice Agent
+
+To start the standalone voice agent (no backend needed):
 
 ```bash
+source .venv/bin/activate
 make src
 ```
 
-Note: If you encounter `ImportError: attempted relative import with no known parent package`, make sure you run from the project root and use module mode (`python -m src.main`).
+Or:
+```bash
+python -m src.main
+```
 
-**New Capabilities:**
-- 🧠 **Smart Memory**: "Tell me more" intelligently refers to recent news
-- ⚡ **Priority Commands**: "Actually, I meant..." cancels previous requests
-- 🎙️ **SenseVoice ASR**: Multilingual offline voice recognition
-- 🔄 **Threading Architecture**: Lightweight, efficient processing
-- 📊 **Complete Logging**: Audio + conversation history saved automatically
+### 8.4. Testing WebSocket Streaming
 
-### 7.3. Voice Commands
+**Browser test (easiest):**
+```bash
+open test_websocket.html
+```
+
+**Manual test (Postman, websocat):**
+See [VOICE_INPUT_TESTING.md](VOICE_INPUT_TESTING.md) for detailed instructions.
+
+**Expected capabilities:**
+- 🌐 **WebSocket Streaming**: Real-time voice communication
+- 🎵 **Chunked TTS**: Audio streamed in 4KB chunks
+- 🧠 **Smart Memory**: Context-aware conversations
+- ⚡ **Priority Commands**: "Actually, I meant..." support
+- 📊 **Complete Logging**: All interactions saved
+
+### 8.5. Voice Commands & WebSocket Events
 
 Once the agent starts, it will greet you. You can then use the following voice commands:
 
@@ -302,24 +379,45 @@ Once the agent starts, it will greet you. You can then use the following voice c
     *   **"Speak faster/slower"** - Speech speed adjustment
     *   **"Exit"** / **"Quit"** - Graceful shutdown
     
-### 7.4. 📁 Directory Structure
+### 8.6. 📁 Project Structure
 
 ```
 News_agent/
-├── audio_logs/                   # Voice input recordings (MP3)
-│   └── input_YYYYMMDD_HHMMSS_N.mp3
-├── output/                       # TTS response audio  
-│   └── response_YYYYMMDD_HHMMSS_N.mp3
-├── logs/
-│   ├── app.log                  # System/technical logs
-│   └── conversations/           # Daily conversation logs
-│       └── conversation_YYYYMMDD.txt
-├── models/                      # SenseVoice model (optional)
-│   └── SenseVoiceSmall/
-└── user_preferences.json        # Saved topics and watchlist
+├── backend/                      # FastAPI backend
+│   ├── app/
+│   │   ├── api/                  # REST & WebSocket endpoints
+│   │   ├── core/                 # Agent wrapper, WebSocket manager, streaming
+│   │   ├── models/               # Pydantic models
+│   │   ├── config.py             # Environment configuration
+│   │   ├── database.py           # Supabase integration
+│   │   ├── cache.py              # Upstash Redis caching
+│   │   └── main.py               # FastAPI application
+│   ├── Dockerfile                # Docker container
+│   └── requirements.txt          # Backend dependencies
+├── src/                          # Local voice agent
+│   ├── agent.py                  # News agent logic
+│   ├── voice_input.py            # SenseVoice ASR
+│   ├── voice_output.py           # TTS & playback
+│   ├── memory.py                 # Conversation memory
+│   └── main.py                   # CLI entry point
+├── tests/                        # Test suite
+│   ├── backend/                  # Backend API tests
+│   ├── src/                      # Source component tests
+│   └── integration/              # Integration tests
+├── env_files/                    # Environment variables (gitignored)
+│   ├── supabase.env
+│   ├── upstash.env
+│   └── render.env
+├── audio_logs/                   # Voice recordings
+├── logs/conversations/           # Daily conversation logs
+├── database/schema.sql           # Supabase schema
+├── test_websocket.html           # WebSocket test client
+├── render.yaml                   # Render deployment blueprint
+├── Makefile                      # Development commands
+└── pyproject.toml                # Project metadata (uv)
 ```
 
-### 7.5. 🎯 Example Conversation Flow
+### 8.7. 🎯 Example Conversation Flow
 
 ```
 👤 USER: "Tell me the latest news"
@@ -335,6 +433,22 @@ News_agent/
 🤖 AGENT: "AAPL has been added to your watchlist."
 ```
 
+## 9. 🚀 Deployment
+
+See [MVP.md](MVP.md) for detailed deployment instructions.
+
+**Quick deploy to Render:**
+1. Push code to GitHub
+2. Connect Render → New Web Service → Blueprint
+3. Set environment variables in Render dashboard
+4. Deploy!
+
+**Free tier includes:**
+- 512MB RAM
+- WebSocket support
+- Auto-scaling
+- HTTPS/SSL
+
 ---
 
-*Built with ❤️ using GLM-4-Flash, SenseVoice ASR, Edge-TTS, and modern Python threading*
+*Built with ❤️ using FastAPI, GLM-4-Flash, SenseVoice ASR, Edge-TTS, Supabase, and Upstash Redis*

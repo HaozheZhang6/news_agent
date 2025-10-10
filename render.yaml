@@ -15,8 +15,7 @@ services:
         value: false
       - key: HOST
         value: 0.0.0.0
-      - key: PORT
-        value: 10000
+      # PORT is provided by Render at runtime
       - key: WORKERS
         value: 1
       - key: SUPABASE_URL

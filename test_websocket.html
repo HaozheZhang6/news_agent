@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test - Voice News Agent</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        .disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        #messages {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            height: 400px;
+            overflow-y: auto;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 3px;
+        }
+        .sent {
+            background: #e3f2fd;
+            border-left: 3px solid #2196f3;
+        }
+        .received {
+            background: #f1f8e9;
+            border-left: 3px solid #8bc34a;
+        }
+        .error {
+            background: #ffebee;
+            border-left: 3px solid #f44336;
+        }
+        input[type="text"] {
+            width: calc(100% - 100px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .timestamp {
+            color: #999;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎙️ Voice News Agent - WebSocket Test</h1>
+        
+        <div id="status" class="status disconnected">
+            Status: Disconnected
+        </div>
+        
+        <div class="controls">
+            <button id="connectBtn" onclick="connect()">Connect</button>
+            <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+            <button onclick="sendVoiceCommand()">Send Voice Command</button>
+            <button onclick="sendVoiceData()">Send Audio Data</button>
+            <button onclick="sendInterrupt()">Send Interrupt</button>
+            <button onclick="clearMessages()">Clear Log</button>
+        </div>
+        
+        <div>
+            <input type="text" id="commandInput" placeholder="Enter voice command (e.g., 'latest tech news')" 
+                   value="latest tech news" onkeypress="if(event.key==='Enter')sendVoiceCommand()">
+        </div>
+        
+        <div id="messages"></div>
+        
+        <div style="color: #666; font-size: 12px; margin-top: 20px;">
+            <strong>Test Instructions:</strong>
+            <ol style="margin: 5px 0;">
+                <li>Click "Connect" to establish WebSocket connection</li>
+                <li>You'll receive a connection event with session_id</li>
+                <li>Click "Send Test Command" or press Enter to send a voice command</li>
+                <li>Watch for transcription and voice_response events</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let sessionId = null;
+        const messagesDiv = document.getElementById('messages');
+        const statusDiv = document.getElementById('status');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+
+        function addMessage(text, type = 'received') {
+            const msg = document.createElement('div');
+            msg.className = `message ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            msg.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${text}`;
+            messagesDiv.appendChild(msg);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function updateStatus(connected) {
+            if (connected) {
+                statusDiv.className = 'status connected';
+                statusDiv.textContent = `Status: Connected (Session: ${sessionId || 'pending...'})`;
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+            } else {
+                statusDiv.className = 'status disconnected';
+                statusDiv.textContent = 'Status: Disconnected';
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+            }
+        }
+
+        function connect() {
+            if (ws) {
+                addMessage('Already connected', 'error');
+                return;
+            }
+
+            const userId = 'test_user_' + Date.now();
+            const wsUrl = `ws://localhost:8000/ws/voice?user_id=${userId}`;
+            
+            addMessage(`Connecting to ${wsUrl}...`, 'sent');
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                addMessage('✅ WebSocket connection established', 'received');
+                updateStatus(true);
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    const eventType = data.event;
+                    
+                    if (eventType === 'connected') {
+                        sessionId = data.data.session_id;
+                        addMessage(`📡 Connected! Session ID: ${sessionId}`, 'received');
+                        updateStatus(true);
+                    } else if (eventType === 'transcription') {
+                        addMessage(`🎤 Transcription: "${data.data.text}" (confidence: ${data.data.confidence})`, 'received');
+                    } else if (eventType === 'voice_response') {
+                        addMessage(`🤖 Response: "${data.data.text}"`, 'received');
+                        if (data.data.news_items && data.data.news_items.length > 0) {
+                            addMessage(`📰 News items: ${data.data.news_items.length}`, 'received');
+                        }
+                        if (data.data.streaming) {
+                            addMessage(`🎵 TTS streaming starting...`, 'received');
+                        }
+                    } else if (eventType === 'partial_transcription') {
+                        const finalFlag = data.data.is_final ? '✅ FINAL' : '⏳';
+                        addMessage(`${finalFlag} Partial: "${data.data.text}"`, 'received');
+                    } else if (eventType === 'tts_chunk') {
+                        const chunkIdx = data.data.chunk_index;
+                        addMessage(`🔊 TTS chunk #${chunkIdx} received (${data.data.audio_chunk.length} bytes)`, 'received');
+                    } else if (eventType === 'streaming_complete') {
+                        addMessage(`✅ Streaming complete (${data.data.total_chunks_sent} chunks)`, 'received');
+                    } else if (eventType === 'audio_received') {
+                        addMessage(`✓ Audio chunk buffered`, 'received');
+                    } else if (eventType === 'error') {
+                        addMessage(`❌ Error: ${data.data.message} (${data.data.error_type})`, 'error');
+                    } else {
+                        addMessage(`📨 Event: ${eventType} - ${JSON.stringify(data.data)}`, 'received');
+                    }
+                } catch (e) {
+                    addMessage(`Raw message: ${event.data}`, 'received');
+                }
+            };
+
+            ws.onerror = (error) => {
+                addMessage('❌ WebSocket error occurred', 'error');
+                console.error('WebSocket error:', error);
+            };
+
+            ws.onclose = () => {
+                addMessage('🔌 WebSocket connection closed', 'received');
+                ws = null;
+                sessionId = null;
+                updateStatus(false);
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                addMessage('Disconnecting...', 'sent');
+            }
+        }
+
+        function sendVoiceCommand() {
+            if (!ws || !sessionId) {
+                addMessage('⚠️ Not connected. Click Connect first.', 'error');
+                return;
+            }
+
+            const command = document.getElementById('commandInput').value;
+            const message = {
+                event: 'voice_command',
+                data: {
+                    session_id: sessionId,
+                    command: command,
+                    confidence: 0.95
+                }
+            };
+
+            ws.send(JSON.stringify(message));
+            addMessage(`🗣️ Sent voice command: "${command}"`, 'sent');
+        }
+
+        function sendVoiceData() {
+            if (!ws || !sessionId) {
+                addMessage('⚠️ Not connected. Click Connect first.', 'error');
+                return;
+            }
+
+            // Simulated audio chunk (base64-encoded dummy data)
+            const dummyAudioChunk = btoa("simulated audio data chunk");
+            const message = {
+                event: 'voice_data',
+                data: {
+                    session_id: sessionId,
+                    audio_chunk: dummyAudioChunk,
+                    format: 'wav',
+                    sample_rate: 16000,
+                    is_final: false  // Set to true for final chunk
+                }
+            };
+
+            ws.send(JSON.stringify(message));
+            addMessage(`🎵 Sent audio data chunk (${dummyAudioChunk.length} bytes, buffering...)`, 'sent');
+        }
+
+        function sendInterrupt() {
+            if (!ws || !sessionId) {
+                addMessage('⚠️ Not connected. Click Connect first.', 'error');
+                return;
+            }
+
+            const message = {
+                event: 'interrupt',
+                data: {
+                    session_id: sessionId,
+                    reason: 'user_interruption'
+                }
+            };
+
+            ws.send(JSON.stringify(message));
+            addMessage(`⏹️ Sent interrupt signal`, 'sent');
+        }
+
+        function clearMessages() {
+            messagesDiv.innerHTML = '';
+        }
+
+        // Auto-connect on load (optional)
+        // connect();
+    </script>
+</body>
+</html>
+

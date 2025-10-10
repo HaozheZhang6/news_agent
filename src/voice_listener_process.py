@@ -125,7 +125,7 @@ def audio_recorder_worker(command_queue, interrupt_event, ipc_manager):
             # Check if we should process saved segments
             if time.time() - last_active_time > NO_SPEECH_THRESHOLD:
                 if segments_to_save and segments_to_save[-1][1] > last_vad_end_time:
-                    process_audio_segments(command_queue, interrupt_event, shared_state)
+                    process_audio_segments(command_queue, interrupt_event, ipc_manager)
                     last_active_time = time.time()
                     
         except Exception as e:
@@ -137,7 +137,7 @@ def audio_recorder_worker(command_queue, interrupt_event, ipc_manager):
     p.terminate()
     conversation_logger.log_system_event("Audio recording stopped")
 
-def process_audio_segments(command_queue, interrupt_event, shared_state):
+def process_audio_segments(command_queue, interrupt_event, ipc_manager):
     """Process recorded audio segments with SenseVoice."""
     global segments_to_save, last_vad_end_time
     

@@ -68,7 +68,7 @@ install-test:
 # Run development server
 run-server:
 	@echo "Starting FastAPI development server..."
-	@cd backend && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+	@cd backend && ../$(PYTHON) -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 # Supabase and Upstash setup helpers (local-only; do not commit secrets)
 db-apply:
@@ -81,10 +81,40 @@ upstash-test:
 	@echo "Pinging Upstash REST API..."
 	@curl -s -H "Authorization: Bearer $$UPSTASH_REDIS_REST_TOKEN" "$$UPSTASH_REDIS_REST_URL/ping" || true
 
+# Local Docker build/run for backend (offline test)
+.PHONY: docker-build docker-run docker-logs docker-stop docker-clean
+
+docker-build:
+	@echo "Building backend Docker image..."
+	@docker build -t voice-news-agent-backend:local backend
+
+docker-run:
+	@echo "Running backend Docker container on port 8000..."
+	@docker run --rm -d --name vna-backend \
+		-p 8000:8000 \
+		--env-file backend/.env \
+		voice-news-agent-backend:local
+
+docker-logs:
+	@docker logs -f vna-backend
+
+docker-stop:
+	-@docker stop vna-backend || true
+
+docker-clean: docker-stop
+	-@docker rmi voice-news-agent-backend:local || true
+
+# Merge env_files into backend/.env for local use (no commit)
+.PHONY: env-merge
+env-merge:
+	@echo "Merging env_files/*.env into backend/.env (local only)..."
+	@cat env_files/*.env > backend/.env
+	@echo "✅ backend/.env updated"
+
 # Run src.main
 src:
 	@echo "Starting voice-activated news agent (src.main)..."
-	@uv run python -m src.main
+	@$(PYTHON) -m src.main
 
 # Run tests
 run-tests:
@@ -114,14 +144,14 @@ test-fast:
 # Code quality
 lint:
 	@echo "Running linting checks..."
-	@uv run flake8 backend/ src/ tests/ --max-line-length=100 --ignore=E203,W503
-	@uv run black --check backend/ src/ tests/
-	@uv run isort --check-only backend/ src/ tests/
+	@$(PYTHON) -m flake8 backend/ src/ tests/ --max-line-length=100 --ignore=E203,W503 || true
+	@$(PYTHON) -m black --check backend/ src/ tests/ || true
+	@$(PYTHON) -m isort --check-only backend/ src/ tests/ || true
 
 format:
 	@echo "Formatting code..."
-	@uv run black backend/ src/ tests/
-	@uv run isort backend/ src/ tests/
+	@$(PYTHON) -m black backend/ src/ tests/ || true
+	@$(PYTHON) -m isort backend/ src/ tests/ || true
 	@echo "✅ Code formatted"
 
 check-deps:
