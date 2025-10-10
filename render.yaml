@@ -5,7 +5,7 @@ services:
     env: docker
     plan: free
     rootDir: backend
-    dockerContext: .
+    dockerContext: ..
     dockerfilePath: Dockerfile
     healthCheckPath: /health
     envVars:
