@@ -9,6 +9,8 @@ from .database import get_database
 from .cache import get_cache
 from .core.websocket_manager import get_websocket_manager
 from .api import voice, news, conversation, user
+from .api.profile import router as profile_router
+from .api.conversation_log import router as conversation_log_router
 
 settings = get_settings()
 
@@ -71,6 +73,8 @@ app.include_router(voice.router)
 app.include_router(news.router)
 app.include_router(conversation.router)
 app.include_router(user.router)
+app.include_router(profile_router)
+app.include_router(conversation_log_router)
 
 
 @app.get("/")
