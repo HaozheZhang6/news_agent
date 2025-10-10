@@ -20,6 +20,10 @@
   - Test audio buffering
 
 ### ✅ Completed
+- [x] **Real-time interruption** - Agent stops speaking immediately when user interrupts
+- [x] **Continuous voice interface** - Browser-based continuous listening with interruption
+- [x] **UUID fix** - Fixed database UUID validation errors for user_id
+- [x] **Native Python deployment** - Switched from Docker to Render native Python runtime
 - [x] **WebSocket streaming implementation** - Real-time voice communication
 - [x] **Streaming handler** - Chunked TTS with edge-tts
 - [x] **Partial transcription support** - Real-time ASR feedback
@@ -67,6 +71,7 @@
 ## 🔧 Technical Debt & Improvements
 
 ### High Priority
+- [ ] **Frontend audio interruption** - Frontend should stop audio playback immediately when receiving new incoming message packages from backend (e.g., new voice_response), not just on explicit interrupt events. This ensures smoother real-time interruption.
 - [ ] **Error handling** - Better error messages for WebSocket failures
 - [ ] **Rate limiting** - Implement per-user rate limits
 - [ ] **Logging improvements** - Structured logging with correlation IDs

@@ -21,6 +21,7 @@ class WebSocketManager:
         self.session_data: Dict[str, Dict[str, Any]] = {}  # session_id -> data
         self.streaming_handler = None
         self._initialized = False
+        self.streaming_tasks: Dict[str, bool] = {}  # session_id -> should_stop_streaming
     
     async def initialize(self):
         """Initialize the WebSocket manager."""
@@ -287,6 +288,10 @@ class WebSocketManager:
             if session_id in self.session_data:
                 self.session_data[session_id]["total_interruptions"] += 1
             
+            # Signal to stop any ongoing TTS streaming
+            self.streaming_tasks[session_id] = True
+            print(f"⚠️ Interrupt signal sent for session {session_id}")
+            
             # Send interruption confirmation
             await self.send_message(session_id, {
                 "event": "voice_interrupted",
@@ -372,16 +377,33 @@ class WebSocketManager:
         return self.user_sessions.get(user_id)
     
     async def stream_tts_response(self, session_id: str, text: str):
-        """Stream TTS audio back to client in chunks."""
+        """Stream TTS audio back to client in chunks.
+        
+        Supports real-time interruption: when user starts speaking while agent
+        is talking, the interrupt handler sets streaming_tasks[session_id] = True,
+        which causes this loop to break immediately and stop sending TTS chunks.
+        """
         try:
             if not self.streaming_handler:
                 print("⚠️ Streaming handler not initialized")
                 return
             
+            # Reset interrupt flag before starting new response
+            # This ensures each new response starts fresh and can be interrupted
+            self.streaming_tasks[session_id] = False
+            
             chunk_index = 0
             total_chunks_sent = 0
+            interrupted = False
             
             async for audio_chunk in self.streaming_handler.stream_tts_audio(text):
+                # Check for interrupt signal on each chunk
+                # This allows near-instant interruption when user speaks
+                if self.streaming_tasks.get(session_id, False):
+                    print(f"🛑 TTS streaming interrupted for {session_id}")
+                    interrupted = True
+                    break
+                
                 # Send audio chunk
                 await self.send_message(session_id, {
                     "event": "tts_chunk",
@@ -399,17 +421,27 @@ class WebSocketManager:
                 # Small delay to prevent overwhelming the client
                 await asyncio.sleep(0.01)
             
-            # Send streaming complete event
-            await self.send_message(session_id, {
-                "event": "streaming_complete",
-                "data": {
-                    "total_chunks_sent": total_chunks_sent,
-                    "session_id": session_id,
-                    "timestamp": datetime.now().isoformat()
-                }
-            })
-            
-            print(f"✅ Streamed {total_chunks_sent} TTS chunks to {session_id}")
+            # Send streaming complete or interrupted event
+            if interrupted:
+                await self.send_message(session_id, {
+                    "event": "streaming_interrupted",
+                    "data": {
+                        "total_chunks_sent": total_chunks_sent,
+                        "session_id": session_id,
+                        "timestamp": datetime.now().isoformat()
+                    }
+                })
+                print(f"⚠️ Streaming interrupted after {total_chunks_sent} chunks for {session_id}")
+            else:
+                await self.send_message(session_id, {
+                    "event": "streaming_complete",
+                    "data": {
+                        "total_chunks_sent": total_chunks_sent,
+                        "session_id": session_id,
+                        "timestamp": datetime.now().isoformat()
+                    }
+                })
+                print(f"✅ Streamed {total_chunks_sent} TTS chunks to {session_id}")
             
         except Exception as e:
             print(f"❌ Error streaming TTS: {e}")

@@ -83,7 +83,12 @@ class AgentWrapper:
             start_time = datetime.now()
             
             if self.agent:
-                response_text = await self.agent.get_response(command)
+                # Run synchronous agent method in thread pool to avoid blocking
+                if asyncio.iscoroutinefunction(self.agent.get_response):
+                    response_text = await self.agent.get_response(command)
+                else:
+                    # Wrap synchronous call in asyncio.to_thread
+                    response_text = await asyncio.to_thread(self.agent.get_response, command)
             else:
                 response_text = f"Mock response for: {command}"
             

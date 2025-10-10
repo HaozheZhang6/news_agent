@@ -146,7 +146,7 @@ flowchart TB
 | **🤖 GLM-4-Flash Integration** | ✅ Complete | News summarization and conversation |
 | **📰 Multi-source News** | ✅ Complete | AlphaVantage + yfinance integration |
 | **☁️ Cloud Backend** | ✅ Complete | FastAPI + Supabase + Upstash Redis |
-| **🐳 Docker Ready** | ✅ Complete | Dockerfile + render.yaml for deployment |
+| **☁️ Render Ready** | ✅ Complete | Native Python runtime for deployment |
 | **🧪 Testing Suite** | ✅ Complete | WebSocket test client + manual test docs |
 | **🚀 Render Deployment** | ⏳ Pending | Blueprint ready, awaiting manual test |
 | **📱 iOS App** | 🚧 Planned | Voice command API ready for integration |
@@ -165,10 +165,10 @@ flowchart TB
 - **Upstash Redis**: 5-layer caching (news, AI, sessions, voice, stocks)
 - **Edge-TTS**: Lightweight streaming TTS (no local model needed)
 
-### 🐳 **Deployment Infrastructure**
-- **Docker**: Production-ready Dockerfile for containerization
+### ☁️ **Deployment Infrastructure**
+- **Native Python Runtime**: Optimized for Render's Python environment
 - **Render Blueprint**: One-click deployment configuration (render.yaml)
-- **Free Tier Optimized**: 512MB RAM, WebSocket streaming, auto-scaling
+- **Free Tier Optimized**: Fast builds, WebSocket streaming, auto-scaling
 - **Environment Management**: Multi-file env configuration (env_files/)
 
 ### 📱 **iOS Integration Ready**
@@ -401,7 +401,6 @@ News_agent/
 │   │   ├── database.py           # Supabase integration
 │   │   ├── cache.py              # Upstash Redis caching
 │   │   └── main.py               # FastAPI application
-│   ├── Dockerfile                # Docker container
 │   └── requirements.txt          # Backend dependencies
 ├── src/                          # Local voice agent
 │   ├── agent.py                  # News agent logic

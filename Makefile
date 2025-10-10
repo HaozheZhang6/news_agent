@@ -81,29 +81,6 @@ upstash-test:
 	@echo "Pinging Upstash REST API..."
 	@curl -s -H "Authorization: Bearer $$UPSTASH_REDIS_REST_TOKEN" "$$UPSTASH_REDIS_REST_URL/ping" || true
 
-# Local Docker build/run for backend (offline test)
-.PHONY: docker-build docker-run docker-logs docker-stop docker-clean
-
-docker-build:
-	@echo "Building backend Docker image..."
-	@docker build -t voice-news-agent-backend:local backend
-
-docker-run:
-	@echo "Running backend Docker container on port 8000..."
-	@docker run --rm -d --name vna-backend \
-		-p 8000:8000 \
-		--env-file backend/.env \
-		voice-news-agent-backend:local
-
-docker-logs:
-	@docker logs -f vna-backend
-
-docker-stop:
-	-@docker stop vna-backend || true
-
-docker-clean: docker-stop
-	-@docker rmi voice-news-agent-backend:local || true
-
 # Merge env_files into backend/.env for local use (no commit)
 .PHONY: env-merge
 env-merge:

@@ -223,7 +223,7 @@ class WebSocketManager:
 |---------|-------------------|-------|
 | WebSocket | ✅ Yes | Full support, persistent connections |
 | Streaming | ✅ Yes | Works great over WebSocket |
-| Docker | ✅ Yes | Can use Dockerfile |
+| Native Python | ✅ Yes | Fast builds, optimized runtime |
 | 512 MB RAM | ⚠️ Limited | Enough for basic voice, may need optimization |
 | Sleeps after 15 min | ⚠️ Yes | Cold start ~30-60s |
 | 750 hrs/month | ✅ Yes | ~1 month continuous |
@@ -280,21 +280,24 @@ WebSocket → iOS App
 
 ## 4. Deployment Configuration for Streaming
 
-### Update render.yaml
+### Update render.yaml (Native Python)
 
 ```yaml
 services:
   - type: web
     name: voice-news-agent-api
-    env: docker
+    runtime: python3
+    region: oregon
     plan: free
-    dockerContext: backend
-    dockerfilePath: Dockerfile
+    rootDir: backend
+    buildCommand: pip install --upgrade pip && pip install -r ../requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
     healthCheckPath: /health
     
     # Streaming-specific settings
     envVars:
-      # ... existing vars ...
+      - key: PYTHON_VERSION
+        value: 3.11.0
       
       # WebSocket settings (important for streaming)
       - key: MAX_WEBSOCKET_CONNECTIONS
@@ -313,42 +316,13 @@ services:
         value: true  # Don't load SenseVoice locally
 ```
 
-### Update Dockerfile for Streaming
+### Python Runtime Benefits
 
-```dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-
-# Install only essential dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
-# Don't install heavy audio processing libs (PyAudio, etc)
-COPY requirements.txt .
-
-# Install minimal requirements
-RUN pip install --no-cache-dir \
-    fastapi \
-    uvicorn \
-    websockets \
-    edge-tts \
-    supabase \
-    httpx \
-    redis \
-    python-dotenv
-
-COPY . .
-
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app
-
-EXPOSE 8000
-
-# Use single worker for free tier
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "${PORT:-8000}", "--workers", "1"]
-```
+Native Python on Render provides:
+- **Faster builds**: No Docker layer overhead
+- **Lower memory**: More efficient than containers
+- **Simpler debugging**: Direct Python logs
+- **Auto-scaling**: Render handles Python runtime optimization
 
 ---
 
@@ -522,7 +496,7 @@ If Render free tier is too limited:
 
 | Use Case | Best Option | Why |
 |----------|-------------|-----|
-| MVP testing | Render Free | Easy Docker deploy, WebSocket works |
+| MVP testing | Render Free | Fast Python deploy, WebSocket works |
 | Low traffic (<100 users) | Render Free + UptimeRobot | Keep-alive pings prevent sleep |
 | Medium traffic | Render Starter ($7) | Always-on, no cold starts |
 | High traffic/low latency | Vercel + Supabase | Global edge, better performance |

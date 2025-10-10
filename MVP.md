@@ -157,10 +157,10 @@ A **cloud-native voice news agent** with:
 ### DevOps
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| **Deployment** | Render | Cloud hosting |
-| **Containerization** | Docker | Consistent environments |
+| **Deployment** | Render (Native Python) | Cloud hosting |
 | **CI/CD** | GitHub Actions (future) | Automated deployment |
 | **Monitoring** | Render Metrics | Performance tracking |
+| **Environment** | Python 3.11 Runtime | Fast builds |
 
 ---
 
@@ -221,9 +221,8 @@ A **cloud-native voice news agent** with:
 
 ### Prerequisites
 
-- **Python**: 3.9 or higher
+- **Python**: 3.9 or higher (3.11 recommended)
 - **uv**: Package manager ([install](https://github.com/astral-sh/uv))
-- **Docker**: For local testing (optional)
 - **Git**: Version control
 
 ### API Keys Required
@@ -373,23 +372,6 @@ curl https://your-app.onrender.com/health
 wss://your-app.onrender.com/ws/voice?user_id=test
 ```
 
-### Docker Deployment (Alternative)
-
-```bash
-# Build Docker image
-cd backend
-docker build -t voice-news-agent:latest .
-
-# Run container
-docker run -d -p 8000:8000 \
-  --env-file ../env_files/supabase.env \
-  --env-file ../env_files/upstash.env \
-  voice-news-agent:latest
-
-# Check logs
-docker logs -f <container_id>
-```
-
 ---
 
 ## 🧪 Testing
@@ -527,7 +509,7 @@ See [VOICE_INPUT_TESTING.md](VOICE_INPUT_TESTING.md) for detailed examples.
 - [x] Supabase integration
 - [x] Upstash Redis caching
 - [x] Streaming TTS
-- [x] Docker deployment config
+- [x] Render deployment config (native Python)
 - [x] Test suite
 - [ ] Render deployment (pending manual test)
 
