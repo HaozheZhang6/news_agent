@@ -240,7 +240,7 @@ class AgentWrapper:
             await self.db.add_conversation_message(
                 session_id=session_id,
                 user_id=user_id,
-                message_type="user_input",
+                role="user",
                 content=user_input,
                 metadata={"processing_time_ms": processing_time_ms}
             )
@@ -249,13 +249,24 @@ class AgentWrapper:
             await self.db.add_conversation_message(
                 session_id=session_id,
                 user_id=user_id,
-                message_type="agent_response",
+                role="agent",
                 content=agent_response,
                 metadata={"processing_time_ms": processing_time_ms}
             )
-            
         except Exception as e:
             print(f"❌ Error storing conversation: {e}")
+
+    async def update_watchlist(self, user_id: str, symbols: List[str]) -> Dict[str, Any]:
+        """Update user's watchlist stocks directly via database accessor."""
+        if not self._initialized:
+            await self.initialize()
+        prefs = await self.db.get_user_preferences(user_id) or {}
+        current = set(prefs.get("watchlist_stocks", []))
+        updated = sorted(current.union({s.upper() for s in symbols if s}))
+        ok = await self.db.update_user_preferences(user_id, {"watchlist_stocks": updated})
+        if ok:
+            await self.cache.delete(f"user:preferences:{user_id}")
+        return {"updated": ok, "watchlist": updated}
     
     async def get_user_preferences(self, user_id: str) -> Dict[str, Any]:
         """Get user preferences."""

@@ -465,3 +465,26 @@ See [MVP.md](MVP.md) for detailed deployment instructions.
 ---
 
 *Built with ❤️ using FastAPI, GLM-4-Flash, SenseVoice ASR, Edge-TTS, Supabase, and Upstash Redis*
+
+## API Overview
+
+### Profile (preferences and watchlist)
+- GET `/api/profile/{user_id}/preferences` → returns `{ preferred_topics, watchlist_stocks }`
+- PUT `/api/profile/{user_id}/preferences` → body: partial UserPreferencesUpdate
+- GET `/api/profile/{user_id}/watchlist` → returns `{ watchlist: string[] }`
+- POST `/api/profile/{user_id}/watchlist/add` → body: `string[]` symbols
+- POST `/api/profile/{user_id}/watchlist/remove` → body: `string[]` symbols
+- POST `/api/profile/{user_id}/watchlist/set` → body: `string[]` symbols (replace)
+
+### Conversation Logging
+- POST `/api/conversation/session/start` → body: `{ user_id }` → returns session row
+- POST `/api/conversation/message` → body: ConversationMessageCreate (maps `message_type` → `role`)
+- GET `/api/conversation/messages/{session_id}?limit=50` → returns `{ messages }`
+
+### Voice API
+- POST `/api/voice/command` → VoiceCommandRequest
+- POST `/api/voice/text-command` → query/body params
+- POST `/api/voice/synthesize`
+- POST `/api/voice/watchlist/update` → params: `user_id`, `symbols[]` updates `users.watchlist_stocks`
+
+Data is persisted in Supabase tables: `users` (preferred_topics, watchlist_stocks), `conversation_sessions`, `conversation_messages` (uses `role` column: user|agent|system).

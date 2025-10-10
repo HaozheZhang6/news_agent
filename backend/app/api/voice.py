@@ -95,6 +95,21 @@ async def synthesize_speech(
         raise HTTPException(status_code=500, detail=f"Error synthesizing speech: {str(e)}")
 
 
+@router.post("/watchlist/update")
+async def update_watchlist(
+    user_id: str,
+    symbols: list[str],
+    agent=Depends(get_agent),
+):
+    """Let the agent update the user's watchlist (internal helper endpoint)."""
+    try:
+        result = await agent.update_watchlist(user_id, symbols)
+        if not result.get("updated"):
+            raise HTTPException(status_code=500, detail="Failed to update watchlist")
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating watchlist: {str(e)}")
+
 @router.get("/health")
 async def voice_health_check():
     """Health check for voice services."""

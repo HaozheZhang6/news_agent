@@ -49,4 +49,12 @@ async def remove_from_watchlist(user_id: str, symbols: List[str], db=Depends(get
         raise HTTPException(status_code=500, detail="Failed to update watchlist")
     return {"status": "ok", "watchlist": updated}
 
+@router.post("/{user_id}/watchlist/set")
+async def set_watchlist(user_id: str, symbols: List[str], db=Depends(get_database)):
+    normalized = sorted({s.upper() for s in symbols if s})
+    ok = await db.update_user_preferences(user_id, {"watchlist_stocks": normalized})
+    if not ok:
+        raise HTTPException(status_code=500, detail="Failed to set watchlist")
+    return {"status": "ok", "watchlist": normalized}
+
 

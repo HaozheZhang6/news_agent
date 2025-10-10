@@ -18,10 +18,17 @@ async def start_session(payload: ConversationSessionCreate, db=Depends(get_datab
 
 @router.post("/message")
 async def log_message(payload: ConversationMessageCreate, db=Depends(get_database)):
+    # Map legacy message_type to 'role' column
+    type_to_role = {
+        "user_input": "user",
+        "agent_response": "agent",
+        "system_event": "system",
+    }
+    role = type_to_role.get(payload.message_type, "system")
     item = await db.add_conversation_message(
         session_id=payload.session_id,
         user_id=payload.user_id,
-        message_type=payload.message_type,
+        role=role,
         content=payload.content,
         metadata={
             "audio_url": payload.audio_url,

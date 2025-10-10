@@ -65,22 +65,47 @@ class DatabaseManager:
             return None
     
     async def update_user_preferences(self, user_id: str, preferences: Dict[str, Any]) -> bool:
-        """Update user preferences."""
+        """Update user preferences stored directly on users table.
+
+        Only columns that exist on users are updated (preferred_topics, watchlist_stocks).
+        """
         try:
-            result = self.client.table('user_preferences').upsert({
-                'user_id': user_id,
-                **preferences
-            }).execute()
-            return bool(result.data)
+            update_payload: Dict[str, Any] = {}
+            if 'preferred_topics' in preferences:
+                update_payload['preferred_topics'] = preferences['preferred_topics']
+            if 'watchlist_stocks' in preferences:
+                update_payload['watchlist_stocks'] = preferences['watchlist_stocks']
+            if not update_payload:
+                return True
+            result = (
+                self.client
+                .table('users')
+                .update(update_payload)
+                .eq('id', user_id)
+                .execute()
+            )
+            return result.data is not None
         except Exception as e:
             print(f"❌ Error updating user preferences: {e}")
             return False
     
     async def get_user_preferences(self, user_id: str) -> Optional[Dict[str, Any]]:
-        """Get user preferences."""
+        """Get user preferences stored on users table."""
         try:
-            result = self.client.table('user_preferences').select('*').eq('user_id', user_id).execute()
-            return result.data[0] if result.data else None
+            result = (
+                self.client
+                .table('users')
+                .select('preferred_topics, watchlist_stocks')
+                .eq('id', user_id)
+                .execute()
+            )
+            if result.data:
+                row = result.data[0]
+                return {
+                    'preferred_topics': row.get('preferred_topics') or [],
+                    'watchlist_stocks': row.get('watchlist_stocks') or [],
+                }
+            return None
         except Exception as e:
             print(f"❌ Error getting user preferences: {e}")
             return None
@@ -99,15 +124,15 @@ class DatabaseManager:
             print(f"❌ Error creating conversation session: {e}")
             return None
     
-    async def add_conversation_message(self, session_id: str, user_id: str, 
-                                    message_type: str, content: str, 
-                                    metadata: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
-        """Add message to conversation."""
+    async def add_conversation_message(self, session_id: str, user_id: str,
+                                       role: str, content: str,
+                                       metadata: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+        """Add message to conversation using 'role' column (user|agent|system)."""
         try:
             message_data = {
                 'session_id': session_id,
                 'user_id': user_id,
-                'message_type': message_type,
+                'role': role,
                 'content': content,
                 'metadata': metadata or {}
             }
