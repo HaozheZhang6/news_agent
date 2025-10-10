@@ -8,9 +8,9 @@ services:
     plan: free
     branch: main
     buildCommand: |
-      pip install uv
-      uv venv .venv
-      uv pip install --python .venv/bin/python -r requirements-deploy.txt
+      python -m venv .venv
+      .venv/bin/pip install --upgrade pip
+      .venv/bin/pip install -r requirements-deploy.txt
     startCommand: |
       .venv/bin/python -m uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT --workers 1
     healthCheckPath: /health

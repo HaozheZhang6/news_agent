@@ -862,10 +862,7 @@ frozenlist==1.8.0 \
     # via
     #   aiohttp
     #   aiosignal
-funasr==1.2.7 \
-    --hash=sha256:b53f748e479e5bf6af172407c50eccaa6818ed91bdf8656abcd7ea6c5e3d2b0d \
-    --hash=sha256:fe943487bab0137813b213ffab14e819d8762fe1df6f776bb2db0bf89958d5e2
-    # via voice-news-agent
+# funasr removed - not needed for backend API (used only in local src/)
 gotrue==2.9.1 \
     --hash=sha256:6ffccd0d971d8e2883a650640fa94e53483c022119d687d1496cd79040736127 \
     --hash=sha256:bc076c2030e5b5a189937fc1985b311844105ad1c78685b353f05253d0ebffed
@@ -1159,10 +1156,7 @@ lazy-loader==0.4 \
     --hash=sha256:342aa8e14d543a154047afb4ba8ef17f5563baad3fc610d7b15b213b0f119efc \
     --hash=sha256:47c75182589b91a4e1a85a136c074285a5ad4d9f39c63e0d7fb76391c4574cd1
     # via librosa
-librosa==0.11.0 \
-    --hash=sha256:0b6415c4fd68bff4c29288abe67c6d80b587e0e1e2cfb0aad23e4559504a7fa1 \
-    --hash=sha256:f5ed951ca189b375bbe2e33b2abd7e040ceeee302b9bbaeeffdfddb8d0ace908
-    # via funasr
+# librosa removed - not needed for backend API
 llvmlite==0.43.0 ; python_full_version < '3.10' \
     --hash=sha256:14f0e4bf2fd2d9a75a3534111e8ebeb08eda2f33e9bdd6dfa13282afacdde0ed \
     --hash=sha256:18e9953c748b105668487b7c81a3e97b046d8abf95c4ddc0cd3c94f4e4651ae8 \
@@ -1308,10 +1302,7 @@ markupsafe==3.0.3 \
     --hash=sha256:f9e130248f4462aaa8e2552d547f36ddadbeaa573879158d721bbd33dfe4743a \
     --hash=sha256:fed51ac40f757d41b7c48425901843666a6677e3e8eb0abcff09e4ba6e664f50
     # via mako
-modelscope==1.30.0 \
-    --hash=sha256:1ebedc419881852a784890330e3b6638ab934fa57f82ffa7e2b81b191fd5f76e \
-    --hash=sha256:a391c63a20f286e50010498ec3cc2aa1a86210a9dd74c55cfa4609fd2f8a999f
-    # via funasr
+# modelscope removed - not needed for backend API
 msgpack==1.1.2 \
     --hash=sha256:0051fffef5a37ca2cd16978ae4f0aef92f164df86823871b5162812bebecd8e2 \
     --hash=sha256:04fb995247a6e83830b62f0b07bf36540c213f6eac8e851166d8d86d83cbd014 \
@@ -3368,9 +3359,7 @@ watchfiles==1.1.0 \
     --hash=sha256:fba9b62da882c1be1280a7584ec4515d0a6006a94d6e5819730ec2eab60ffe12 \
     --hash=sha256:fe4371595edf78c41ef8ac8df20df3943e13defd0efcb732b2e393b5a8a7a71f
     # via uvicorn
-webrtcvad==2.0.10 \
-    --hash=sha256:f1bed2fb25b63fb7b1a55d64090c993c9c9167b28485ae0bcdd81cf6ede96aea
-    # via voice-news-agent
+# webrtcvad removed - not needed for backend API (used only in local src/)
 websockets==15.0.1 \
     --hash=sha256:0701bc3cfcb9164d04a14b149fd74be7347a530ad3bbf15ab2c678a2cd3dd9a2 \
     --hash=sha256:0a34631031a8f05657e8e90903e656959234f3a04552259458aac0b0f9ae6fd9 \
