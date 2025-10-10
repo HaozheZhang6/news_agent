@@ -1,10 +1,10 @@
 """Voice API endpoints for text and voice commands."""
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any, Optional
-from app.models.voice import VoiceCommandRequest, VoiceCommandResponse, VoiceSynthesis, VoiceSynthesisResponse
-from app.core.agent_wrapper import get_agent
-from app.database import get_database
-from app.cache import get_cache
+from ..models.voice import VoiceCommandRequest, VoiceCommandResponse, VoiceSynthesis, VoiceSynthesisResponse
+from ..core.agent_wrapper import get_agent
+from ..database import get_database
+from ..cache import get_cache
 
 router = APIRouter(prefix="/api/voice", tags=["voice"])
 

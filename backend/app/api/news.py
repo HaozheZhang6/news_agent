@@ -1,10 +1,10 @@
 """News API endpoints."""
 from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional, Dict, Any
-from app.models.news import NewsLatestRequest, NewsSearchRequest, NewsResponse, NewsSummaryRequest, NewsSummaryResponse
-from app.core.agent_wrapper import get_agent
-from app.database import get_database
-from app.cache import get_cache
+from ..models.news import NewsLatestRequest, NewsSearchRequest, NewsResponse, NewsSummaryRequest, NewsSummaryResponse
+from ..core.agent_wrapper import get_agent
+from ..database import get_database
+from ..cache import get_cache
 
 router = APIRouter(prefix="/api/news", tags=["news"])
 

@@ -19,8 +19,8 @@ except ImportError as e:
     conversation_memory = None
     config = None
 
-from app.database import get_database
-from app.cache import get_cache
+from ..database import get_database
+from ..cache import get_cache
 
 
 class AgentWrapper:

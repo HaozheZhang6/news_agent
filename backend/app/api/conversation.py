@@ -1,9 +1,9 @@
 """Conversation API endpoints."""
 from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional, Dict, Any
-from app.models.conversation import ConversationHistoryRequest, ConversationHistoryResponse, ConversationSession, ConversationMessage
-from app.database import get_database
-from app.cache import get_cache
+from ..models.conversation import ConversationHistoryRequest, ConversationHistoryResponse, ConversationSession, ConversationMessage
+from ..database import get_database
+from ..cache import get_cache
 
 router = APIRouter(prefix="/api/conversations", tags=["conversations"])
 
