@@ -8,11 +8,11 @@ services:
     plan: free
     branch: main
     buildCommand: |
-      python -m venv .venv
-      .venv/bin/pip install --upgrade pip
-      .venv/bin/pip install -r requirements-deploy.txt
+      curl -LsSf https://astral.sh/uv/install.sh | sh
+      source $HOME/.cargo/env
+      uv sync --frozen
     startCommand: |
-      .venv/bin/python -m uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT --workers 1
+      uv run uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT --workers 1
     healthCheckPath: /health
     autoDeploy: true
     envVars:

@@ -1,12 +1,10 @@
 # Voice News Agent Makefile
 # Using uv for Python package management
 
-# Prefer uv-managed .venv Python; fallback to venv, then system python3/python
+# Use uv for Python package management
 ifeq (,$(PYTHON))
 ifneq (,$(wildcard .venv/bin/python))
 PYTHON := .venv/bin/python
-else ifneq (,$(wildcard venv/bin/python))
-PYTHON := venv/bin/python
 else
 PYTHON := $(shell command -v python3 || command -v python)
 endif
@@ -19,9 +17,10 @@ help:
 	@echo "Voice News Agent - Available Commands:"
 	@echo ""
 	@echo "Setup & Installation:"
-	@echo "  install        Install production dependencies"
-	@echo "  install-dev    Install development dependencies"
-	@echo "  install-test   Install test dependencies"
+	@echo "  init           Initialize uv project (run once)"
+	@echo "  install        Install production dependencies with uv"
+	@echo "  install-dev    Install development dependencies with uv"
+	@echo "  install-test   Install test dependencies with uv"
 	@echo "  setup-env      Setup environment files"
 	@echo ""
 	@echo "Development:"
@@ -45,30 +44,29 @@ help:
 # Setup environment files
 setup-env:
 	@echo "Setting up environment files..."
-	@cp backend/env.example backend/.env
+	@cp env_files/env.example backend/.env
 	@echo "✅ Environment files created"
 
 # Install dependencies
 install:
 	@echo "Installing production dependencies with uv..."
-	@uv pip install -r backend/requirements.txt
+	@uv sync --no-dev
 	@echo "✅ Production dependencies installed"
 
 install-dev:
 	@echo "Installing development dependencies with uv..."
-	@uv pip install -r backend/requirements.txt
-	@uv pip install -r tests/requirements-test.txt
+	@uv sync
 	@echo "✅ Development dependencies installed"
 
 install-test:
 	@echo "Installing test dependencies with uv..."
-	@uv pip install -r tests/requirements-test.txt
+	@uv sync --extra test
 	@echo "✅ Test dependencies installed"
 
 # Run development server
 run-server:
 	@echo "Starting FastAPI development server..."
-	@cd backend && ../$(PYTHON) -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+	@uv run uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 
 # Supabase and Upstash setup helpers (local-only; do not commit secrets)
 db-apply:
@@ -98,49 +96,49 @@ env-merge:
 # Run src.main
 src:
 	@echo "Starting voice-activated news agent (src.main)..."
-	@$(PYTHON) -m src.main
+	@uv run python -m src.main
 
 # Run tests
 run-tests:
 	@echo "Running all tests..."
-	@$(PYTHON) tests/run_tests.py
+	@uv run python tests/run_tests.py
 
 test-backend:
 	@echo "Running backend tests..."
-	@$(PYTHON) -m pytest tests/backend/ -v --tb=short --timeout=15
+	@uv run pytest tests/backend/ -v --tb=short --timeout=15
 
 test-src:
 	@echo "Running source component tests..."
-	@$(PYTHON) -m pytest tests/src/ -v --tb=short --timeout=15
+	@uv run pytest tests/src/ -v --tb=short --timeout=15
 
 test-integration:
 	@echo "Running integration tests..."
-	@$(PYTHON) -m pytest tests/integration/ -v --tb=short --timeout=15
+	@uv run pytest tests/integration/ -v --tb=short --timeout=15
 
 test-coverage:
 	@echo "Running tests with coverage..."
-	@$(PYTHON) -m pytest tests/ --cov=backend --cov=src --cov-report=html --cov-report=term --timeout=15
+	@uv run pytest tests/ --cov=backend --cov=src --cov-report=html --cov-report=term --timeout=15
 
 test-fast:
 	@echo "Running fast tests only..."
-	@$(PYTHON) -m pytest tests/ -v --tb=short -m "not slow" --timeout=15
+	@uv run pytest tests/ -v --tb=short -m "not slow" --timeout=15
 
 # Code quality
 lint:
 	@echo "Running linting checks..."
-	@$(PYTHON) -m flake8 backend/ src/ tests/ --max-line-length=100 --ignore=E203,W503 || true
-	@$(PYTHON) -m black --check backend/ src/ tests/ || true
-	@$(PYTHON) -m isort --check-only backend/ src/ tests/ || true
+	@uv run flake8 backend/ src/ tests/ --max-line-length=100 --ignore=E203,W503 || true
+	@uv run black --check backend/ src/ tests/ || true
+	@uv run isort --check-only backend/ src/ tests/ || true
 
 format:
 	@echo "Formatting code..."
-	@$(PYTHON) -m black backend/ src/ tests/ || true
-	@$(PYTHON) -m isort backend/ src/ tests/ || true
+	@uv run black backend/ src/ tests/ || true
+	@uv run isort backend/ src/ tests/ || true
 	@echo "✅ Code formatted"
 
 check-deps:
 	@echo "Checking for dependency updates..."
-	@uv pip list --outdated
+	@uv tree --outdated
 
 # Utilities
 clean:
@@ -167,6 +165,12 @@ dev: install-dev setup-env
 prod: install setup-env
 	@echo "Production environment ready!"
 	@echo "Run 'make run-server' to start the server"
+
+# Initialize uv project (run once)
+init:
+	@echo "Initializing uv project..."
+	@uv init --no-readme
+	@echo "✅ uv project initialized"
 
 # Full test suite with reports
 test-full: test-coverage
