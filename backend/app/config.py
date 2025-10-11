@@ -101,7 +101,7 @@ class Settings(BaseSettings):
     render_external_url: Optional[str] = Field(default=None, env="RENDER_EXTERNAL_URL")
     
     class Config:
-        env_file = [".env", "../env_files/supabase.env", "../env_files/upstash.env", "../env_files/render.env"]
+        env_file = ["backend/.env", "env_files/supabase.env", "env_files/upstash.env", "env_files/render.env"]
         env_file_encoding = "utf-8"
         case_sensitive = False
         extra = "ignore"  # Ignore extra fields from .env
