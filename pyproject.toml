@@ -60,7 +60,6 @@ dependencies = [
     "pygame>=2.5.2",
     "funasr>=1.0.0",
     "webrtcvad>=2.0.10",
-    "pyaudio>=0.2.11",
     "pydub>=0.25.1",
     
     # Language detection
@@ -93,6 +92,8 @@ dev = [
     "flake8>=6.1.0",
     "mypy>=1.7.0",
     "pre-commit>=3.5.0",
+    # Local voice input (requires system audio libraries)
+    "pyaudio>=0.2.11",
 ]
 
 test = [
