@@ -13,6 +13,7 @@ from ..database import get_database
 from ..cache import get_cache
 from .streaming_handler import get_streaming_handler
 from ..utils.logger import get_logger
+from ..utils.conversation_logger import get_conversation_logger
 
 
 class WebSocketManager:
@@ -25,13 +26,19 @@ class WebSocketManager:
         self.streaming_handler = None
         self._initialized = False
         self.streaming_tasks: Dict[str, bool] = {}  # session_id -> should_stop_streaming
-        
+
         # Error throttling (max 1 error per second per type)
         self.last_error_times: Dict[str, float] = {}
         self.error_throttle_seconds = 1.0
-        
+
         # Logger
         self.logger = get_logger()
+
+        # Conversation logger for comprehensive logging
+        self.conversation_logger = get_conversation_logger()
+
+        # Track TTS chunks per session
+        self.tts_chunk_counts: Dict[str, int] = {}
     
     async def initialize(self):
         """Initialize the WebSocket manager."""
@@ -42,10 +49,37 @@ class WebSocketManager:
         self.cache = await get_cache()
         self.agent = await get_agent()
         self.streaming_handler = get_streaming_handler()
-        
+
         # Initialize SenseVoice model for ASR (same as src implementation)
-        await self.streaming_handler.load_sensevoice_model("models/SenseVoiceSmall")
-        
+        # Model downloaded to models/iic/SenseVoiceSmall via ModelScope
+        model_load_start = time.time()
+        model_loaded = await self.streaming_handler.load_sensevoice_model("models/iic/SenseVoiceSmall")
+        model_load_time = (time.time() - model_load_start) * 1000
+
+        # Log model loading info
+        if model_loaded:
+            self.logger.info("✅ SenseVoice model loaded successfully")
+            self.conversation_logger.log_model_info(
+                "sensevoice",
+                loaded=True,
+                model_path="models/iic/SenseVoiceSmall",
+                loading_time_ms=model_load_time
+            )
+        else:
+            self.logger.warning(None, "⚠️ SenseVoice model not available - using fallback transcription for testing")
+            self.conversation_logger.log_model_info(
+                "sensevoice",
+                loaded=False,
+                error="Model not available or failed to load"
+            )
+
+        # Log agent info
+        self.conversation_logger.log_model_info(
+            "agent",
+            loaded=True,
+            model_path="NewsAgent"
+        )
+
         self._initialized = True
         print("✅ WebSocketManager initialized successfully")
     
@@ -105,7 +139,10 @@ class WebSocketManager:
                 self.logger.warning(session_id, f"Failed to create conversation session: {db_err}")
             
             self.logger.websocket_connect(session_id, user_id)
-            
+
+            # Start conversation logging session
+            self.conversation_logger.start_session(session_id, user_id)
+
             # Small delay to ensure WebSocket is fully ready after accept
             await asyncio.sleep(0.01)
             
@@ -161,10 +198,17 @@ class WebSocketManager:
                 if self.streaming_handler:
                     self.streaming_handler.clear_session_buffer(session_id)
                 
+                # End conversation logging session
+                self.conversation_logger.end_session(session_id)
+
                 # Clean up session data
                 if session_id in self.session_data:
                     del self.session_data[session_id]
-                
+
+                # Clean up TTS chunk count
+                if session_id in self.tts_chunk_counts:
+                    del self.tts_chunk_counts[session_id]
+
                 print(f"✅ WebSocket disconnected: {session_id}")
                 
         except Exception as e:
@@ -380,13 +424,16 @@ class WebSocketManager:
     
     async def handle_audio_chunk(self, session_id: str, data: Dict[str, Any]):
         """Handle audio chunk with complete ASR/LLM/TTS pipeline."""
+        start_time = time.time()
+
         try:
             if not self._initialized:
                 await self.initialize()
-            
+
             user_id = self.session_data.get(session_id, {}).get("user_id")
-            
+
             if not user_id:
+                print(f"❌ No user_id found for session {session_id}")
                 await self.send_message(session_id, {
                     "event": "error",
                     "data": {
@@ -396,56 +443,122 @@ class WebSocketManager:
                     }
                 })
                 return
-            
+
             # Decode audio chunk
             audio_chunk = base64.b64decode(data["audio_chunk"])
-            format = data.get("format", "webm")
-            
-            print(f"🎤 Processing audio chunk for session {session_id}")
-            
+            audio_format = data.get("format", "webm")
+            audio_size = len(audio_chunk)
+
+            print(f"🎤 Processing audio chunk for session {session_id}: {audio_size} bytes ({audio_format})")
+
             # Process with streaming handler (ASR -> LLM -> TTS)
             result = await self.streaming_handler.process_voice_command(
-                session_id, audio_chunk, format
+                session_id, audio_chunk, audio_format
             )
-            
+
+            print(f"🎤 Processing result: {result}")
+
             if result["success"]:
+                transcription = result["transcription"]
+                agent_response = result["response"]
+
                 # Send transcription
                 await self.send_message(session_id, {
                     "event": "transcription",
                     "data": {
-                        "text": result["transcription"],
+                        "text": transcription,
                         "confidence": 0.95,
                         "session_id": session_id,
                         "processing_time_ms": 200
                     }
                 })
-                
+
                 # Send agent response
                 await self.send_message(session_id, {
                     "event": "agent_response",
                     "data": {
-                        "text": result["response"],
+                        "text": agent_response,
                         "session_id": session_id,
                         "processing_time_ms": 500,
                         "timestamp": result["timestamp"]
                     }
                 })
-                
+
+                # Initialize TTS chunk count for this session
+                self.tts_chunk_counts[session_id] = 0
+
                 # Stream TTS response
-                if result["response"]:
-                    await self.stream_tts_response(session_id, result["response"])
+                if agent_response:
+                    print(f"🔊 Starting TTS streaming for: {agent_response[:50]}...")
+                    await self.stream_tts_response(session_id, agent_response)
+
+                # Calculate total processing time
+                processing_time_ms = (time.time() - start_time) * 1000
+                tts_chunks_sent = self.tts_chunk_counts.get(session_id, 0)
+
+                # Log the complete conversation turn
+                self.conversation_logger.log_conversation_turn(
+                    session_id=session_id,
+                    user_id=user_id,
+                    transcription=transcription,
+                    agent_response=agent_response,
+                    processing_time_ms=processing_time_ms,
+                    audio_format=audio_format,
+                    audio_size_bytes=audio_size,
+                    tts_chunks_sent=tts_chunks_sent,
+                    metadata={
+                        "timestamp": result.get("timestamp"),
+                        "confidence": 0.95
+                    }
+                )
             else:
+                error_msg = result.get("error", "ASR processing failed")
+                print(f"❌ Processing failed: {error_msg}")
+
+                # Calculate processing time
+                processing_time_ms = (time.time() - start_time) * 1000
+
+                # Log failed turn
+                self.conversation_logger.log_conversation_turn(
+                    session_id=session_id,
+                    user_id=user_id,
+                    transcription="",
+                    agent_response="",
+                    processing_time_ms=processing_time_ms,
+                    audio_format=audio_format,
+                    audio_size_bytes=audio_size,
+                    tts_chunks_sent=0,
+                    error=error_msg
+                )
+
                 await self.send_message(session_id, {
                     "event": "error",
                     "data": {
                         "error_type": "asr_processing_failed",
-                        "message": result.get("error", "ASR processing failed"),
+                        "message": error_msg,
                         "session_id": session_id
                     }
                 })
-            
+
         except Exception as e:
             print(f"❌ Error handling audio chunk: {e}")
+
+            # Calculate processing time
+            processing_time_ms = (time.time() - start_time) * 1000
+
+            # Log error turn
+            self.conversation_logger.log_conversation_turn(
+                session_id=session_id,
+                user_id=self.session_data.get(session_id, {}).get("user_id", "unknown"),
+                transcription="",
+                agent_response="",
+                processing_time_ms=processing_time_ms,
+                audio_format=data.get("format", "unknown"),
+                audio_size_bytes=0,
+                tts_chunks_sent=0,
+                error=str(e)
+            )
+
             await self.send_message(session_id, {
                 "event": "error",
                 "data": {
@@ -460,7 +573,10 @@ class WebSocketManager:
         try:
             if session_id in self.session_data:
                 self.session_data[session_id]["total_interruptions"] += 1
-            
+
+            # Log interruption
+            self.conversation_logger.log_interruption(session_id)
+
             # Signal to stop any ongoing TTS streaming
             self.streaming_tasks[session_id] = True
             print(f"⚠️ Interrupt signal sent for session {session_id}")
@@ -574,11 +690,11 @@ class WebSocketManager:
             # Reset interrupt flag before starting new response
             # This ensures each new response starts fresh and can be interrupted
             self.streaming_tasks[session_id] = False
-            
+
             chunk_index = 0
             total_chunks_sent = 0
             interrupted = False
-            
+
             async for audio_chunk in self.streaming_handler.stream_tts_audio(text):
                 # Check for interrupt signal on each chunk
                 # This allows near-instant interruption when user speaks
@@ -586,7 +702,7 @@ class WebSocketManager:
                     print(f"🛑 TTS streaming interrupted for {session_id}")
                     interrupted = True
                     break
-                
+
                 # Send audio chunk
                 await self.send_message(session_id, {
                     "event": "tts_chunk",
@@ -600,9 +716,12 @@ class WebSocketManager:
                 })
                 chunk_index += 1
                 total_chunks_sent += 1
-                
+
                 # Small delay to prevent overwhelming the client
                 await asyncio.sleep(0.01)
+
+            # Update TTS chunk count for this session
+            self.tts_chunk_counts[session_id] = total_chunks_sent
             
             # Send streaming complete or interrupted event
             if interrupted:

@@ -93,13 +93,19 @@ class ConversationLogger:
             timestamp = datetime.now().timestamp()
         status = "active" if active else "inactive"
         self.app_logger.debug(f"VAD: {status} at {timestamp}")
-    
+
+    def log_speech_detection(self, detected: bool):
+        """Log speech detection results (wrapper for log_vad_activity)."""
+        # Use debug level to avoid log spam
+        status = "Speech detected" if detected else "No speech"
+        self.app_logger.debug(f"{status}")
+
     def log_error(self, error: str, exception: Exception = None):
         """Log errors."""
         self.app_logger.error(f"Error: {error}")
         if exception:
             self.app_logger.exception(exception)
-    
+
     def log_interruption(self, reason: str):
         """Log interruption events."""
         self.log_system_event(f"Audio playback interrupted: {reason}")

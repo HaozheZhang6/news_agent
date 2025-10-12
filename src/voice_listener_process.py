@@ -1,10 +1,11 @@
 """Voice listener thread for continuous speech recognition with SenseVoice."""
 import threading
 import time
+import numpy as np
 try:
-    import pyaudio
+    import sounddevice as sd
 except Exception:  # pragma: no cover - optional dependency for CI/test envs
-    pyaudio = None  # type: ignore
+    sd = None  # type: ignore
 import os
 from .config import (
     AUDIO_RATE, AUDIO_CHANNELS, CHUNK, NO_SPEECH_THRESHOLD,
@@ -84,57 +85,62 @@ def classify_intent(text: str):
     return Command(CommandType.NEWS_REQUEST, data=text)
 
 def audio_recorder_worker(command_queue, interrupt_event, ipc_manager):
-    """Audio recording worker with VAD-based speech detection."""
+    """Audio recording worker with VAD-based speech detection using sounddevice."""
     global recording_active, last_active_time, segments_to_save, last_vad_end_time
-    
-    conversation_logger.log_system_event("Audio recording started with SenseVoice")
-    if pyaudio is None:
-        conversation_logger.log_error("PyAudio not available; skipping live recording in tests")
+
+    conversation_logger.log_system_event("Audio recording started with SenseVoice (using sounddevice)")
+    if sd is None:
+        conversation_logger.log_error("sounddevice not available; skipping live recording in tests")
         return
 
-    p = pyaudio.PyAudio()
-    stream = p.open(
-        format=pyaudio.paInt16,
-        channels=AUDIO_CHANNELS,
-        rate=AUDIO_RATE,
-        input=True,
-        frames_per_buffer=CHUNK,
-    )
-    
     audio_buffer = []
-    
-    while recording_active:
-        try:
-            data = stream.read(CHUNK)
-            audio_buffer.append(data)
-            
-            # Check VAD every 0.5 seconds
-            if len(audio_buffer) * CHUNK / AUDIO_RATE >= 0.5:
-                raw_audio = b''.join(audio_buffer)
-                vad_result = vad_detector.check_vad_activity(raw_audio)
-                
-                if vad_result:
-                    conversation_logger.log_speech_detection(True)
-                    last_active_time = time.time()
-                    segments_to_save.append((raw_audio, time.time()))
-                else:
-                    conversation_logger.log_speech_detection(False)
-                
-                audio_buffer = []  # Clear buffer
-            
-            # Check if we should process saved segments
-            if time.time() - last_active_time > NO_SPEECH_THRESHOLD:
-                if segments_to_save and segments_to_save[-1][1] > last_vad_end_time:
-                    process_audio_segments(command_queue, interrupt_event, ipc_manager)
-                    last_active_time = time.time()
-                    
-        except Exception as e:
-            conversation_logger.log_error(f"Audio recording error: {e}")
-            time.sleep(0.1)
-    
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
+
+    # Use sounddevice's InputStream for continuous recording
+    with sd.InputStream(
+        samplerate=AUDIO_RATE,
+        channels=AUDIO_CHANNELS,
+        dtype='int16',
+        blocksize=CHUNK
+    ) as stream:
+        conversation_logger.log_system_event(f"Audio stream opened: {AUDIO_RATE}Hz, {AUDIO_CHANNELS} channel(s)")
+
+        while recording_active:
+            try:
+                # Read audio data
+                data, overflowed = stream.read(CHUNK)
+
+                if overflowed:
+                    conversation_logger.log_error("Audio buffer overflow, skipping chunk")
+                    continue
+
+                # Convert numpy array to bytes for compatibility with existing code
+                audio_bytes = data.tobytes()
+                audio_buffer.append(audio_bytes)
+
+                # Check VAD every 0.5 seconds
+                if len(audio_buffer) * CHUNK / AUDIO_RATE >= 0.5:
+                    raw_audio = b''.join(audio_buffer)
+                    vad_result = vad_detector.check_vad_activity(raw_audio)
+
+                    if vad_result:
+                        conversation_logger.log_speech_detection(True)
+                        last_active_time = time.time()
+                        segments_to_save.append((raw_audio, time.time()))
+                    else:
+                        conversation_logger.log_speech_detection(False)
+
+                    audio_buffer = []  # Clear buffer
+
+                # Check if we should process saved segments
+                if time.time() - last_active_time > NO_SPEECH_THRESHOLD:
+                    if segments_to_save and segments_to_save[-1][1] > last_vad_end_time:
+                        process_audio_segments(command_queue, interrupt_event, ipc_manager)
+                        last_active_time = time.time()
+
+            except Exception as e:
+                conversation_logger.log_error(f"Audio recording error: {e}")
+                time.sleep(0.1)
+
     conversation_logger.log_system_event("Audio recording stopped")
 
 def process_audio_segments(command_queue, interrupt_event, ipc_manager):

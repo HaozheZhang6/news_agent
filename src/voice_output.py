@@ -33,60 +33,60 @@ speech_interrupt_callback = None
 
 
 def voice_monitoring_thread():
-    """Monitor for voice activity during speech playback to enable real-time interruption.
+    """Monitor for voice activity during speech playback to enable real-time interruption using sounddevice.
     Uses the same VAD logic as ASR-LLM-TTS script 14 with 40% activation rate.
     """
-    import pyaudio
+    import sounddevice as sd
     global active_speech_monitoring, speech_interrupt_callback
-    
-    conversation_logger.log_system_event("Voice monitoring started")
-    
-    p = pyaudio.PyAudio()
-    stream = p.open(format=pyaudio.paInt16,
-                    channels=1,
-                    rate=AUDIO_RATE,
-                    input=True,
-                    frames_per_buffer=CHUNK)
-    
+
+    conversation_logger.log_system_event("Voice monitoring started (using sounddevice)")
+
     audio_buffer = []
-    
-    while active_speech_monitoring:
-        try:
-            data = stream.read(CHUNK, exception_on_overflow=False)
-        except OSError as e:
-            if e.errno == -9981:  # Input overflowed
-                conversation_logger.log_error("Audio buffer overflow, skipping chunk")
-                continue
-            else:
-                conversation_logger.log_error(f"Audio recording error: {e}")
+
+    # Use sounddevice's InputStream for continuous monitoring
+    with sd.InputStream(
+        samplerate=AUDIO_RATE,
+        channels=1,
+        dtype='int16',
+        blocksize=CHUNK
+    ) as stream:
+        while active_speech_monitoring:
+            try:
+                data, overflowed = stream.read(CHUNK)
+
+                if overflowed:
+                    conversation_logger.log_error("Audio buffer overflow, skipping chunk")
+                    continue
+
+                # Convert numpy array to bytes for compatibility
+                audio_bytes = data.tobytes()
+                audio_buffer.append(audio_bytes)
+
+                # Check for voice activity every 0.5 seconds (same as script 14)
+                if len(audio_buffer) * CHUNK / AUDIO_RATE >= 0.5:
+                    raw_audio = b''.join(audio_buffer)
+
+                    # Use conservative VAD with 40% activation rate
+                    if vad_detector.check_vad_activity_conservative(raw_audio, threshold_rate=0.4):
+                        conversation_logger.log_interruption("Voice detected during playback")
+
+                        # Stop current audio immediately (same as script 14)
+                        if pygame.mixer.music.get_busy():
+                            pygame.mixer.music.stop()
+                            conversation_logger.log_system_event("TTS playback stopped due to voice interruption")
+
+                        # Call callback if provided
+                        if speech_interrupt_callback:
+                            speech_interrupt_callback()
+
+                        break
+
+                    audio_buffer = []  # Clear buffer
+
+            except Exception as e:
+                conversation_logger.log_error(f"Voice monitoring error: {e}")
                 break
-        
-        audio_buffer.append(data)
-        
-        # Check for voice activity every 0.5 seconds (same as script 14)
-        if len(audio_buffer) * CHUNK / AUDIO_RATE >= 0.5:
-            raw_audio = b''.join(audio_buffer)
-            
-            # Use conservative VAD with 40% activation rate
-            if vad_detector.check_vad_activity_conservative(raw_audio, threshold_rate=0.4):
-                conversation_logger.log_interruption("Voice detected during playback")
-                
-                # Stop current audio immediately (same as script 14)
-                if pygame.mixer.music.get_busy():
-                    pygame.mixer.music.stop()
-                    conversation_logger.log_system_event("TTS playback stopped due to voice interruption")
-                
-                # Call callback if provided
-                if speech_interrupt_callback:
-                    speech_interrupt_callback()
-                
-                break
-            
-            audio_buffer = []  # Clear buffer
-    
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
+
     conversation_logger.log_system_event("Voice monitoring stopped")
 
 def start_voice_monitoring(interrupt_callback=None):
