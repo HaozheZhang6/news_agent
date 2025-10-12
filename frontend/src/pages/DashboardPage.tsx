@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { VoiceButton } from "../components/VoiceButton";
+import { ContinuousVoiceInterface } from "../components/ContinuousVoiceInterface";
 import { QuickCommands } from "../components/QuickCommands";
 import { StatusIndicators } from "../components/StatusIndicators";
 import { Card } from "../components/ui/card";
@@ -7,8 +7,10 @@ import { WatchlistCard } from "../components/WatchlistCard";
 import { Button } from "../components/ui/button";
 import { User, History, Settings, LogOut } from "lucide-react";
 import { useAuth } from "../lib/auth-context";
+import { toast } from "sonner";
+import { cn } from "../components/ui/utils";
 
-type VoiceState = "idle" | "listening" | "speaking";
+type VoiceState = "idle" | "listening" | "speaking" | "connecting";
 
 interface DashboardPageProps {
   onNavigate: (page: "dashboard" | "profile" | "history") => void;
@@ -16,25 +18,52 @@ interface DashboardPageProps {
 
 export function DashboardPage({ onNavigate }: DashboardPageProps) {
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
-  const [isConnected, setIsConnected] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
+  const [conversationHistory, setConversationHistory] = useState<Array<{
+    id: string;
+    type: 'user' | 'agent';
+    text: string;
+    timestamp: Date;
+  }>>([]);
+  
   const { user, logout } = useAuth();
 
-  const handleVoiceButtonClick = () => {
-    if (voiceState === "idle") {
-      setVoiceState("listening");
-      // Simulate listening -> speaking transition
-      setTimeout(() => setVoiceState("speaking"), 2000);
-      setTimeout(() => setVoiceState("idle"), 5000);
-    } else {
-      setVoiceState("idle");
-    }
+  const generateUUID = () => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+
+  const handleTranscription = (text: string) => {
+    const newEntry = {
+      id: Date.now().toString(),
+      type: 'user' as const,
+      text,
+      timestamp: new Date()
+    };
+    setConversationHistory(prev => [...prev, newEntry]);
+  };
+
+  const handleResponse = (text: string) => {
+    const newEntry = {
+      id: Date.now().toString(),
+      type: 'agent' as const,
+      text,
+      timestamp: new Date()
+    };
+    setConversationHistory(prev => [...prev, newEntry]);
+  };
+
+  const handleError = (error: string) => {
+    toast.error(error);
   };
 
   const handleQuickCommand = (command: string) => {
     console.log("Quick command:", command);
-    setVoiceState("listening");
-    setTimeout(() => setVoiceState("speaking"), 1500);
-    setTimeout(() => setVoiceState("idle"), 4000);
+    // Quick commands will be handled by the continuous voice interface
+    toast.info(`Quick command: ${command}`);
   };
 
   return (
@@ -109,18 +138,34 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
             <div className="text-center">
               <h1 className="mb-2">Hey, {user?.name}!</h1>
               <p className="text-muted-foreground">
-                Tap the button to start a conversation
+                Start a continuous conversation with your voice agent
               </p>
             </div>
 
-            <VoiceButton state={voiceState} onClick={handleVoiceButtonClick} />
+            <ContinuousVoiceInterface
+              userId={user?.id || generateUUID()}
+              onTranscription={handleTranscription}
+              onResponse={handleResponse}
+              onError={handleError}
+            />
 
-            {voiceState !== "idle" && (
-              <Card className="w-full max-w-md p-6 animate-in fade-in slide-in-from-bottom-4">
-                <p className="text-center text-muted-foreground">
-                  {voiceState === "listening" && "I'm listening..."}
-                  {voiceState === "speaking" && "Here's what I found for you..."}
-                </p>
+            {/* Conversation History */}
+            {conversationHistory.length > 0 && (
+              <Card className="w-full max-w-md p-4">
+                <h3 className="mb-3 text-sm font-medium">Recent Conversation</h3>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {conversationHistory.slice(-5).map((entry) => (
+                    <div key={entry.id} className="text-xs">
+                      <span className={cn(
+                        "font-medium",
+                        entry.type === 'user' ? "text-blue-600" : "text-green-600"
+                      )}>
+                        {entry.type === 'user' ? 'You' : 'Agent'}:
+                      </span>
+                      <span className="ml-2">{entry.text}</span>
+                    </div>
+                  ))}
+                </div>
               </Card>
             )}
           </div>

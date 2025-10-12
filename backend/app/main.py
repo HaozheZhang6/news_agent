@@ -132,41 +132,44 @@ async def health_check():
 @app.websocket("/ws/voice")
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time voice communication."""
+    session_id = None
     try:
         # Get WebSocket manager
         ws_manager = await get_websocket_manager()
-        
+
+        # Accept early to avoid "need to call accept first" when sending initial errors
+        await websocket.accept()
+
         # Extract user ID from query parameters or headers
-        # In a real implementation, you would authenticate the user
         user_id = websocket.query_params.get("user_id", "anonymous")
-        
-        # Connect WebSocket
+
+        # Connect WebSocket (this will register the connection and send 'connected')
         session_id = await ws_manager.connect(websocket, user_id)
-        
+
         # Handle messages
         while True:
             try:
                 message = await websocket.receive_text()
                 await ws_manager.process_message(websocket, message)
-                
+
             except WebSocketDisconnect:
                 print(f"WebSocket disconnected: {session_id}")
-                await ws_manager.disconnect(session_id)
+                if session_id:
+                    await ws_manager.disconnect(session_id)
                 break
-                
+
             except Exception as e:
                 print(f"Error processing WebSocket message: {e}")
-                await ws_manager.send_message(session_id, {
-                    "event": "error",
-                    "data": {
-                        "error_type": "message_processing_failed",
-                        "message": str(e),
-                        "session_id": session_id
-                    }
-                })
-                
-    except WebSocketDisconnect:
-        print("WebSocket disconnected")
+                if session_id:
+                    await ws_manager.send_message(session_id, {
+                        "event": "error",
+                        "data": {
+                            "error_type": "message_processing_failed",
+                            "message": str(e),
+                            "session_id": session_id
+                        }
+                    })
+
     except Exception as e:
         print(f"WebSocket error: {e}")
 
