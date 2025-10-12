@@ -2,7 +2,9 @@
 import asyncio
 import json
 import uuid
+import logging
 import base64
+import time
 from typing import Dict, Any, Optional, Set
 from datetime import datetime
 from fastapi import WebSocket, WebSocketDisconnect
@@ -10,6 +12,7 @@ from ..core.agent_wrapper import get_agent
 from ..database import get_database
 from ..cache import get_cache
 from .streaming_handler import get_streaming_handler
+from ..utils.logger import get_logger
 
 
 class WebSocketManager:
@@ -22,6 +25,13 @@ class WebSocketManager:
         self.streaming_handler = None
         self._initialized = False
         self.streaming_tasks: Dict[str, bool] = {}  # session_id -> should_stop_streaming
+        
+        # Error throttling (max 1 error per second per type)
+        self.last_error_times: Dict[str, float] = {}
+        self.error_throttle_seconds = 1.0
+        
+        # Logger
+        self.logger = get_logger()
     
     async def initialize(self):
         """Initialize the WebSocket manager."""
@@ -47,24 +57,29 @@ class WebSocketManager:
         except ValueError:
             return False
     
+    def _should_log_error(self, error_key: str) -> bool:
+        """Check if error should be logged (throttle to max 1 per second per type)."""
+        current_time = time.time()
+        last_time = self.last_error_times.get(error_key, 0)
+        
+        if current_time - last_time >= self.error_throttle_seconds:
+            self.last_error_times[error_key] = current_time
+            return True
+        return False
+    
     async def connect(self, websocket: WebSocket, user_id: str) -> str:
         """Accept WebSocket connection and create session."""
         try:
             if not self._initialized:
                 await self.initialize()
             
-            # Accept only if not already accepted by the endpoint
-            try:
-                if getattr(websocket, "client_state", None) and websocket.client_state.name != "CONNECTED":
-                    await websocket.accept()
-            except Exception:
-                # If already accepted, ignore
-                pass
+            # NOTE: WebSocket should already be accepted by the endpoint
+            # Don't try to accept again here
             
             # Generate proper UUID for user_id if it's not already a UUID
             if user_id == "anonymous" or not self._is_valid_uuid(user_id):
                 user_id = str(uuid.uuid4())
-                print(f"🔄 Generated UUID for anonymous user: {user_id}")
+                self.logger.info(f"Generated UUID for anonymous user: {user_id[:8]}...")
             
             # Create new session
             session_id = str(uuid.uuid4())
@@ -87,19 +102,37 @@ class WebSocketManager:
                 await self.db.create_conversation_session(user_id)
             except Exception as db_err:
                 # Log and continue – don't break the WebSocket connection
-                print(f"⚠️ Failed to create conversation session for {user_id}: {db_err}")
+                self.logger.warning(session_id, f"Failed to create conversation session: {db_err}")
             
-            print(f"✅ WebSocket connected: {session_id} for user {user_id}")
+            self.logger.websocket_connect(session_id, user_id)
             
-            # Send welcome message
-            await self.send_message(session_id, {
+            # Small delay to ensure WebSocket is fully ready after accept
+            await asyncio.sleep(0.01)
+            
+            # Send welcome message with retry
+            connected_message = {
                 "event": "connected",
                 "data": {
                     "session_id": session_id,
                     "message": "Connected to Voice News Agent",
                     "timestamp": datetime.now().isoformat()
                 }
-            })
+            }
+            
+            # Try to send welcome message with retries
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    await self.send_message(session_id, connected_message, raise_on_error=True)
+                    self.logger.info(f"session={session_id[:8]}... | Successfully sent connected message (attempt {attempt + 1})")
+                    break  # Success, exit retry loop
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        self.logger.warning(session_id, f"Retry sending connected message (attempt {attempt + 1}): {e}")
+                        await asyncio.sleep(0.05)  # Wait 50ms before retry
+                    else:
+                        self.logger.error(session_id, "send_connected_failed", f"All retries exhausted: {e}")
+                        raise
             
             return session_id
             
@@ -137,27 +170,55 @@ class WebSocketManager:
         except Exception as e:
             print(f"❌ Error disconnecting WebSocket: {e}")
     
-    async def send_message(self, session_id: str, message: Dict[str, Any]):
-        """Send message to specific WebSocket connection."""
+    async def send_message(self, session_id: str, message: Dict[str, Any], raise_on_error: bool = False):
+        """Send message to specific WebSocket connection.
+        
+        Args:
+            session_id: Session ID
+            message: Message dict to send
+            raise_on_error: If True, raise exception on send failure (for retry logic)
+        """
         try:
             if session_id not in self.active_connections:
-                print(f"⚠️ WebSocket {session_id} not found, skipping message")
+                # Throttle this error (max 1 per second)
+                if self._should_log_error(f"ws_not_found_{session_id}"):
+                    self.logger.warning(session_id, "WebSocket not found, skipping message")
+                if raise_on_error:
+                    raise RuntimeError(f"WebSocket not found for session {session_id}")
                 return
                 
             websocket = self.active_connections[session_id]
             
-            # Check if WebSocket is still connected
-            if websocket.client_state.name != "CONNECTED":
-                print(f"⚠️ WebSocket {session_id} is not connected, removing from active connections")
-                await self.disconnect(session_id)
+            # Check if websocket is in correct state
+            from starlette.websockets import WebSocketState
+            if websocket.client_state != WebSocketState.CONNECTED:
+                self.logger.warning(session_id, f"WebSocket not in CONNECTED state: {websocket.client_state.name}")
+                if raise_on_error:
+                    raise RuntimeError(f"WebSocket not in CONNECTED state: {websocket.client_state.name}")
                 return
+            
+            # Log message being sent (DEBUG level)
+            event = message.get("event", "unknown")
+            self.logger.websocket_message_sent(session_id, event)
                 
             await websocket.send_text(json.dumps(message))
                 
         except Exception as e:
-            print(f"❌ Error sending message to {session_id}: {e}")
-            # Remove disconnected connection
-            await self.disconnect(session_id)
+            error_msg = f"{type(e).__name__}: {str(e)}"
+            if self._should_log_error(f"ws_send_error_{session_id}"):
+                self.logger.error(session_id, "send_message_failed", error_msg)
+            
+            # If requested to raise, propagate the error for retry logic
+            if raise_on_error:
+                raise
+            
+            # Otherwise, only disconnect if WebSocket is actually closed
+            if session_id in self.active_connections:
+                websocket = self.active_connections[session_id]
+                from starlette.websockets import WebSocketState
+                if websocket.client_state == WebSocketState.DISCONNECTED:
+                    self.logger.warning(session_id, "WebSocket disconnected, removing")
+                    await self.disconnect(session_id)
     
     async def broadcast_message(self, message: Dict[str, Any], exclude: Optional[Set[str]] = None):
         """Broadcast message to all active connections."""
@@ -454,13 +515,16 @@ class WebSocketManager:
             session_id = data.get("data", {}).get("session_id")
             
             if not session_id:
-                print("⚠️ No session_id in message")
+                self.logger.warning(None, "No session_id in message")
                 return
             
             # Check if session is still active
             if session_id not in self.active_connections:
-                print(f"⚠️ Session {session_id} is no longer active, ignoring message")
+                self.logger.warning(session_id, "Session no longer active, ignoring message")
                 return
+            
+            # Log message received
+            self.logger.websocket_message_received(session_id, event)
             
             # Route message to appropriate handler
             if event == "voice_command":
