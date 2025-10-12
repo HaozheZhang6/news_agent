@@ -3,6 +3,7 @@ import { Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import { cn } from "./ui/utils";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
+import { logger } from "../utils/logger";
 
 type VoiceState = "idle" | "listening" | "speaking" | "connecting";
 
@@ -67,26 +68,28 @@ export function ContinuousVoiceInterface({
     }
 
     setVoiceState("connecting");
-    console.log("🔌 Connecting to WebSocket...");
+    const wsUrl = `ws://localhost:8000/ws/voice?user_id=${userId}`;
+    logger.wsConnect(wsUrl);
 
     try {
       // Correct WebSocket URL format with user_id query parameter
-      const ws = new WebSocket(`ws://localhost:8000/ws/voice?user_id=${userId}`);
+      const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log("✅ WebSocket connected");
+        logger.info('ws', 'WebSocket connection opened');
         setIsConnected(true);
         setVoiceState("idle");
       };
 
       ws.onmessage = (event) => {
         const message = JSON.parse(event.data);
+        logger.wsMessageReceived(message.event, message.data?.session_id);
         handleWebSocketMessage(message);
       };
 
       ws.onclose = () => {
-        console.log("❌ WebSocket disconnected");
+        logger.wsDisconnect();
         setIsConnected(false);
         setVoiceState("idle");
         wsRef.current = null;
@@ -94,7 +97,7 @@ export function ContinuousVoiceInterface({
       };
 
       ws.onerror = (error) => {
-        console.error("❌ WebSocket error:", error);
+        logger.wsError(error);
         onError?.("Connection error. Please try again.");
       };
 
@@ -109,26 +112,27 @@ export function ContinuousVoiceInterface({
    * Handle incoming WebSocket messages
    */
   const handleWebSocketMessage = useCallback((message: any) => {
-    console.log("📥 Received:", message.event);
-
     switch (message.event) {
       case 'connected':
         sessionIdRef.current = message.data.session_id;
-        console.log("🎯 Session established:", sessionIdRef.current);
+        logger.wsConnected(sessionIdRef.current);
+        // Always start recording after receiving 'connected' event
+        setVoiceState("listening");
+        startRecording();
         break;
 
       case 'transcription':
         const transcription = message.data.text;
         setCurrentTranscription(transcription);
         onTranscription?.(transcription);
-        console.log("🎤 Transcribed:", transcription);
+        logger.transcriptionReceived(transcription);
         break;
 
       case 'agent_response':
         const response = message.data.text;
         setCurrentResponse(response);
         onResponse?.(response);
-        console.log("🤖 Agent response:", response);
+        logger.responseReceived(response);
         break;
 
       case 'tts_chunk':
@@ -322,7 +326,7 @@ export function ContinuousVoiceInterface({
         }
       };
       
-      // VAD check loop (same logic as src.main)
+      // VAD check loop (~3-4 Hz)
       vadCheckIntervalRef.current = setInterval(() => {
         analyser.getFloatTimeDomainData(dataArray);
         const isSpeaking = checkVoiceActivity(dataArray);
@@ -359,7 +363,7 @@ export function ContinuousVoiceInterface({
             }, 100); // Small delay to ensure we captured enough audio
           }
         }
-      }, VAD_CHECK_INTERVAL_MS);
+      }, 250); // 4Hz checks to reduce message frequency
       
     } catch (error) {
       console.error("❌ Error starting recording:", error);
@@ -408,7 +412,7 @@ export function ContinuousVoiceInterface({
       return;
     }
 
-    console.log("📤 Sending audio to backend (detected silence)");
+    logger.vadSendTriggered();
     
     const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm;codecs=opus' });
     audioChunksRef.current = []; // Clear chunks
@@ -429,7 +433,8 @@ export function ContinuousVoiceInterface({
             sample_rate: 48000
           }
         }));
-        console.log("✅ Audio sent to backend");
+        logger.audioChunkSent(audioBlob.size, sessionIdRef.current);
+        logger.wsMessageSent("audio_chunk", sessionIdRef.current);
       }
     };
   }, []);
@@ -438,19 +443,16 @@ export function ContinuousVoiceInterface({
    * Start voice interaction
    */
   const startVoiceInteraction = useCallback(async () => {
-    if (!isConnected) {
+    // If not connected, just open WS and wait for 'connected' event to start recording
+    if (!isConnected || !sessionIdRef.current) {
+      setVoiceState("connecting");
       connectWebSocket();
-      // Wait for connection before starting recording
-      setTimeout(() => {
-        if (wsRef.current?.readyState === WebSocket.OPEN) {
-          setVoiceState("listening");
-          startRecording();
-        }
-      }, 1000);
-    } else {
-      setVoiceState("listening");
-      startRecording();
+      return;
     }
+
+    // Already connected with a valid session
+    setVoiceState("listening");
+    startRecording();
   }, [isConnected, connectWebSocket, startRecording]);
 
   /**
