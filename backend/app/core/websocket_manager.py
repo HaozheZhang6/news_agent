@@ -32,8 +32,20 @@ class WebSocketManager:
         self.cache = await get_cache()
         self.agent = await get_agent()
         self.streaming_handler = get_streaming_handler()
+        
+        # Initialize SenseVoice model for ASR (same as src implementation)
+        await self.streaming_handler.load_sensevoice_model("models/SenseVoiceSmall")
+        
         self._initialized = True
         print("✅ WebSocketManager initialized successfully")
+    
+    def _is_valid_uuid(self, uuid_string: str) -> bool:
+        """Check if string is a valid UUID."""
+        try:
+            uuid.UUID(uuid_string)
+            return True
+        except ValueError:
+            return False
     
     async def connect(self, websocket: WebSocket, user_id: str) -> str:
         """Accept WebSocket connection and create session."""
@@ -41,7 +53,18 @@ class WebSocketManager:
             if not self._initialized:
                 await self.initialize()
             
-            await websocket.accept()
+            # Accept only if not already accepted by the endpoint
+            try:
+                if getattr(websocket, "client_state", None) and websocket.client_state.name != "CONNECTED":
+                    await websocket.accept()
+            except Exception:
+                # If already accepted, ignore
+                pass
+            
+            # Generate proper UUID for user_id if it's not already a UUID
+            if user_id == "anonymous" or not self._is_valid_uuid(user_id):
+                user_id = str(uuid.uuid4())
+                print(f"🔄 Generated UUID for anonymous user: {user_id}")
             
             # Create new session
             session_id = str(uuid.uuid4())
@@ -59,8 +82,12 @@ class WebSocketManager:
             self.user_sessions[user_id] = session_id
             self.session_data[session_id] = session_data
             
-            # Create session in database
-            await self.db.create_conversation_session(user_id)
+            # Create session in database (non-fatal if it fails)
+            try:
+                await self.db.create_conversation_session(user_id)
+            except Exception as db_err:
+                # Log and continue – don't break the WebSocket connection
+                print(f"⚠️ Failed to create conversation session for {user_id}: {db_err}")
             
             print(f"✅ WebSocket connected: {session_id} for user {user_id}")
             
@@ -113,11 +140,19 @@ class WebSocketManager:
     async def send_message(self, session_id: str, message: Dict[str, Any]):
         """Send message to specific WebSocket connection."""
         try:
-            if session_id in self.active_connections:
-                websocket = self.active_connections[session_id]
-                await websocket.send_text(json.dumps(message))
-            else:
-                print(f"⚠️ WebSocket {session_id} not found")
+            if session_id not in self.active_connections:
+                print(f"⚠️ WebSocket {session_id} not found, skipping message")
+                return
+                
+            websocket = self.active_connections[session_id]
+            
+            # Check if WebSocket is still connected
+            if websocket.client_state.name != "CONNECTED":
+                print(f"⚠️ WebSocket {session_id} is not connected, removing from active connections")
+                await self.disconnect(session_id)
+                return
+                
+            await websocket.send_text(json.dumps(message))
                 
         except Exception as e:
             print(f"❌ Error sending message to {session_id}: {e}")
@@ -282,6 +317,83 @@ class WebSocketManager:
                 }
             })
     
+    async def handle_audio_chunk(self, session_id: str, data: Dict[str, Any]):
+        """Handle audio chunk with complete ASR/LLM/TTS pipeline."""
+        try:
+            if not self._initialized:
+                await self.initialize()
+            
+            user_id = self.session_data.get(session_id, {}).get("user_id")
+            
+            if not user_id:
+                await self.send_message(session_id, {
+                    "event": "error",
+                    "data": {
+                        "error_type": "invalid_session",
+                        "message": "Invalid session",
+                        "session_id": session_id
+                    }
+                })
+                return
+            
+            # Decode audio chunk
+            audio_chunk = base64.b64decode(data["audio_chunk"])
+            format = data.get("format", "webm")
+            
+            print(f"🎤 Processing audio chunk for session {session_id}")
+            
+            # Process with streaming handler (ASR -> LLM -> TTS)
+            result = await self.streaming_handler.process_voice_command(
+                session_id, audio_chunk, format
+            )
+            
+            if result["success"]:
+                # Send transcription
+                await self.send_message(session_id, {
+                    "event": "transcription",
+                    "data": {
+                        "text": result["transcription"],
+                        "confidence": 0.95,
+                        "session_id": session_id,
+                        "processing_time_ms": 200
+                    }
+                })
+                
+                # Send agent response
+                await self.send_message(session_id, {
+                    "event": "agent_response",
+                    "data": {
+                        "text": result["response"],
+                        "session_id": session_id,
+                        "processing_time_ms": 500,
+                        "timestamp": result["timestamp"]
+                    }
+                })
+                
+                # Stream TTS response
+                if result["response"]:
+                    await self.stream_tts_response(session_id, result["response"])
+            else:
+                await self.send_message(session_id, {
+                    "event": "error",
+                    "data": {
+                        "error_type": "asr_processing_failed",
+                        "message": result.get("error", "ASR processing failed"),
+                        "session_id": session_id
+                    }
+                })
+            
+        except Exception as e:
+            print(f"❌ Error handling audio chunk: {e}")
+            await self.send_message(session_id, {
+                "event": "error",
+                "data": {
+                    "error_type": "audio_processing_failed",
+                    "message": str(e),
+                    "session_id": session_id
+                }
+            })
+    
     async def handle_interrupt(self, session_id: str, data: Dict[str, Any]):
         """Handle voice interruption."""
         try:
@@ -345,11 +457,18 @@ class WebSocketManager:
                 print("⚠️ No session_id in message")
                 return
             
+            # Check if session is still active
+            if session_id not in self.active_connections:
+                print(f"⚠️ Session {session_id} is no longer active, ignoring message")
+                return
+            
             # Route message to appropriate handler
             if event == "voice_command":
                 await self.handle_voice_command(session_id, data.get("data", {}))
             elif event == "voice_data":
                 await self.handle_voice_data(session_id, data.get("data", {}))
+            elif event == "audio_chunk":
+                await self.handle_audio_chunk(session_id, data.get("data", {}))
             elif event == "interrupt":
                 await self.handle_interrupt(session_id, data.get("data", {}))
             elif event == "start_listening":

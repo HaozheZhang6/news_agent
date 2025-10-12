@@ -1,0 +1,562 @@
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import { cn } from "./ui/utils";
+import { Button } from "./ui/button";
+import { Card } from "./ui/card";
+
+type VoiceState = "idle" | "listening" | "speaking" | "connecting";
+
+interface ContinuousVoiceInterfaceProps {
+  userId: string;
+  onTranscription?: (text: string) => void;
+  onResponse?: (text: string) => void;
+  onError?: (error: string) => void;
+}
+
+/**
+ * Continuous Voice Interface with VAD (Voice Activity Detection)
+ * 
+ * Key Features (mirroring src.main):
+ * 1. Voice Activity Detection: Detects when user starts/stops talking
+ * 2. Auto-send after silence: Sends audio 1 second after user stops talking
+ * 3. Real-time interruption: Stops agent audio when user starts talking
+ * 4. Continuous listening: Always listening when active
+ */
+export function ContinuousVoiceInterface({ 
+  userId, 
+  onTranscription, 
+  onResponse, 
+  onError 
+}: ContinuousVoiceInterfaceProps) {
+  // State management
+  const [voiceState, setVoiceState] = useState<VoiceState>("idle");
+  const [isConnected, setIsConnected] = useState(false);
+  const [currentTranscription, setCurrentTranscription] = useState("");
+  const [currentResponse, setCurrentResponse] = useState("");
+  const [isMuted, setIsMuted] = useState(false);
+  
+  // Refs for WebSocket and audio management
+  const wsRef = useRef<WebSocket | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioQueueRef = useRef<ArrayBuffer[]>([]);
+  const currentAudioSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const isPlayingAudioRef = useRef(false);
+  
+  // Refs for recording and VAD
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const isRecordingRef = useRef(false);
+  const lastSpeechTimeRef = useRef<number>(0);
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const vadCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // VAD Configuration (same as src.main: NO_SPEECH_THRESHOLD = 1.0 second)
+  const SILENCE_THRESHOLD_MS = 1000; // 1 second of silence triggers send
+  const VAD_CHECK_INTERVAL_MS = 100; // Check audio level every 100ms
+  const SPEECH_THRESHOLD = 0.01; // Audio level threshold to detect speech
+
+  /**
+   * WebSocket connection management
+   * Uses correct URL format: ws://localhost:8000/ws/voice?user_id={userId}
+   */
+  const connectWebSocket = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      return;
+    }
+
+    setVoiceState("connecting");
+    console.log("🔌 Connecting to WebSocket...");
+
+    try {
+      // Correct WebSocket URL format with user_id query parameter
+      const ws = new WebSocket(`ws://localhost:8000/ws/voice?user_id=${userId}`);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        console.log("✅ WebSocket connected");
+        setIsConnected(true);
+        setVoiceState("idle");
+      };
+
+      ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        handleWebSocketMessage(message);
+      };
+
+      ws.onclose = () => {
+        console.log("❌ WebSocket disconnected");
+        setIsConnected(false);
+        setVoiceState("idle");
+        wsRef.current = null;
+        sessionIdRef.current = null;
+      };
+
+      ws.onerror = (error) => {
+        console.error("❌ WebSocket error:", error);
+        onError?.("Connection error. Please try again.");
+      };
+
+    } catch (error) {
+      console.error("❌ Failed to connect:", error);
+      setVoiceState("idle");
+      onError?.("Failed to connect to voice service.");
+    }
+  }, [userId, onError]);
+
+  /**
+   * Handle incoming WebSocket messages
+   */
+  const handleWebSocketMessage = useCallback((message: any) => {
+    console.log("📥 Received:", message.event);
+
+    switch (message.event) {
+      case 'connected':
+        sessionIdRef.current = message.data.session_id;
+        console.log("🎯 Session established:", sessionIdRef.current);
+        break;
+
+      case 'transcription':
+        const transcription = message.data.text;
+        setCurrentTranscription(transcription);
+        onTranscription?.(transcription);
+        console.log("🎤 Transcribed:", transcription);
+        break;
+
+      case 'agent_response':
+        const response = message.data.text;
+        setCurrentResponse(response);
+        onResponse?.(response);
+        console.log("🤖 Agent response:", response);
+        break;
+
+      case 'tts_chunk':
+        handleTTSChunk(message.data);
+        break;
+
+      case 'streaming_complete':
+        console.log("✅ TTS streaming complete");
+        // Back to listening after agent finishes speaking
+        if (voiceState === "speaking") {
+          setVoiceState("listening");
+        }
+        break;
+
+      case 'streaming_interrupted':
+        console.log("🛑 TTS streaming interrupted by user");
+        stopAudioPlayback();
+        break;
+
+      case 'packet_interruption':
+        console.log("🚨 Backend detected new question, interrupting");
+        stopAudioPlayback();
+        break;
+
+      case 'error':
+        console.error("❌ Backend error:", message.data);
+        onError?.(message.data.message || "An error occurred");
+        break;
+
+      default:
+        console.warn("⚠️ Unknown event:", message.event);
+    }
+  }, [onTranscription, onResponse, onError, voiceState]);
+
+  /**
+   * Handle TTS audio chunks from backend
+   */
+  const handleTTSChunk = useCallback(async (data: any) => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+
+    try {
+      // Decode base64 audio chunk
+      const audioData = base64ToArrayBuffer(data.audio_chunk);
+      audioQueueRef.current.push(audioData);
+      
+      // Start playing if not already playing
+      if (!isPlayingAudioRef.current) {
+        setVoiceState("speaking");
+        playNextAudioChunk();
+      }
+    } catch (error) {
+      console.error("❌ Error handling TTS chunk:", error);
+    }
+  }, []);
+
+  /**
+   * Play next audio chunk from queue
+   */
+  const playNextAudioChunk = useCallback(async () => {
+    if (audioQueueRef.current.length === 0) {
+      isPlayingAudioRef.current = false;
+      if (voiceState === "speaking") {
+        setVoiceState("listening");
+      }
+      return;
+    }
+
+    isPlayingAudioRef.current = true;
+    const audioData = audioQueueRef.current.shift()!;
+
+    try {
+      const audioBuffer = await audioContextRef.current!.decodeAudioData(audioData);
+      const source = audioContextRef.current!.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContextRef.current!.destination);
+      
+      source.onended = () => {
+        currentAudioSourceRef.current = null;
+        playNextAudioChunk();
+      };
+      
+      currentAudioSourceRef.current = source;
+      source.start(0);
+    } catch (error) {
+      console.error("❌ Error playing audio:", error);
+      isPlayingAudioRef.current = false;
+      playNextAudioChunk();
+    }
+  }, [voiceState]);
+
+  /**
+   * Stop audio playback immediately (for interruption)
+   */
+  const stopAudioPlayback = useCallback(() => {
+    if (currentAudioSourceRef.current) {
+      try {
+        currentAudioSourceRef.current.stop();
+        currentAudioSourceRef.current.disconnect();
+      } catch (e) {
+        // Already stopped
+      }
+      currentAudioSourceRef.current = null;
+    }
+    audioQueueRef.current = [];
+    isPlayingAudioRef.current = false;
+    
+    if (voiceState === "speaking") {
+      setVoiceState("listening");
+    }
+  }, [voiceState]);
+
+  /**
+   * Send interrupt signal to backend
+   */
+  const sendInterruptSignal = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN && sessionIdRef.current) {
+      wsRef.current.send(JSON.stringify({
+        event: "interrupt",
+        data: {
+          session_id: sessionIdRef.current,
+          reason: "user_started_speaking"
+        }
+      }));
+      console.log("🛑 Interrupt signal sent to backend");
+    }
+  }, []);
+
+  /**
+   * Voice Activity Detection (VAD)
+   * Detects when user is speaking by analyzing audio level
+   */
+  const checkVoiceActivity = useCallback((audioData: Float32Array): boolean => {
+    let sum = 0;
+    for (let i = 0; i < audioData.length; i++) {
+      sum += Math.abs(audioData[i]);
+    }
+    const average = sum / audioData.length;
+    
+    // Return true if audio level exceeds threshold (user is speaking)
+    return average > SPEECH_THRESHOLD;
+  }, []);
+
+  /**
+   * Start recording with VAD
+   * Continuously records audio and monitors for voice activity
+   */
+  const startRecording = useCallback(async () => {
+    if (isRecordingRef.current) {
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        } 
+      });
+      
+      mediaStreamRef.current = stream;
+      
+      // Create MediaRecorder for audio capture
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus'
+      });
+      mediaRecorderRef.current = mediaRecorder;
+      
+      // Set up audio analyzer for VAD
+      const audioContext = new AudioContext();
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 2048;
+      source.connect(analyser);
+      
+      const bufferLength = analyser.fftSize;
+      const dataArray = new Float32Array(bufferLength);
+      
+      // Start recording
+      audioChunksRef.current = [];
+      mediaRecorder.start();
+      isRecordingRef.current = true;
+      console.log("🎤 Recording started with VAD");
+      
+      // Handle recorded data
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      
+      // VAD check loop (same logic as src.main)
+      vadCheckIntervalRef.current = setInterval(() => {
+        analyser.getFloatTimeDomainData(dataArray);
+        const isSpeaking = checkVoiceActivity(dataArray);
+        
+        if (isSpeaking) {
+          // User is speaking
+          lastSpeechTimeRef.current = Date.now();
+          
+          // If agent was speaking, interrupt immediately
+          if (isPlayingAudioRef.current) {
+            console.log("🚨 User started speaking, interrupting agent");
+            stopAudioPlayback();
+            sendInterruptSignal();
+          }
+          
+          // Clear any pending silence timer
+          if (silenceTimerRef.current) {
+            clearTimeout(silenceTimerRef.current);
+            silenceTimerRef.current = null;
+          }
+        } else {
+          // User is silent
+          const silenceDuration = Date.now() - lastSpeechTimeRef.current;
+          
+          // If silence exceeds threshold and we haven't already set a timer
+          if (silenceDuration >= SILENCE_THRESHOLD_MS && 
+              !silenceTimerRef.current && 
+              audioChunksRef.current.length > 0) {
+            
+            // Set timer to send audio after silence threshold
+            silenceTimerRef.current = setTimeout(() => {
+              sendAudioToBackend();
+              silenceTimerRef.current = null;
+            }, 100); // Small delay to ensure we captured enough audio
+          }
+        }
+      }, VAD_CHECK_INTERVAL_MS);
+      
+    } catch (error) {
+      console.error("❌ Error starting recording:", error);
+      onError?.("Microphone access denied or error occurred");
+      isRecordingRef.current = false;
+    }
+  }, [checkVoiceActivity, stopAudioPlayback, sendInterruptSignal, onError]);
+
+  /**
+   * Stop recording
+   */
+  const stopRecording = useCallback(() => {
+    if (!isRecordingRef.current) {
+      return;
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+    
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
+    }
+    
+    if (vadCheckIntervalRef.current) {
+      clearInterval(vadCheckIntervalRef.current);
+      vadCheckIntervalRef.current = null;
+    }
+    
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+    
+    isRecordingRef.current = false;
+    console.log("🔇 Recording stopped");
+  }, []);
+
+  /**
+   * Send recorded audio to backend
+   * Called after detecting 1 second of silence (same as src.main)
+   */
+  const sendAudioToBackend = useCallback(async () => {
+    if (audioChunksRef.current.length === 0 || !sessionIdRef.current) {
+      return;
+    }
+
+    console.log("📤 Sending audio to backend (detected silence)");
+    
+    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm;codecs=opus' });
+    audioChunksRef.current = []; // Clear chunks
+    
+    // Convert to base64
+    const reader = new FileReader();
+    reader.readAsDataURL(audioBlob);
+    reader.onloadend = () => {
+      const base64Audio = (reader.result as string).split(',')[1];
+      
+      if (wsRef.current?.readyState === WebSocket.OPEN && sessionIdRef.current) {
+        wsRef.current.send(JSON.stringify({
+          event: "audio_chunk",
+          data: {
+            session_id: sessionIdRef.current,
+            audio_chunk: base64Audio,
+            format: "webm",
+            sample_rate: 48000
+          }
+        }));
+        console.log("✅ Audio sent to backend");
+      }
+    };
+  }, []);
+
+  /**
+   * Start voice interaction
+   */
+  const startVoiceInteraction = useCallback(async () => {
+    if (!isConnected) {
+      connectWebSocket();
+      // Wait for connection before starting recording
+      setTimeout(() => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          setVoiceState("listening");
+          startRecording();
+        }
+      }, 1000);
+    } else {
+      setVoiceState("listening");
+      startRecording();
+    }
+  }, [isConnected, connectWebSocket, startRecording]);
+
+  /**
+   * Stop voice interaction
+   */
+  const stopVoiceInteraction = useCallback(() => {
+    stopRecording();
+    stopAudioPlayback();
+    setVoiceState("idle");
+    
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.close();
+    }
+  }, [stopRecording, stopAudioPlayback]);
+
+  /**
+   * Cleanup on unmount
+   */
+  useEffect(() => {
+    return () => {
+      stopRecording();
+      stopAudioPlayback();
+      
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+      
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
+  }, [stopRecording, stopAudioPlayback]);
+
+  /**
+   * Helper: Convert base64 to ArrayBuffer
+   */
+  const base64ToArrayBuffer = (base64: string): ArrayBuffer => {
+    const binaryString = window.atob(base64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-6">
+      {/* Voice Button */}
+      <div className="relative">
+        <Button
+          size="lg"
+          variant={voiceState === "idle" ? "default" : "destructive"}
+          className={cn(
+            "h-24 w-24 rounded-full transition-all duration-300",
+            voiceState === "listening" && "animate-pulse bg-blue-500 hover:bg-blue-600",
+            voiceState === "speaking" && "bg-green-500 hover:bg-green-600",
+            voiceState === "connecting" && "bg-yellow-500 hover:bg-yellow-600"
+          )}
+          onClick={voiceState === "idle" ? startVoiceInteraction : stopVoiceInteraction}
+        >
+          {voiceState === "idle" ? (
+            <Mic className="h-8 w-8" />
+          ) : (
+            <MicOff className="h-8 w-8" />
+          )}
+        </Button>
+        
+        {/* Connection indicator */}
+        <div 
+          className={cn(
+            "absolute top-0 right-0 h-4 w-4 rounded-full border-2 border-white",
+            isConnected ? "bg-green-500" : "bg-red-500"
+          )}
+        />
+      </div>
+
+      {/* Status Text */}
+      <div className="text-center">
+        <p className="text-lg font-medium">
+          {voiceState === "idle" && "Click to start conversation"}
+          {voiceState === "connecting" && "Connecting..."}
+          {voiceState === "listening" && "Listening... (speak naturally)"}
+          {voiceState === "speaking" && "Agent is speaking..."}
+        </p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {voiceState === "listening" && "I'll automatically send when you stop talking (1 sec silence)"}
+          {voiceState === "speaking" && "Start speaking to interrupt"}
+        </p>
+      </div>
+
+      {/* Transcription Display */}
+      {currentTranscription && (
+        <Card className="w-full max-w-md p-4 bg-blue-50">
+          <p className="text-sm font-medium text-blue-900">You said:</p>
+          <p className="text-sm text-blue-700 mt-1">{currentTranscription}</p>
+        </Card>
+      )}
+
+      {/* Response Display */}
+      {currentResponse && (
+        <Card className="w-full max-w-md p-4 bg-green-50">
+          <p className="text-sm font-medium text-green-900">Agent:</p>
+          <p className="text-sm text-green-700 mt-1">{currentResponse}</p>
+        </Card>
+      )}
+    </div>
+  );
+}

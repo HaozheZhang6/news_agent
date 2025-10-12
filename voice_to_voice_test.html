@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice-to-Voice Testing - News Agent</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: #f9f9f9;
+        }
+        
+        .test-section h2 {
+            color: #4a5568;
+            margin-top: 0;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .test-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .test-item.active {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        
+        .test-item.processing {
+            border-color: #f6ad55;
+            background: #fffaf0;
+        }
+        
+        .test-item.success {
+            border-color: #48bb78;
+            background: #f0fff4;
+        }
+        
+        .test-item.error {
+            border-color: #f56565;
+            background: #fff5f5;
+        }
+        
+        .test-phrase {
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+        
+        .test-file {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+        
+        button:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        button.play {
+            background: #48bb78;
+        }
+        
+        button.play:hover {
+            background: #38a169;
+        }
+        
+        button.test {
+            background: #ed8936;
+        }
+        
+        button.test:hover {
+            background: #dd6b20;
+        }
+        
+        .status {
+            font-size: 0.8em;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+        
+        .status.pending {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        
+        .status.processing {
+            background: #fef5e7;
+            color: #c05621;
+        }
+        
+        .status.success {
+            background: #f0fff4;
+            color: #22543d;
+        }
+        
+        .status.error {
+            background: #fff5f5;
+            color: #742a2a;
+        }
+        
+        .response-audio {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .response-text {
+            font-size: 0.9em;
+            color: #4a5568;
+            margin-bottom: 8px;
+        }
+        
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+        }
+        
+        .connection-status.connected {
+            background: #48bb78;
+        }
+        
+        .connection-status.disconnected {
+            background: #f56565;
+        }
+        
+        .connection-status.connecting {
+            background: #f6ad55;
+        }
+        
+        .batch-controls {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 10px;
+        }
+        
+        .batch-controls button {
+            margin: 0 10px;
+            padding: 12px 24px;
+            font-size: 1.1em;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #667eea;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .log-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #1a202c;
+            color: #e2e8f0;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        
+        .log-entry.info {
+            color: #63b3ed;
+        }
+        
+        .log-entry.success {
+            color: #68d391;
+        }
+        
+        .log-entry.error {
+            color: #fc8181;
+        }
+        
+        .log-entry.warning {
+            color: #f6e05e;
+        }
+    </style>
+</head>
+<body>
+    <div class="connection-status" id="connectionStatus">Disconnected</div>
+    
+    <div class="container">
+        <h1>🎤 Voice-to-Voice Testing</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 30px;">
+            Test the complete ASR → LLM → TTS pipeline using generated voice files
+        </p>
+        
+        <div class="batch-controls">
+            <button onclick="testAllSequentially()">🚀 Test All Sequentially</button>
+            <button onclick="testAllInParallel()">⚡ Test All in Parallel</button>
+            <button onclick="clearAllResults()">🗑️ Clear Results</button>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div id="progressText">Ready to test</div>
+        </div>
+        
+        <!-- Stock Price Tests -->
+        <div class="test-section">
+            <h2>📈 Stock Price Queries</h2>
+            <div class="test-grid" id="stockPriceTests">
+                <!-- Generated dynamically -->
+            </div>
+        </div>
+        
+        <!-- Follow-up Questions -->
+        <div class="test-section">
+            <h2>❓ Follow-up Questions</h2>
+            <div class="test-grid" id="followupTests">
+                <!-- Generated dynamically -->
+            </div>
+        </div>
+        
+        <!-- News Queries -->
+        <div class="test-section">
+            <h2>📰 News Queries</h2>
+            <div class="test-grid" id="newsTests">
+                <!-- Generated dynamically -->
+            </div>
+        </div>
+        
+        <!-- Deeper Analysis -->
+        <div class="test-section">
+            <h2>🔍 Deeper Analysis</h2>
+            <div class="test-grid" id="analysisTests">
+                <!-- Generated dynamically -->
+            </div>
+        </div>
+        
+        <!-- Log Section -->
+        <div class="log-section">
+            <h3 style="color: #e2e8f0; margin-top: 0;">📋 Test Log</h3>
+            <div id="testLog"></div>
+        </div>
+    </div>
+
+    <script>
+        // Test configuration
+        const TEST_FILES = {
+            stock_prices: [
+                { phrase: "What's the stock price of AAPL today?", file: "test_price_aapl_today.wav", expected: "AAPL stock price" },
+                { phrase: "What's the stock price of TSLA today?", file: "test_price_tsla_today.wav", expected: "TSLA stock price" },
+                { phrase: "What's the stock price of MSFT today?", file: "test_price_msft_today.wav", expected: "MSFT stock price" },
+                { phrase: "What's the stock price of GOOGL today?", file: "test_price_googl_today.wav", expected: "GOOGL stock price" },
+                { phrase: "What's the stock price of NVDA today?", file: "test_price_nvda_today.wav", expected: "NVDA stock price" }
+            ],
+            followup: [
+                { phrase: "What happened to it?", file: "test_followup_happened.wav", expected: "stock movement" },
+                { phrase: "Why did it change?", file: "test_followup_2.wav", expected: "price change reason" },
+                { phrase: "What caused the movement?", file: "test_followup_caused_movement.wav", expected: "movement cause" },
+                { phrase: "Is it going up or down?", file: "test_followup_up_down.wav", expected: "direction" }
+            ],
+            news: [
+                { phrase: "What's the latest news of AAPL?", file: "test_news_aapl_latest.wav", expected: "AAPL news" },
+                { phrase: "What's the latest news of TSLA?", file: "test_news_tsla_latest.wav", expected: "TSLA news" },
+                { phrase: "What's the latest news of MSFT?", file: "test_news_msft_latest.wav", expected: "MSFT news" },
+                { phrase: "What's the latest news of GOOGL?", file: "test_news_googl_latest.wav", expected: "GOOGL news" },
+                { phrase: "What's the latest news of NVDA?", file: "test_news_nvda_latest.wav", expected: "NVDA news" }
+            ],
+            analysis: [
+                { phrase: "Could you please dive deeper to the AAPL news?", file: "test_analysis_aapl_deeper.wav", expected: "AAPL analysis" },
+                { phrase: "Could you please dive deeper to the TSLA news?", file: "test_analysis_tsla_deeper.wav", expected: "TSLA analysis" },
+                { phrase: "Could you please dive deeper to the MSFT news?", file: "test_analysis_msft_deeper.wav", expected: "MSFT analysis" },
+                { phrase: "Could you please dive deeper to the GOOGL news?", file: "test_analysis_googl_deeper.wav", expected: "GOOGL analysis" },
+                { phrase: "Could you please dive deeper to the NVDA news?", file: "test_analysis_nvda_deeper.wav", expected: "NVDA analysis" }
+            ]
+        };
+        
+        // WebSocket connection
+        let ws = null;
+        let sessionId = null;
+        let testResults = {};
+        let currentTestCount = 0;
+        let totalTests = 0;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTests();
+            connectWebSocket();
+        });
+        
+        function initializeTests() {
+            // Count total tests
+            totalTests = Object.values(TEST_FILES).reduce((sum, tests) => sum + tests.length, 0);
+            
+            // Generate test UI for each category
+            generateTestUI('stockPriceTests', TEST_FILES.stock_prices);
+            generateTestUI('followupTests', TEST_FILES.followup);
+            generateTestUI('newsTests', TEST_FILES.news);
+            generateTestUI('analysisTests', TEST_FILES.analysis);
+            
+            log('info', `Initialized ${totalTests} voice tests`);
+        }
+        
+        function generateTestUI(containerId, tests) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            tests.forEach((test, index) => {
+                const testId = `${containerId}_${index}`;
+                const testItem = document.createElement('div');
+                testItem.className = 'test-item';
+                testItem.id = testId;
+                
+                testItem.innerHTML = `
+                    <div class="test-phrase">${test.phrase}</div>
+                    <div class="test-file">📁 ${test.file}</div>
+                    <div class="test-controls">
+                        <button class="play" onclick="playTestFile('${test.file}')">▶️ Play</button>
+                        <button class="test" onclick="runSingleTest('${testId}', '${test.file}', '${test.phrase}', '${test.expected}')">🎤 Test</button>
+                        <span class="status pending" id="status_${testId}">Pending</span>
+                    </div>
+                    <div class="response-audio" id="response_${testId}" style="display: none;">
+                        <div class="response-text" id="text_${testId}"></div>
+                        <audio controls id="audio_${testId}"></audio>
+                    </div>
+                `;
+                
+                container.appendChild(testItem);
+            });
+        }
+        
+        function connectWebSocket() {
+            const status = document.getElementById('connectionStatus');
+            status.textContent = 'Connecting...';
+            status.className = 'connection-status connecting';
+            
+            ws = new WebSocket('ws://localhost:8000/ws/voice');
+            
+            ws.onopen = function() {
+                status.textContent = 'Connected';
+                status.className = 'connection-status connected';
+                log('success', 'WebSocket connected');
+                
+                // Send connection message
+                ws.send(JSON.stringify({
+                    event: 'connect',
+                    data: {
+                        user_id: 'test_user_' + Date.now(),
+                        session_id: null
+                    }
+                }));
+            };
+            
+            ws.onmessage = function(event) {
+                const message = JSON.parse(event.data);
+                handleWebSocketMessage(message);
+            };
+            
+            ws.onclose = function() {
+                status.textContent = 'Disconnected';
+                status.className = 'connection-status disconnected';
+                log('warning', 'WebSocket disconnected');
+            };
+            
+            ws.onerror = function(error) {
+                log('error', 'WebSocket error: ' + error);
+            };
+        }
+        
+        function handleWebSocketMessage(message) {
+            log('info', `Received: ${message.event}`);
+            
+            switch(message.event) {
+                case 'connected':
+                    sessionId = message.data.session_id;
+                    log('success', `Session established: ${sessionId}`);
+                    break;
+                    
+                case 'transcription':
+                    log('info', `Transcribed: "${message.data.text}"`);
+                    break;
+                    
+                case 'agent_response':
+                    log('info', `Agent response: "${message.data.text}"`);
+                    break;
+                    
+                case 'tts_chunk':
+                    handleTTSChunk(message.data);
+                    break;
+                    
+                case 'streaming_complete':
+                    handleStreamingComplete(message.data);
+                    break;
+                    
+                case 'error':
+                    log('error', `Error: ${message.data.message}`);
+                    break;
+            }
+        }
+        
+        function handleTTSChunk(data) {
+            const testId = data.session_id; // We'll use session_id to track which test this belongs to
+            if (!testResults[testId]) {
+                testResults[testId] = {
+                    chunks: [],
+                    text: '',
+                    audioBlob: null
+                };
+            }
+            
+            // Decode base64 audio chunk
+            const audioData = atob(data.audio_chunk);
+            const audioArray = new Uint8Array(audioData.length);
+            for (let i = 0; i < audioData.length; i++) {
+                audioArray[i] = audioData.charCodeAt(i);
+            }
+            
+            testResults[testId].chunks.push(audioArray);
+        }
+        
+        function handleStreamingComplete(data) {
+            const testId = data.session_id;
+            if (testResults[testId]) {
+                // Combine all audio chunks
+                const totalLength = testResults[testId].chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+                const combinedArray = new Uint8Array(totalLength);
+                let offset = 0;
+                
+                testResults[testId].chunks.forEach(chunk => {
+                    combinedArray.set(chunk, offset);
+                    offset += chunk.length;
+                });
+                
+                // Create audio blob
+                testResults[testId].audioBlob = new Blob([combinedArray], { type: 'audio/mp3' });
+                
+                // Update UI
+                updateTestResult(testId, 'success');
+                log('success', `Test ${testId} completed with ${data.total_chunks_sent} chunks`);
+            }
+        }
+        
+        function playTestFile(filename) {
+            const audio = new Audio(`tests/voice_samples/${filename}`);
+            audio.play().catch(e => log('error', `Failed to play ${filename}: ${e}`));
+        }
+        
+        async function runSingleTest(testId, filename, phrase, expected) {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('error', 'WebSocket not connected');
+                return;
+            }
+            
+            updateTestStatus(testId, 'processing');
+            log('info', `Starting test: ${phrase}`);
+            
+            try {
+                // Load and convert audio file to base64
+                const response = await fetch(`tests/voice_samples/${filename}`);
+                const arrayBuffer = await response.arrayBuffer();
+                const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+                
+                // Send audio chunk to backend
+                ws.send(JSON.stringify({
+                    event: 'audio_chunk',
+                    data: {
+                        audio_chunk: base64,
+                        format: 'wav',
+                        session_id: sessionId
+                    }
+                }));
+                
+                // Store test info for result handling
+                testResults[sessionId] = {
+                    testId: testId,
+                    phrase: phrase,
+                    expected: expected,
+                    filename: filename
+                };
+                
+            } catch (error) {
+                log('error', `Failed to load ${filename}: ${error}`);
+                updateTestStatus(testId, 'error');
+            }
+        }
+        
+        function updateTestStatus(testId, status) {
+            const testItem = document.getElementById(testId);
+            const statusElement = document.getElementById(`status_${testId}`);
+            
+            testItem.className = `test-item ${status}`;
+            statusElement.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            statusElement.className = `status ${status}`;
+        }
+        
+        function updateTestResult(testId, status) {
+            updateTestStatus(testId, status);
+            
+            const testData = testResults[sessionId];
+            if (testData && testData.audioBlob) {
+                // Show response audio
+                const responseDiv = document.getElementById(`response_${testId}`);
+                const audioElement = document.getElementById(`audio_${testId}`);
+                const textElement = document.getElementById(`text_${testId}`);
+                
+                responseDiv.style.display = 'block';
+                textElement.textContent = `Response for: "${testData.phrase}"`;
+                
+                const audioUrl = URL.createObjectURL(testData.audioBlob);
+                audioElement.src = audioUrl;
+                
+                log('success', `Audio response ready for ${testData.phrase}`);
+            }
+            
+            currentTestCount++;
+            updateProgress();
+        }
+        
+        function updateProgress() {
+            const progress = (currentTestCount / totalTests) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+            document.getElementById('progressText').textContent = 
+                `${currentTestCount}/${totalTests} tests completed (${Math.round(progress)}%)`;
+        }
+        
+        async function testAllSequentially() {
+            log('info', 'Starting sequential testing...');
+            currentTestCount = 0;
+            
+            const allTests = [
+                ...TEST_FILES.stock_prices.map(t => ({...t, category: 'stockPriceTests'})),
+                ...TEST_FILES.followup.map(t => ({...t, category: 'followupTests'})),
+                ...TEST_FILES.news.map(t => ({...t, category: 'newsTests'})),
+                ...TEST_FILES.analysis.map(t => ({...t, category: 'analysisTests'}))
+            ];
+            
+            for (let i = 0; i < allTests.length; i++) {
+                const test = allTests[i];
+                const testId = `${test.category}_${i}`;
+                
+                log('info', `Running test ${i + 1}/${allTests.length}: ${test.phrase}`);
+                await runSingleTest(testId, test.file, test.phrase, test.expected);
+                
+                // Wait for completion before next test
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+            
+            log('success', 'Sequential testing completed!');
+        }
+        
+        async function testAllInParallel() {
+            log('info', 'Starting parallel testing...');
+            currentTestCount = 0;
+            
+            const allTests = [
+                ...TEST_FILES.stock_prices.map(t => ({...t, category: 'stockPriceTests'})),
+                ...TEST_FILES.followup.map(t => ({...t, category: 'followupTests'})),
+                ...TEST_FILES.news.map(t => ({...t, category: 'newsTests'})),
+                ...TEST_FILES.analysis.map(t => ({...t, category: 'analysisTests'}))
+            ];
+            
+            // Run all tests in parallel
+            const promises = allTests.map((test, i) => {
+                const testId = `${test.category}_${i}`;
+                return runSingleTest(testId, test.file, test.phrase, test.expected);
+            });
+            
+            await Promise.all(promises);
+            log('success', 'Parallel testing completed!');
+        }
+        
+        function clearAllResults() {
+            // Reset all test items
+            document.querySelectorAll('.test-item').forEach(item => {
+                item.className = 'test-item';
+                const statusElement = item.querySelector('.status');
+                statusElement.textContent = 'Pending';
+                statusElement.className = 'status pending';
+                
+                const responseDiv = item.querySelector('.response-audio');
+                responseDiv.style.display = 'none';
+            });
+            
+            // Reset progress
+            currentTestCount = 0;
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('progressText').textContent = 'Ready to test';
+            
+            // Clear results
+            testResults = {};
+            
+            log('info', 'All results cleared');
+        }
+        
+        function log(type, message) {
+            const logDiv = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            // Keep only last 100 log entries
+            while (logDiv.children.length > 100) {
+                logDiv.removeChild(logDiv.firstChild);
+            }
+        }
+    </script>
+</body>
+</html>

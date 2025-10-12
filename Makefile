@@ -25,6 +25,7 @@ help:
 	@echo ""
 	@echo "Development:"
 	@echo "  run-server     Start FastAPI development server"
+	@echo "  run-frontend   Start frontend development server"
 	@echo "  src            Start voice agent (runs python -m src.main)"
 	@echo "  run-tests      Run all tests"
 	@echo "  test-backend   Run backend tests only"
@@ -40,6 +41,7 @@ help:
 	@echo ""
 	@echo "Utilities:"
 	@echo "  clean          Clean build artifacts and cache"
+	@echo "  stop-servers   Stop all running backend and frontend servers"
 
 # Setup environment files
 setup-env:
@@ -67,6 +69,11 @@ install-test:
 run-server:
 	@echo "Starting FastAPI development server..."
 	@uv run uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Run frontend development server
+run-frontend:
+	@echo "Starting frontend development server..."
+	@cd frontend && npm run dev
 
 # Supabase and Upstash setup helpers (local-only; do not commit secrets)
 db-apply:
@@ -154,6 +161,16 @@ clean:
 	@find . -type d -name "__pycache__" -exec rm -rf {} +
 	@find . -type f -name "*.pyc" -delete
 	@echo "✅ Cleanup completed"
+
+# Stop all running servers
+stop-servers:
+	@echo "🛑 Stopping all running servers..."
+	@lsof -ti :8000 | xargs kill -9 2>/dev/null || echo "No backend server on port 8000"
+	@lsof -ti :3000 | xargs kill -9 2>/dev/null || echo "No frontend server on port 3000"
+	@pkill -f "uvicorn backend.app.main:app" 2>/dev/null || echo "No uvicorn processes"
+	@pkill -f "npm run dev" 2>/dev/null || echo "No npm dev processes"
+	@pkill -f "vite" 2>/dev/null || echo "No vite processes"
+	@echo "✅ All servers stopped"
 
 # Quick development workflow
 dev: install-dev setup-env
