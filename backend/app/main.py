@@ -1,7 +1,11 @@
 """FastAPI main application for Voice News Agent Backend."""
+import logging
+from logging.handlers import RotatingFileHandler
+import os
 import asyncio
+import time
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from .config import get_settings
@@ -11,42 +15,56 @@ from .core.websocket_manager import get_websocket_manager
 from .api import voice, news, conversation, user
 from .api.profile import router as profile_router
 from .api.conversation_log import router as conversation_log_router
+from .utils.logger import get_logger
 
 settings = get_settings()
+logger = get_logger()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     # Startup
-    print("🚀 Starting Voice News Agent Backend...")
+    # Setup logging to file and console
+    os.makedirs("logs", exist_ok=True)
+    logger = logging.getLogger("voice_news_agent")
+    logger.setLevel(logging.INFO)
+    if not logger.handlers:
+        file_handler = RotatingFileHandler("logs/app.log", maxBytes=2_000_000, backupCount=3)
+        file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
+        logger.addHandler(file_handler)
+        logger.addHandler(console_handler)
+
+    logger.info("🚀 Starting Voice News Agent Backend...")
     
     try:
         # Initialize database
         db = await get_database()
         await db.initialize()
-        print("✅ Database initialized")
+        logger.info("✅ Database initialized")
         
         # Initialize cache
         cache = await get_cache()
         await cache.initialize()
-        print("✅ Cache initialized")
+        logger.info("✅ Cache initialized")
         
         # Initialize WebSocket manager
         ws_manager = await get_websocket_manager()
-        print("✅ WebSocket manager initialized")
+        logger.info("✅ WebSocket manager initialized")
         
-        print("🎉 Backend startup complete!")
+        logger.info("🎉 Backend startup complete!")
         
     except Exception as e:
-        print(f"❌ Startup failed: {e}")
+        logging.getLogger("voice_news_agent").exception(f"❌ Startup failed: {e}")
         raise
     
     yield
     
     # Shutdown
-    print("🛑 Shutting down Voice News Agent Backend...")
-    print("✅ Backend shutdown complete!")
+    logging.getLogger("voice_news_agent").info("🛑 Shutting down Voice News Agent Backend...")
+    logging.getLogger("voice_news_agent").info("✅ Backend shutdown complete!")
 
 
 # Create FastAPI application
@@ -67,6 +85,26 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add request logging middleware
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log all HTTP requests and responses."""
+    start_time = time.time()
+    
+    # Log request
+    logger.info(f"📥 HTTP | {request.method} {request.url.path} | client={request.client.host if request.client else 'unknown'}")
+    
+    # Process request
+    response = await call_next(request)
+    
+    # Calculate duration
+    duration_ms = int((time.time() - start_time) * 1000)
+    
+    # Log response
+    logger.info(f"📤 HTTP | {request.method} {request.url.path} | status={response.status_code} | duration={duration_ms}ms")
+    
+    return response
 
 # Include API routers
 app.include_router(voice.router)
@@ -169,6 +207,8 @@ async def websocket_endpoint(websocket: WebSocket):
                             "session_id": session_id
                         }
                     })
+                # On unexpected error, break to avoid repeated receive loop errors
+                break
 
     except Exception as e:
         print(f"WebSocket error: {e}")

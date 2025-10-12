@@ -1,13 +1,15 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { ContinuousVoiceInterface } from "../components/ContinuousVoiceInterface";
 import { QuickCommands } from "../components/QuickCommands";
 import { StatusIndicators } from "../components/StatusIndicators";
 import { Card } from "../components/ui/card";
 import { WatchlistCard } from "../components/WatchlistCard";
 import { Button } from "../components/ui/button";
+import { LogViewer } from "../components/LogViewer";
 import { User, History, Settings, LogOut } from "lucide-react";
 import { useAuth } from "../lib/auth-context";
-import { toast } from "sonner";
+import { toast } from "../utils/toast-logger";
+import { logger } from "../utils/logger";
 import { cn } from "../components/ui/utils";
 
 type VoiceState = "idle" | "listening" | "speaking" | "connecting";
@@ -25,8 +27,17 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     text: string;
     timestamp: Date;
   }>>([]);
-  
+
   const { user, logout } = useAuth();
+
+  // Log state changes
+  React.useEffect(() => {
+    logger.info('state', `Voice state changed: ${voiceState}`);
+  }, [voiceState]);
+
+  React.useEffect(() => {
+    logger.info('state', `Connection state changed: ${isConnected ? 'connected' : 'disconnected'}`);
+  }, [isConnected]);
 
   const generateUUID = () => {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -61,7 +72,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
   };
 
   const handleQuickCommand = (command: string) => {
-    console.log("Quick command:", command);
+    logger.info('ui', `Quick command clicked: ${command}`);
     // Quick commands will be handled by the continuous voice interface
     toast.info(`Quick command: ${command}`);
   };
@@ -74,27 +85,36 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
           <div className="flex items-center justify-between">
             <h2>Voice Agent</h2>
             <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onNavigate("profile")}
-              >
-                <User className="w-5 h-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onNavigate("history")}
-              >
-                <History className="w-5 h-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={logout}
-              >
-                <LogOut className="w-5 h-5" />
-              </Button>
+                   <Button
+                     variant="ghost"
+                     size="icon"
+                     onClick={() => {
+                       logger.info('ui', 'Profile button clicked');
+                       onNavigate("profile");
+                     }}
+                   >
+                     <User className="w-5 h-5" />
+                   </Button>
+                   <Button
+                     variant="ghost"
+                     size="icon"
+                     onClick={() => {
+                       logger.info('ui', 'Conversation history button clicked');
+                       onNavigate("history");
+                     }}
+                   >
+                     <History className="w-5 h-5" />
+                   </Button>
+                   <Button
+                     variant="ghost"
+                     size="icon"
+                     onClick={() => {
+                       logger.info('ui', 'Logout button clicked');
+                       logout();
+                     }}
+                   >
+                     <LogOut className="w-5 h-5" />
+                   </Button>
             </div>
           </div>
         </div>
@@ -199,6 +219,9 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
           </div>
         </div>
       </main>
+
+      {/* Log Viewer (bottom right corner) */}
+      <LogViewer />
     </div>
   );
 }
