@@ -16,7 +16,8 @@ ZHIPUAI_API_KEY = os.getenv("ZHIPUAI_API_KEY", "")
 ALPHAVANTAGE_API_KEY = os.getenv("ALPHAVANTAGE_API_KEY", "")
 
 # SenseVoice Configuration
-SENSEVOICE_MODEL_PATH = os.getenv("SENSEVOICE_MODEL_PATH", str(BASE_DIR / "models" / "SenseVoiceSmall"))
+# Model downloaded to models/iic/SenseVoiceSmall via ModelScope
+SENSEVOICE_MODEL_PATH = os.getenv("SENSEVOICE_MODEL_PATH", str(BASE_DIR / "models" / "iic" / "SenseVoiceSmall"))
 
 # Audio Configuration
 AUDIO_RATE = 16000

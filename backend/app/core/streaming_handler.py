@@ -129,16 +129,11 @@ class StreamingVoiceHandler:
         sample_rate: int = 16000
     ) -> str:
         """
-        Transcribe audio chunk.
-        
-        Note: This is a placeholder. In production, you would:
-        - Use SenseVoice for local transcription
-        - Or call OpenAI Whisper API
-        - Or rely on client-side iOS ASR
+        Transcribe audio chunk with support for compressed formats.
         
         Args:
-            audio_data: Raw audio bytes
-            format: Audio format
+            audio_data: Raw audio bytes (may be compressed)
+            format: Audio format (wav, opus, webm, mp3, etc.)
             sample_rate: Sample rate in Hz
             
         Returns:
@@ -146,16 +141,22 @@ class StreamingVoiceHandler:
         """
         if not self._model_loaded or self.sensevoice_model is None:
             # Fallback: return placeholder text for testing
+            print(f"⚠️ SenseVoice model not loaded, using fallback transcription")
             return "What's the stock price of AAPL today?"
         
         try:
-            # Save audio to temporary file (same as src implementation)
+            # Convert compressed audio to WAV if needed
+            wav_data = await self._convert_to_wav(audio_data, format, sample_rate)
+            
+            # Save audio to temporary file
             import tempfile
             with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
-                tmpfile.write(audio_data)
+                tmpfile.write(wav_data)
                 audio_file = tmpfile.name
             
-            # Transcribe with SenseVoice (same as src implementation)
+            print(f"🎤 Processing audio: {len(audio_data)} bytes ({format}) -> {len(wav_data)} bytes (wav)")
+            
+            # Transcribe with SenseVoice
             result = self.sensevoice_model.generate(
                 input=audio_file,
                 cache={},
@@ -168,7 +169,7 @@ class StreamingVoiceHandler:
             os.unlink(audio_file)
             
             if result and len(result) > 0 and 'text' in result[0]:
-                # Extract text (remove language tags, same as src)
+                # Extract text (remove language tags)
                 text = result[0]['text'].split(">")[-1].strip()
                 print(f"🎤 Transcribed: '{text}'")
                 return text
@@ -178,6 +179,77 @@ class StreamingVoiceHandler:
         except Exception as e:
             print(f"❌ Transcription error: {e}")
             return "What's the stock price of AAPL today?"
+    
+    async def _convert_to_wav(self, audio_data: bytes, format: str, sample_rate: int = 16000) -> bytes:
+        """
+        Convert compressed audio to WAV format using FFmpeg.
+        
+        Args:
+            audio_data: Raw audio bytes
+            format: Source format (opus, webm, mp3, etc.)
+            sample_rate: Target sample rate
+            
+        Returns:
+            WAV audio bytes
+        """
+        import tempfile
+        import subprocess
+        import os
+        
+        # If already WAV, return as-is
+        if format.lower() == "wav":
+            return audio_data
+        
+        try:
+            # Create temporary files
+            with tempfile.NamedTemporaryFile(delete=False, suffix=f".{format}") as input_file:
+                input_file.write(audio_data)
+                input_path = input_file.name
+            
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as output_file:
+                output_path = output_file.name
+            
+            # FFmpeg command to convert to WAV
+            ffmpeg_cmd = [
+                'ffmpeg',
+                '-i', input_path,
+                '-ar', str(sample_rate),
+                '-ac', '1',  # Mono
+                '-f', 'wav',
+                '-y',  # Overwrite output
+                output_path
+            ]
+            
+            # Run FFmpeg conversion
+            result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, check=True)
+            
+            # Read converted WAV data
+            with open(output_path, 'rb') as f:
+                wav_data = f.read()
+            
+            # Clean up temp files
+            os.unlink(input_path)
+            os.unlink(output_path)
+            
+            print(f"✅ Converted {format} to WAV: {len(audio_data)} -> {len(wav_data)} bytes")
+            return wav_data
+            
+        except subprocess.CalledProcessError as e:
+            print(f"❌ FFmpeg conversion failed: {e.stderr}")
+            # Fallback: return original data (might work for some formats)
+            return audio_data
+        except Exception as e:
+            print(f"❌ Audio conversion error: {e}")
+            return audio_data
+        finally:
+            # Ensure temp files are cleaned up
+            try:
+                if 'input_path' in locals():
+                    os.unlink(input_path)
+                if 'output_path' in locals():
+                    os.unlink(output_path)
+            except:
+                pass
     
     async def process_voice_command(
         self, 

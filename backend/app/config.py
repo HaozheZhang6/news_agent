@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     
     # Database Configuration (Supabase)
     supabase_url: str = Field(default="", env="SUPABASE_URL")
-    supabase_key: str = Field(default="", env="SUPABASE_KEY")
+    supabase_key: str = Field(default="", env="SUPABASE_KEY")  # Now set to service key in env files
     supabase_service_key: str = Field(default="", env="SUPABASE_SERVICE_KEY")
     supabase_db_password: Optional[str] = Field(default=None, env="SUPABASE_DB_PASSWORD")
     

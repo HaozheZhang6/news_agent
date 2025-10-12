@@ -15,7 +15,10 @@ from .core.websocket_manager import get_websocket_manager
 from .api import voice, news, conversation, user
 from .api.profile import router as profile_router
 from .api.conversation_log import router as conversation_log_router
+from .api import websocket_simple
+from .api.conversation_session import router as conversation_session_router
 from .utils.logger import get_logger
+from .utils.conversation_logger import get_conversation_logger
 
 settings = get_settings()
 logger = get_logger()
@@ -113,6 +116,8 @@ app.include_router(conversation.router)
 app.include_router(user.router)
 app.include_router(profile_router)
 app.include_router(conversation_log_router)
+app.include_router(websocket_simple.router)
+app.include_router(conversation_session_router)
 
 
 @app.get("/")
