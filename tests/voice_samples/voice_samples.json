@@ -1,0 +1,277 @@
+{
+  "metadata": {
+    "description": "Voice sample configuration for News Agent testing",
+    "version": "1.0.0",
+    "audio_format": {
+      "sample_rate": 16000,
+      "channels": 1,
+      "bit_depth": 16
+    },
+    "opus_encoding": {
+      "bitrate": 64000,
+      "frame_duration": 20
+    }
+  },
+  "samples": {
+    "stock_price_queries": [
+      {
+        "id": "price_aapl",
+        "text": "What is the current price of Apple stock?",
+        "wav_path": "wav/test_price_aapl.wav",
+        "encoded_path": "encoded_compressed_opus/test_price_aapl_compressed_opus.json",
+        "expected_entities": ["AAPL", "Apple", "price"],
+        "expected_intent": "stock_price_query"
+      },
+      {
+        "id": "price_nvda",
+        "text": "How much is NVIDIA stock trading at?",
+        "wav_path": "wav/test_price_nvda.wav",
+        "encoded_path": "encoded_compressed_opus/test_price_nvda_compressed_opus.json",
+        "expected_entities": ["NVDA", "NVIDIA", "price"],
+        "expected_intent": "stock_price_query"
+      },
+      {
+        "id": "price_tsla",
+        "text": "What's the price of Tesla stock?",
+        "wav_path": "wav/test_price_tsla.wav",
+        "encoded_path": "encoded_compressed_opus/test_price_tsla_compressed_opus.json",
+        "expected_entities": ["TSLA", "Tesla", "price"],
+        "expected_intent": "stock_price_query"
+      },
+      {
+        "id": "price_msft",
+        "text": "Tell me the current Microsoft stock price",
+        "wav_path": "wav/test_price_msft.wav",
+        "encoded_path": "encoded_compressed_opus/test_price_msft_compressed_opus.json",
+        "expected_entities": ["MSFT", "Microsoft", "price"],
+        "expected_intent": "stock_price_query"
+      },
+      {
+        "id": "price_googl",
+        "text": "What is Google's stock price right now?",
+        "wav_path": "wav/test_price_googl.wav",
+        "encoded_path": "encoded_compressed_opus/test_price_googl_compressed_opus.json",
+        "expected_entities": ["GOOGL", "Google", "price"],
+        "expected_intent": "stock_price_query"
+      }
+    ],
+    "news_queries": [
+      {
+        "id": "news_nvda_latest",
+        "text": "What's the latest news about NVIDIA?",
+        "wav_path": "wav/test_news_nvda_latest.wav",
+        "encoded_path": "encoded_compressed_opus/test_news_nvda_latest_compressed_opus.json",
+        "expected_entities": ["NVDA", "NVIDIA", "news", "latest"],
+        "expected_intent": "news_query"
+      },
+      {
+        "id": "news_aapl_latest",
+        "text": "Tell me the latest news about Apple",
+        "wav_path": "wav/test_news_aapl_latest.wav",
+        "encoded_path": "encoded_compressed_opus/test_news_aapl_latest_compressed_opus.json",
+        "expected_entities": ["AAPL", "Apple", "news", "latest"],
+        "expected_intent": "news_query"
+      },
+      {
+        "id": "news_tsla_latest",
+        "text": "What's happening with Tesla lately?",
+        "wav_path": "wav/test_news_tsla_latest.wav",
+        "encoded_path": "encoded_compressed_opus/test_news_tsla_latest_compressed_opus.json",
+        "expected_entities": ["TSLA", "Tesla", "news"],
+        "expected_intent": "news_query"
+      },
+      {
+        "id": "news_msft_latest",
+        "text": "Give me the latest Microsoft news",
+        "wav_path": "wav/test_news_msft_latest.wav",
+        "encoded_path": "encoded_compressed_opus/test_news_msft_latest_compressed_opus.json",
+        "expected_entities": ["MSFT", "Microsoft", "news", "latest"],
+        "expected_intent": "news_query"
+      },
+      {
+        "id": "news_googl_latest",
+        "text": "What's the news on Google?",
+        "wav_path": "wav/test_news_googl_latest.wav",
+        "encoded_path": "encoded_compressed_opus/test_news_googl_latest_compressed_opus.json",
+        "expected_entities": ["GOOGL", "Google", "news"],
+        "expected_intent": "news_query"
+      }
+    ],
+    "watchlist_operations": [
+      {
+        "id": "watchlist_add_nvda",
+        "text": "Add NVIDIA to my watchlist",
+        "wav_path": "wav/test_watchlist_add_nvda.wav",
+        "encoded_path": "encoded_compressed_opus/test_watchlist_add_nvda_compressed_opus.json",
+        "expected_entities": ["NVDA", "NVIDIA", "watchlist", "add"],
+        "expected_intent": "watchlist_add"
+      },
+      {
+        "id": "watchlist_add_aapl",
+        "text": "Please add Apple to my watchlist",
+        "wav_path": "wav/test_watchlist_add_aapl.wav",
+        "encoded_path": "encoded_compressed_opus/test_watchlist_add_aapl_compressed_opus.json",
+        "expected_entities": ["AAPL", "Apple", "watchlist", "add"],
+        "expected_intent": "watchlist_add"
+      },
+      {
+        "id": "watchlist_add_tsla",
+        "text": "I want to add Tesla to my watchlist",
+        "wav_path": "wav/test_watchlist_add_tsla.wav",
+        "encoded_path": "encoded_compressed_opus/test_watchlist_add_tsla_compressed_opus.json",
+        "expected_entities": ["TSLA", "Tesla", "watchlist", "add"],
+        "expected_intent": "watchlist_add"
+      },
+      {
+        "id": "watchlist_remove_nvda",
+        "text": "Remove NVIDIA from my watchlist",
+        "wav_path": "wav/test_watchlist_remove_nvda.wav",
+        "encoded_path": "encoded_compressed_opus/test_watchlist_remove_nvda_compressed_opus.json",
+        "expected_entities": ["NVDA", "NVIDIA", "watchlist", "remove"],
+        "expected_intent": "watchlist_remove"
+      },
+      {
+        "id": "watchlist_view",
+        "text": "Show me my watchlist",
+        "wav_path": "wav/test_watchlist_view.wav",
+        "encoded_path": "encoded_compressed_opus/test_watchlist_view_compressed_opus.json",
+        "expected_entities": ["watchlist", "show"],
+        "expected_intent": "watchlist_view"
+      }
+    ],
+    "deep_dive_analysis": [
+      {
+        "id": "analysis_nvda_deeper",
+        "text": "Can you dive deeper into that NVIDIA news?",
+        "wav_path": "wav/test_analysis_nvda_deeper.wav",
+        "encoded_path": "encoded_compressed_opus/test_analysis_nvda_deeper_compressed_opus.json",
+        "expected_entities": ["NVDA", "NVIDIA", "deeper", "analysis"],
+        "expected_intent": "deep_dive_request",
+        "requires_context": true
+      },
+      {
+        "id": "analysis_aapl_deeper",
+        "text": "Tell me more about that Apple story",
+        "wav_path": "wav/test_analysis_aapl_deeper.wav",
+        "encoded_path": "encoded_compressed_opus/test_analysis_aapl_deeper_compressed_opus.json",
+        "expected_entities": ["AAPL", "Apple", "more", "analysis"],
+        "expected_intent": "deep_dive_request",
+        "requires_context": true
+      },
+      {
+        "id": "analysis_tsla_deeper",
+        "text": "Give me more details on Tesla",
+        "wav_path": "wav/test_analysis_tsla_deeper.wav",
+        "encoded_path": "encoded_compressed_opus/test_analysis_tsla_deeper_compressed_opus.json",
+        "expected_entities": ["TSLA", "Tesla", "details", "analysis"],
+        "expected_intent": "deep_dive_request",
+        "requires_context": true
+      },
+      {
+        "id": "analysis_msft_deeper",
+        "text": "Can you elaborate on the Microsoft news?",
+        "wav_path": "wav/test_analysis_msft_deeper.wav",
+        "encoded_path": "encoded_compressed_opus/test_analysis_msft_deeper_compressed_opus.json",
+        "expected_entities": ["MSFT", "Microsoft", "elaborate", "analysis"],
+        "expected_intent": "deep_dive_request",
+        "requires_context": true
+      },
+      {
+        "id": "analysis_googl_deeper",
+        "text": "What's the full story on Google?",
+        "wav_path": "wav/test_analysis_googl_deeper.wav",
+        "encoded_path": "encoded_compressed_opus/test_analysis_googl_deeper_compressed_opus.json",
+        "expected_entities": ["GOOGL", "Google", "story", "analysis"],
+        "expected_intent": "deep_dive_request",
+        "requires_context": true
+      }
+    ],
+    "follow_up_queries": [
+      {
+        "id": "followup_why_up_down",
+        "text": "Why did it go up?",
+        "wav_path": "wav/test_followup_up_down.wav",
+        "encoded_path": "encoded_compressed_opus/test_followup_up_down_compressed_opus.json",
+        "expected_entities": ["why", "movement"],
+        "expected_intent": "follow_up_question",
+        "requires_context": true
+      },
+      {
+        "id": "followup_what_happened",
+        "text": "What caused that?",
+        "wav_path": "wav/test_followup_happened.wav",
+        "encoded_path": "encoded_compressed_opus/test_followup_happened_compressed_opus.json",
+        "expected_entities": ["what", "caused"],
+        "expected_intent": "follow_up_question",
+        "requires_context": true
+      },
+      {
+        "id": "followup_caused_movement",
+        "text": "What caused the price movement?",
+        "wav_path": "wav/test_followup_caused_movement.wav",
+        "encoded_path": "encoded_compressed_opus/test_followup_caused_movement_compressed_opus.json",
+        "expected_entities": ["caused", "price", "movement"],
+        "expected_intent": "follow_up_question",
+        "requires_context": true
+      },
+      {
+        "id": "followup_when",
+        "text": "When did this happen?",
+        "wav_path": "wav/test_followup_2.wav",
+        "encoded_path": "encoded_compressed_opus/test_followup_2_compressed_opus.json",
+        "expected_entities": ["when", "happened"],
+        "expected_intent": "follow_up_question",
+        "requires_context": true
+      }
+    ],
+    "multi_turn_scenarios": [
+      {
+        "id": "scenario_nvda_full_analysis",
+        "description": "Complete NVDA news analysis with follow-ups",
+        "turns": [
+          "news_nvda_latest",
+          "analysis_nvda_deeper",
+          "followup_caused_movement"
+        ],
+        "expected_session_entities": ["NVDA", "NVIDIA", "news", "analysis", "price", "movement"]
+      },
+      {
+        "id": "scenario_aapl_price_and_watchlist",
+        "description": "Check AAPL price and add to watchlist",
+        "turns": [
+          "price_aapl",
+          "watchlist_add_aapl",
+          "watchlist_view"
+        ],
+        "expected_session_entities": ["AAPL", "Apple", "price", "watchlist"]
+      },
+      {
+        "id": "scenario_tsla_news_deep_dive",
+        "description": "Tesla news with deep dive",
+        "turns": [
+          "news_tsla_latest",
+          "analysis_tsla_deeper",
+          "followup_what_happened"
+        ],
+        "expected_session_entities": ["TSLA", "Tesla", "news", "analysis"]
+      }
+    ]
+  },
+  "test_configurations": {
+    "backend_websocket_integration": {
+      "base_url": "http://localhost:8000",
+      "websocket_endpoint": "ws://localhost:8000/ws/voice/simple",
+      "session_api_endpoint": "http://localhost:8000/api/conversation-sessions/sessions",
+      "timeout_seconds": 30,
+      "validate_session_history": true,
+      "validate_audio_responses": true
+    },
+    "validation_rules": {
+      "transcription_similarity_threshold": 0.8,
+      "response_timeout_seconds": 10,
+      "require_audio_response": true,
+      "require_text_response": true,
+      "check_expected_entities": true
+    }
+  }
+}

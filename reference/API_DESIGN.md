@@ -83,7 +83,13 @@ GET  /api/user/analytics
 
 ---
 
-## 🔄 **WebSocket Events**
+## 🔄 **WebSocket Events (with Audio Compression)**
+
+### **Audio Compression Pipeline**
+- **Frontend**: Real-time Opus/WebM compression → Base64 encoding
+- **Backend**: Base64 decode → FFmpeg conversion → ASR → LLM → TTS → Base64 encoding
+- **Bandwidth Reduction**: 80%+ reduction with 5.5x compression ratio
+- **Supported Formats**: Opus, WebM, AAC, MP3, WAV
 
 ### **Client → Server Events**
 ```json
@@ -103,8 +109,20 @@ GET  /api/user/analytics
 {
   "event": "voice_data",
   "data": {
-    "audio_chunk": "base64_encoded_audio",
+    "audio_chunk": "base64_encoded_compressed_audio",
+    "format": "opus",
+    "is_final": true,
     "session_id": "uuid",
+    "user_id": "uuid",
+    "sample_rate": 16000,
+    "file_size": 11667,
+    "compression": {
+      "codec": "opus",
+      "original_size": 64590,
+      "compressed_size": 11667,
+      "compression_ratio": 5.5,
+      "bitrate": 64000
+    },
     "timestamp": "2024-01-01T00:00:00Z"
   }
 }
