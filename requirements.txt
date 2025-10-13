@@ -166,7 +166,7 @@ anyio==4.11.0 \
     --hash=sha256:0287e96f4d26d4149305414d4e3bc32f0dcd0862365a4bddea19d7a1ec38c4fc \
     --hash=sha256:82a8d0b81e318cc5ce71a5f1f8b5c4e63619620b63141ef8c995fa0db95a57c4
     # via
-    #   httpcore
+    #   httpx
     #   openai
     #   starlette
     #   watchfiles
@@ -595,6 +595,7 @@ cryptography==46.0.2 \
     --hash=sha256:ff798ad7a957a5021dcbab78dfff681f0cf15744d0e6af62bd6746984d9c9e9c
     # via
     #   aliyun-python-sdk-core
+    #   pyjwt
     #   python-jose
 curl-cffi==0.13.0 \
     --hash=sha256:28911b526e8cd4aa0e5e38401bfe6887e8093907272f1f67ca22e6beb2933a51 \
@@ -615,7 +616,9 @@ decorator==5.2.1 \
 deprecation==2.1.0 \
     --hash=sha256:72b3bde64e5d778694b0cf68178aed03d15e15477116add3fb773e581f9518ff \
     --hash=sha256:a10811591210e1fb0e768a8c25517cabeabcba6f0bf96564f8ff45189f90b14a
-    # via postgrest
+    # via
+    #   postgrest
+    #   storage3
 distro==1.9.0 \
     --hash=sha256:2fa77c6fd8940f116ee1d6b94a2f90b13b5ea8d019b98bc8bafdcabcdd9bdbed \
     --hash=sha256:7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2
@@ -861,10 +864,6 @@ funasr==1.2.7 \
     --hash=sha256:b53f748e479e5bf6af172407c50eccaa6818ed91bdf8656abcd7ea6c5e3d2b0d \
     --hash=sha256:fe943487bab0137813b213ffab14e819d8762fe1df6f776bb2db0bf89958d5e2
     # via voice-news-agent
-gotrue==2.9.1 \
-    --hash=sha256:6ffccd0d971d8e2883a650640fa94e53483c022119d687d1496cd79040736127 \
-    --hash=sha256:bc076c2030e5b5a189937fc1985b311844105ad1c78685b353f05253d0ebffed
-    # via supabase
 greenlet==3.2.4 ; (python_full_version < '3.14' and platform_machine == 'AMD64') or (python_full_version < '3.14' and platform_machine == 'WIN32') or (python_full_version < '3.14' and platform_machine == 'aarch64') or (python_full_version < '3.14' and platform_machine == 'amd64') or (python_full_version < '3.14' and platform_machine == 'ppc64le') or (python_full_version < '3.14' and platform_machine == 'win32') or (python_full_version < '3.14' and platform_machine == 'x86_64') \
     --hash=sha256:00fadb3fedccc447f517ee0d3fd8fe49eae949e1cd0f6a611818f4f6fb7dc83b \
     --hash=sha256:061dc4cf2c34852b052a8620d40f36324554bc192be474b9e9770e8c042fd735 \
@@ -921,9 +920,9 @@ greenlet==3.2.4 ; (python_full_version < '3.14' and platform_machine == 'AMD64')
     --hash=sha256:f10fd42b5ee276335863712fa3da6608e93f70629c631bf77145021600abc23c \
     --hash=sha256:f28588772bb5fb869a8eb331374ec06f24a83a9c25bfa1f38b6993afe9c1e968
     # via sqlalchemy
-h11==0.14.0 \
-    --hash=sha256:8f19fbbe99e72420ff35c00b27a34cb9937e902a8b810e2c88300c6f0a3b699d \
-    --hash=sha256:e3fe4ac4b851c468cc8363d500db52c2ead036020723024a109d37346efaa761
+h11==0.16.0 \
+    --hash=sha256:4e35b956cf45792e4caa5885e69fba00bdbc6ffafbfa020300e549b208ee5ff1 \
+    --hash=sha256:63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86
     # via
     #   httpcore
     #   uvicorn
@@ -935,9 +934,9 @@ hpack==4.1.0 \
     --hash=sha256:157ac792668d995c657d93111f46b4535ed114f0c9c8d672271bbec7eae1b496 \
     --hash=sha256:ec5eca154f7056aa06f196a557655c5b009b382873ac8d1e66e79e87535f1dca
     # via h2
-httpcore==0.17.3 \
-    --hash=sha256:a6f30213335e34c1ade7be6ec7c47f19f50c56db36abef1a9dfa3815b1cb3888 \
-    --hash=sha256:c2789b767ddddfa2a5782e3199b2b7f6894540b17b16ec26b2c4d8e103510b87
+httpcore==1.0.9 \
+    --hash=sha256:2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55 \
+    --hash=sha256:6e34463af53fd2ab5d807f399a9b45ea31c3dfa2276f15a2c3f00afff6e176e8
     # via httpx
 httptools==0.6.4 \
     --hash=sha256:0614154d5454c21b6410fdf5262b4a3ddb0f53f1e1721cfd59d55f32138c578a \
@@ -977,17 +976,17 @@ httptools==0.6.4 \
     --hash=sha256:f8787367fbdfccae38e35abf7641dafc5310310a5987b689f4c32cc8cc3ee975 \
     --hash=sha256:f9eb89ecf8b290f2e293325c646a211ff1c2493222798bb80a530c5e7502494f
     # via uvicorn
-httpx==0.24.1 \
-    --hash=sha256:06781eb9ac53cde990577af654bd990a4949de37a28bdb4a230d434f3a30b9bd \
-    --hash=sha256:5853a43053df830c20f8110c5e69fe44d035d850b2dfe795e196f00fdb774bdd
+httpx==0.28.1 \
+    --hash=sha256:75e98c5f16b0f35b567856f597f06ff2270a374470a5c2392242528e3e3e42fc \
+    --hash=sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad
     # via
-    #   gotrue
     #   langsmith
     #   openai
     #   postgrest
     #   storage3
     #   supabase
-    #   supafunc
+    #   supabase-auth
+    #   supabase-functions
     #   upstash-redis
     #   voice-news-agent
 hydra-core==1.3.2 \
@@ -1988,9 +1987,9 @@ pooch==1.8.2 \
     --hash=sha256:3529a57096f7198778a5ceefd5ac3ef0e4d06a6ddaf9fc2d609b806f25302c47 \
     --hash=sha256:76561f0de68a01da4df6af38e9955c4c9d1a5c90da73f7e40276a5728ec83d10
     # via librosa
-postgrest==0.17.0 \
-    --hash=sha256:5ee05d8d6796b9d716585d2ad589db57ef832af6c2592a3e39dcef8993929cff \
-    --hash=sha256:df2530e903955ffddbd21d92a99abc8d09d6efb357ce33438fca68d4b46b5d95
+postgrest==2.22.0 \
+    --hash=sha256:cbb5ded1df3806593d95c430109fe292201c23f627629af01a9f67381d65b370 \
+    --hash=sha256:e9d77ed6c82918f8b67d48c963f52de06c71cd1351b64881f239c54a19f6420a
     # via supabase
 propcache==0.4.1 \
     --hash=sha256:0002004213ee1f36cfb3f9a42b5066100c44276b9b72b4e1504cddd3d692e86e \
@@ -2137,17 +2136,6 @@ pyasn1==0.6.1 \
     # via
     #   python-jose
     #   rsa
-pyasn1-modules==0.4.1 \
-    --hash=sha256:12f2f1ba04e06ff95d80700a78967897a489c05e093e3bffa05a84ed9c0a7fa3 \
-    --hash=sha256:2a166fc88d435a2779810dd2678354adc33499e9d4d7f937f28b20cc55893e83 \
-    --hash=sha256:506b32a595f8693811682ab4b127602d404df7dfc453b499c91a80d0f7bad289 \
-    --hash=sha256:5fce4bcdd2e0e8c063d835dbe2860dac46437506af509353c7f8114d4bacbd5b \
-    --hash=sha256:692d8c1446f52ed2662120bcd9ddcb5aa2b71f38bda31e58b19fb4672fffba69 \
-    --hash=sha256:78dfff3879b4994d1f4fc6485646a57755c6ee3c19647a491f790a0895bd2f87 \
-    --hash=sha256:95328285b4dab57ea8c52a4a996cb52be6d629353315be5bfda403d15932a497 \
-    --hash=sha256:bbeb01d36a2f472ae5ee5e1451cacc42112986abe622f735bb870a5db77cf903 \
-    --hash=sha256:f745109634a7c19fa4d6b8b7d6967c3123d988c9ade0cd35d4295ee1acdb53e9
-    # via voice-news-agent
 pycparser==2.23 ; implementation_name != 'PyPy' \
     --hash=sha256:78816d4f24add8f10a06d6f05b4d424ad9e96cfebf68a4ddc99c65c0720d00c2 \
     --hash=sha256:e5c6e8d3fbad53479cab09ac03729e0a9faf2bee3db8208a550daf5af81a5934
@@ -2192,7 +2180,6 @@ pydantic==2.12.0 \
     --hash=sha256:f6a1da352d42790537e95e83a8bdfb91c7efbae63ffd0b86fa823899e807116f
     # via
     #   fastapi
-    #   gotrue
     #   langchain
     #   langchain-core
     #   langsmith
@@ -2200,6 +2187,8 @@ pydantic==2.12.0 \
     #   postgrest
     #   pydantic-settings
     #   realtime
+    #   storage3
+    #   supabase-auth
     #   voice-news-agent
 pydantic-core==2.41.1 \
     --hash=sha256:0234236514f44a5bf552105cfe2543a12f48203397d9d0f866affa569345a5b5 \
@@ -2365,6 +2354,10 @@ pygame==2.6.1 \
     --hash=sha256:f3935459109da4bb0b3901da9904f0a3e52028a3332a355d298b1673a334cf21 \
     --hash=sha256:fb6e8d0547f30ddc845f4fd1e33070ef548233ad0dbf21f7ecea768883d1bbdc
     # via voice-news-agent
+pyjwt==2.10.1 \
+    --hash=sha256:3cc5772eb20009233caf06e9d8a0577824723b44e6648ee0a2aedb6cf9381953 \
+    --hash=sha256:dcdd193e30abefd5debf142f9adfcdd2b58004e644f25406ffaebd50bd98dacb
+    # via supabase-auth
 pynndescent==0.5.13 \
     --hash=sha256:69aabb8f394bc631b6ac475a1c7f3994c54adf3f51cd63b2730fefba5771b949 \
     --hash=sha256:d74254c0ee0a1eeec84597d5fe89fedcf778593eeabe32c2f97412934a9800fb
@@ -2374,7 +2367,6 @@ python-dateutil==2.9.0.post0 \
     --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
     # via
     #   pandas
-    #   storage3
     #   voice-news-agent
 python-dotenv==1.1.1 \
     --hash=sha256:31f23644fe2602f88ff55e1f5c79ba497e01224ee7737937930c448e4d0e24dc \
@@ -2930,8 +2922,6 @@ sniffio==1.3.1 \
     --hash=sha256:f4324edc670a0f49750a81b895f35c3adb843cca46f0530f79fc1babb23789dc
     # via
     #   anyio
-    #   httpcore
-    #   httpx
     #   openai
 soundfile==0.13.1 \
     --hash=sha256:03267c4e493315294834a0870f31dbb3b28a95561b80b134f0bd3cf2d5f0e618 \
@@ -3046,21 +3036,27 @@ starlette==0.48.0 \
     --hash=sha256:0764ca97b097582558ecb498132ed0c7d942f233f365b86ba37770e026510659 \
     --hash=sha256:7e8cee469a8ab2352911528110ce9088fdc6a37d9876926e73da7ce4aa4c7a46
     # via fastapi
-storage3==0.8.0 \
-    --hash=sha256:a1aa28a6eb685b8158f2de26589cd216fcd18328c5762d21159a4545e8cf6709 \
-    --hash=sha256:cdb5af60ff240a8c2ef83cecdb5816042ce4a9162803456bcd1bca075b4c82df
+storage3==2.22.0 \
+    --hash=sha256:199a67c2b1ac595191617ff2d7bcd0ef6440126e4335a6aaaf9df7881ccd3842 \
+    --hash=sha256:fd31d884bfd590866e2b1897f3b2f26f737a836155a13c9a642dbc5c353e49df
     # via supabase
 strenum==0.4.15 \
     --hash=sha256:878fb5ab705442070e4dd1929bb5e2249511c0bcf2b0eeacf3bcd80875c82eff \
     --hash=sha256:a30cda4af7cc6b5bf52c8055bc4bf4b2b6b14a93b574626da33df53cf7740659
-    # via postgrest
-supabase==2.8.1 \
-    --hash=sha256:711c70e6acd9e2ff48ca0dc0b1bb70c01c25378cc5189ec9f5ed9655b30bc41d \
-    --hash=sha256:dfa8bef89b54129093521d5bba2136ff765baf67cd76d8ad0aa4984d61a7815c
+    # via
+    #   postgrest
+    #   supabase-functions
+supabase==2.22.0 \
+    --hash=sha256:4d50b32b07b07439f69db75c1c1b013446167fd2aa747fbbb3b094084b5a52f4 \
+    --hash=sha256:c2dda9cc712db69ab4f690092581cff0b8978c268f782a3c16663c9ff0094473
     # via voice-news-agent
-supafunc==0.6.0 \
-    --hash=sha256:2f7b538d52f268dc5cc7e25743085665242ee1cc8b2b2d867ff0bccfea2d1856 \
-    --hash=sha256:6e7fbc9992c2722216e1799f314aacf4ac147628741ad7cdd5c7be367e21f619
+supabase-auth==2.22.0 \
+    --hash=sha256:6a3db812102e0ab1a399996d492f05f68e07ca6510291758678be7b8c5345ce0 \
+    --hash=sha256:bea3808b9a17b883f6aa56abd55ba1b00c311e6f4a6e42ed9e03321caa9fe71f
+    # via supabase
+supabase-functions==2.22.0 \
+    --hash=sha256:c92d1b832499abfa8bde248d674aeb5f03b511d29959bf3d16afcdab824b290c \
+    --hash=sha256:dfc04c0c751629813e75153124b7f1bc81ff0128d058f6deaed2f124782416fa
     # via supabase
 tabulate==0.9.0 \
     --hash=sha256:0095b12bf5966de529c0feb1fa08671671b3368eec77d7ef7ab114be2c068b3c \
@@ -3215,8 +3211,6 @@ typing-extensions==4.15.0 \
     #   speechrecognition
     #   sqlalchemy
     #   starlette
-    #   storage3
-    #   supabase
     #   typing-inspection
     #   uvicorn
     #   voice-news-agent
@@ -3598,7 +3592,11 @@ yarl==1.22.0 \
     --hash=sha256:f6d2cb59377d99718913ad9a151030d6f83ef420a2b8f521d94609ecc106ee82 \
     --hash=sha256:f87ac53513d22240c7d59203f25cc3beac1e574c6cd681bbfd321987b69f95fd \
     --hash=sha256:ff86011bd159a9d2dfc89c34cfd8aff12875980e3bd6a39ff097887520e60249
-    # via aiohttp
+    # via
+    #   aiohttp
+    #   postgrest
+    #   storage3
+    #   supabase-functions
 yfinance==0.2.66 \
     --hash=sha256:511a1a40a687f277aae3a02543009a8aeaa292fce5509671f58915078aebb5c7 \
     --hash=sha256:fae354cc1649109444b2c84194724afcc52c2a7799551ce44c739424ded6af9c

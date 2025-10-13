@@ -33,6 +33,9 @@ help:
 	@echo "  test-integration Run integration tests only"
 	@echo "  test-coverage  Run tests with coverage report"
 	@echo "  test-fast      Run fast tests only (exclude slow tests)"
+	@echo "  test-render     Test Render WebSocket deployment"
+	@echo "  test-render-sample Test Render with specific sample"
+	@echo "  test-render-health Test Render health endpoint only"
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  lint           Run linting checks"
@@ -189,7 +192,15 @@ init:
 	@uv init --no-readme
 	@echo "✅ uv project initialized"
 
-# Full test suite with reports
-test-full: test-coverage
-	@echo "✅ Full test suite completed with coverage report"
-	@echo "📊 Coverage report available in htmlcov/index.html"
+# Test Render deployment
+test-render:
+	@echo "Testing Render WebSocket deployment..."
+	@uv run python scripts/test_render_websocket.py --url https://voice-news-agent-api.onrender.com
+
+test-render-sample:
+	@echo "Testing Render WebSocket with specific sample..."
+	@uv run python scripts/test_render_websocket.py --sample-id news_nvda_latest --url https://voice-news-agent-api.onrender.com
+
+test-render-health:
+	@echo "Testing Render health endpoint only..."
+	@uv run python scripts/test_render_websocket.py --health-only --url https://voice-news-agent-api.onrender.com
