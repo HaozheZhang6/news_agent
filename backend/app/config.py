@@ -1,8 +1,30 @@
 """Configuration management for Voice News Agent Backend."""
 import os
 from typing import List, Optional
+from pathlib import Path
 from pydantic_settings import BaseSettings
 from pydantic import Field
+
+
+def get_sensevoice_model_path() -> str:
+    """Get the SenseVoice model path, auto-detecting if not set."""
+    # Check if explicitly set via environment variable
+    if os.getenv("SENSEVOICE_MODEL_PATH"):
+        return os.getenv("SENSEVOICE_MODEL_PATH")
+    
+    # Try to find the model in ModelScope cache
+    try:
+        from modelscope.hub.snapshot_download import snapshot_download
+        cache_dir = Path.home() / ".cache" / "modelscope" / "hub"
+        model_path = snapshot_download(
+            model_id="iic/SenseVoiceSmall",
+            cache_dir=str(cache_dir),
+            revision="master"
+        )
+        return str(model_path)
+    except Exception:
+        # Fallback to default path
+        return "/app/models/SenseVoiceSmall"
 
 
 class Settings(BaseSettings):
@@ -35,7 +57,7 @@ class Settings(BaseSettings):
     openai_api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
     
     # Voice Services
-    sensevoice_model_path: str = Field(default="/app/models/SenseVoiceSmall", env="SENSEVOICE_MODEL_PATH")
+    sensevoice_model_path: str = Field(default_factory=get_sensevoice_model_path, env="SENSEVOICE_MODEL_PATH")
     edge_tts_voice: str = Field(default="en-US-AriaNeural", env="EDGE_TTS_VOICE")
     edge_tts_rate: float = Field(default=1.0, env="EDGE_TTS_RATE")
     edge_tts_pitch: float = Field(default=1.0, env="EDGE_TTS_PITCH")

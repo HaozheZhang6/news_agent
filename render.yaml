@@ -60,5 +60,3 @@ services:
         value: 100
       - key: LOG_LEVEL
         value: INFO
-      - key: SENSEVOICE_MODEL_PATH
-        value: /app/models/SenseVoiceSmall

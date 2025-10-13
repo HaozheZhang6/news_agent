@@ -64,11 +64,12 @@ The deployment is configured in `render.yaml`:
 ### Build Process
 1. Install dependencies with `uv sync --frozen`
 2. Download SenseVoice model using `scripts/download_sensevoice_deploy.py`
-3. Model is stored at `/app/models/SenseVoiceSmall`
+3. Model is cached in ModelScope's default cache directory (`~/.cache/modelscope/hub`)
+4. Backend automatically detects the cached model path at runtime
 
 ### Environment Variables
-- `SENSEVOICE_MODEL_PATH=/app/models/SenseVoiceSmall`
-- Automatically set in `render.yaml`
+- `SENSEVOICE_MODEL_PATH` is automatically detected (no manual setting needed)
+- Backend uses ModelScope's cache directory for deployment
 
 ### Build Command
 ```yaml
@@ -85,11 +86,12 @@ buildCommand: |
 
 | Aspect | Local Development | Render Deployment |
 |--------|------------------|-------------------|
-| Model Path | `models/iic/SenseVoiceSmall` | `/app/models/SenseVoiceSmall` |
+| Model Path | `models/iic/SenseVoiceSmall` | Auto-detected from ModelScope cache |
 | Download Script | `download_sensevoice.py` | `download_sensevoice_deploy.py` |
-| Base Directory | Project root | `/app` |
+| Base Directory | Project root | ModelScope cache (`~/.cache/modelscope/hub`) |
 | Git Tracking | Ignored (`/models` in `.gitignore`) | Not tracked |
 | Environment | Development | Production |
+| Path Detection | Manual setup | Automatic detection |
 
 ## Troubleshooting
 
@@ -122,8 +124,9 @@ uv run python scripts/test_local_setup.py
 
 ### Deployment
 - Check Render build logs for successful model download
-- Verify `/app/models/SenseVoiceSmall` exists in deployment
+- Verify ModelScope cache directory contains the model
 - Test API endpoints that use voice processing
+- Backend will automatically detect the cached model path
 
 ## Notes
 
