@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { logger } from "../utils/logger";
 import { useAudioEncoder } from "../utils/audio-encoder";
+import { PCMAudioRecorder } from "../utils/wav-encoder";
 
 type VoiceState = "idle" | "listening" | "speaking" | "connecting";
 
@@ -49,12 +50,10 @@ export function ContinuousVoiceInterface({
   const isPlayingAudioRef = useRef(false);
   
   // Refs for recording and VAD
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const pcmRecorderRef = useRef<PCMAudioRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
   const isRecordingRef = useRef(false);
   const lastSpeechTimeRef = useRef<number>(0);
-  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const vadCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const shouldStartRecordingRef = useRef(false); // Flag to start recording after connection
   
@@ -310,36 +309,26 @@ export function ContinuousVoiceInterface({
       });
       
       mediaStreamRef.current = stream;
-      
-      // Create MediaRecorder for audio capture
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
-      });
-      mediaRecorderRef.current = mediaRecorder;
-      
+
+      // Create PCM recorder for WAV format
+      const pcmRecorder = new PCMAudioRecorder(16000); // 16kHz sample rate
+      await pcmRecorder.start(stream);
+      pcmRecorderRef.current = pcmRecorder;
+
       // Set up audio analyzer for VAD
-      const audioContext = new AudioContext();
+      const audioContext = new AudioContext({ sampleRate: 16000 });
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 2048;
       source.connect(analyser);
-      
+
       const bufferLength = analyser.fftSize;
       const dataArray = new Float32Array(bufferLength);
-      
+
       // Start recording
-      audioChunksRef.current = [];
       lastSpeechTimeRef.current = Date.now(); // Initialize to current time
-      mediaRecorder.start(100); // Request data every 100ms for continuous streaming
       isRecordingRef.current = true;
-      console.log("🎤 Recording started with VAD");
-      
-      // Handle recorded data
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
+      console.log("🎤 PCM recording started with VAD (16kHz, mono, 16-bit WAV)");
       
       // VAD check loop (~3-4 Hz)
       vadCheckIntervalRef.current = setInterval(() => {
@@ -367,14 +356,15 @@ export function ContinuousVoiceInterface({
           const silenceDuration = Date.now() - lastSpeechTimeRef.current;
 
           // Log silence duration every 2 seconds for debugging
-          if (Date.now() % 2000 < 250 && audioChunksRef.current.length > 0) {
-            console.log(`🤐 Silence: ${(silenceDuration / 1000).toFixed(1)}s, chunks: ${audioChunksRef.current.length}`);
+          if (Date.now() % 2000 < 250 && pcmRecorderRef.current) {
+            const duration = pcmRecorderRef.current.getDuration();
+            console.log(`🤐 Silence: ${(silenceDuration / 1000).toFixed(1)}s, recorded: ${duration.toFixed(2)}s`);
           }
 
-          // If silence exceeds threshold and we have chunks to send
-          if (silenceDuration >= SILENCE_THRESHOLD_MS && audioChunksRef.current.length > 0) {
+          // If silence exceeds threshold and we have audio recorded
+          if (silenceDuration >= SILENCE_THRESHOLD_MS && pcmRecorderRef.current && pcmRecorderRef.current.getDuration() > 0) {
 
-            console.log(`📤 Silence threshold reached (${silenceDuration}ms), sending ${audioChunksRef.current.length} chunks immediately`);
+            console.log(`📤 Silence threshold reached (${silenceDuration}ms), recorded ${pcmRecorderRef.current.getDuration().toFixed(2)}s audio`);
 
             // Send immediately when silence threshold is reached
             sendAudioToBackend();
@@ -400,27 +390,24 @@ export function ContinuousVoiceInterface({
       return;
     }
 
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-      mediaRecorderRef.current.stop();
+    // Stop PCM recorder (this also stops and encodes the audio)
+    if (pcmRecorderRef.current) {
+      pcmRecorderRef.current.stop();
+      pcmRecorderRef.current = null;
     }
-    
+
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach(track => track.stop());
       mediaStreamRef.current = null;
     }
-    
+
     if (vadCheckIntervalRef.current) {
       clearInterval(vadCheckIntervalRef.current);
       vadCheckIntervalRef.current = null;
     }
-    
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = null;
-    }
-    
+
     isRecordingRef.current = false;
-    console.log("🔇 Recording stopped");
+    console.log("🔇 PCM recording stopped");
   }, []);
 
   /**
@@ -428,31 +415,40 @@ export function ContinuousVoiceInterface({
    * Called after detecting 1 second of silence (same as src.main)
    */
   const sendAudioToBackend = useCallback(async () => {
-    if (audioChunksRef.current.length === 0 || !sessionIdRef.current) {
+    if (!pcmRecorderRef.current || !sessionIdRef.current) {
       return;
     }
 
     logger.vadSendTriggered();
-    
-    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm;codecs=opus' });
-    audioChunksRef.current = []; // Clear chunks
-    
+
     try {
-      // Use the new audio encoder with compression enabled
-      const encodedMessage = await audioEncoder.encodeBlob(audioBlob, {
-        format: 'webm',
-        sampleRate: 48000,
+      // Stop recording and get WAV data
+      const wavData = pcmRecorderRef.current.stop();
+      if (!wavData) {
+        console.warn("⚠️ No audio data to send");
+        return;
+      }
+
+      // Recreate PCM recorder for next utterance
+      if (mediaStreamRef.current) {
+        const newRecorder = new PCMAudioRecorder(16000);
+        await newRecorder.start(mediaStreamRef.current);
+        pcmRecorderRef.current = newRecorder;
+      }
+
+      // Encode WAV to base64 message
+      const encodedMessage = audioEncoder.encodeWAV(wavData, {
+        sampleRate: 16000,
         isFinal: true,
         sessionId: sessionIdRef.current,
-        userId: userId,
-        compress: true, // Enable compression
-        codec: 'opus' // Use Opus for best compression
+        userId: userId
       });
-      
+
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify(encodedMessage));
-        logger.audioChunkSent(audioBlob.size, sessionIdRef.current);
+        logger.audioChunkSent(wavData.byteLength, sessionIdRef.current);
         logger.wsMessageSent("audio_chunk", sessionIdRef.current);
+        console.log(`📤 Sent WAV audio: ${wavData.byteLength} bytes`);
       }
     } catch (error) {
       console.error("❌ Error encoding audio:", error);
@@ -513,8 +509,8 @@ export function ContinuousVoiceInterface({
   useEffect(() => {
     return () => {
       // Cleanup only on unmount, not on every render
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-        mediaRecorderRef.current.stop();
+      if (pcmRecorderRef.current) {
+        pcmRecorderRef.current.stop();
       }
 
       if (mediaStreamRef.current) {
