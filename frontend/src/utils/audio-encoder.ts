@@ -205,11 +205,11 @@ export class AudioBase64Encoder {
    * Encode ArrayBuffer to base64 WebSocket message
    */
   encodeArrayBuffer(
-    audioBuffer: ArrayBuffer, 
+    audioBuffer: ArrayBuffer,
     options: Partial<AudioEncodingOptions> = {}
   ): EncodedAudioMessage {
     const base64Audio = this.arrayBufferToBase64(audioBuffer);
-    
+
     return {
       event: 'audio_chunk',
       data: {
@@ -220,6 +220,31 @@ export class AudioBase64Encoder {
         user_id: options.userId || this.defaultUserId,
         sample_rate: options.sampleRate || 16000,
         file_size: audioBuffer.byteLength,
+        encoded_at: new Date().toISOString()
+      }
+    };
+  }
+
+  /**
+   * Encode WAV ArrayBuffer (from PCMAudioRecorder) to base64 WebSocket message
+   * Optimized for WAV format - no compression needed
+   */
+  encodeWAV(
+    wavBuffer: ArrayBuffer,
+    options: Partial<AudioEncodingOptions> = {}
+  ): EncodedAudioMessage {
+    const base64Audio = this.arrayBufferToBase64(wavBuffer);
+
+    return {
+      event: 'audio_chunk',
+      data: {
+        audio_chunk: base64Audio,
+        format: 'wav',
+        is_final: options.isFinal ?? true,
+        session_id: options.sessionId || this.defaultSessionId,
+        user_id: options.userId || this.defaultUserId,
+        sample_rate: options.sampleRate || 16000,
+        file_size: wavBuffer.byteLength,
         encoded_at: new Date().toISOString()
       }
     };
@@ -408,11 +433,12 @@ export const defaultAudioEncoder = new AudioBase64Encoder();
  */
 export function useAudioEncoder(userId?: string) {
   const encoder = new AudioBase64Encoder(userId);
-  
+
   return {
     encodeBlob: encoder.encodeBlob.bind(encoder),
     encodeFile: encoder.encodeFile.bind(encoder),
     encodeArrayBuffer: encoder.encodeArrayBuffer.bind(encoder),
+    encodeWAV: encoder.encodeWAV.bind(encoder),
     newSession: encoder.newSession.bind(encoder),
     getCurrentSessionId: encoder.getCurrentSessionId.bind(encoder),
     setUserId: encoder.setUserId.bind(encoder),
