@@ -22,6 +22,8 @@ export interface AudioEncodingOptions {
   codec?: 'opus' | 'aac' | 'mp3' | 'webm';
   /** Compression bitrate */
   bitrate?: number;
+  /** Original filename (for file uploads) */
+  originalFilename?: string;
 }
 
 export interface EncodedAudioMessage {
@@ -102,42 +104,21 @@ export class AudioBase64Encoder {
     }
 
     try {
-      // Create a new MediaRecorder with the specified codec
-      const mediaRecorder = new MediaRecorder(audioBlob, {
-        mimeType: codecConfig.mimeType,
-        audioBitsPerSecond: codecConfig.bitrate
-      });
-
-      return new Promise((resolve, reject) => {
-        const chunks: Blob[] = [];
-        
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            chunks.push(event.data);
-          }
-        };
-
-        mediaRecorder.onstop = () => {
-          const compressedBlob = new Blob(chunks, { type: codecConfig.mimeType });
-          const compressionInfo = {
-            codec,
-            original_size: audioBlob.size,
-            compressed_size: compressedBlob.size,
-            compression_ratio: audioBlob.size / compressedBlob.size,
-            bitrate: codecConfig.bitrate,
-            mimeType: codecConfig.mimeType
-          };
-          
-          resolve({ compressedBlob, compressionInfo });
-        };
-
-        mediaRecorder.onerror = (error) => {
-          reject(new Error(`Compression failed: ${error}`));
-        };
-
-        mediaRecorder.start();
-        mediaRecorder.stop();
-      });
+      // Since we already have the audio as WebM/Opus from MediaRecorder,
+      // we don't need to re-encode it. Just return the original blob.
+      // The browser's MediaRecorder already compressed it with Opus codec.
+      return {
+        compressedBlob: audioBlob,
+        compressionInfo: {
+          codec,
+          original_size: audioBlob.size,
+          compressed_size: audioBlob.size,
+          compression_ratio: 1.0,
+          bitrate: codecConfig.bitrate,
+          mimeType: codecConfig.mimeType,
+          note: 'Already compressed by MediaRecorder'
+        }
+      };
     } catch (error) {
       console.warn(`Compression failed: ${error}, using original`);
       return {
@@ -273,7 +254,7 @@ export class AudioBase64Encoder {
         resolve(base64);
       };
       reader.onerror = reject;
-      reader.readAsArrayBuffer(file);
+      reader.readAsDataURL(file);
     });
   }
 

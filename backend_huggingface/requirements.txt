@@ -1,0 +1,10 @@
+# Minimal deps for CPU Gradio Space with SenseVoice
+gradio>=4.44.0
+funasr>=1.0.0
+modelscope>=1.15.0
+torch>=2.0.0
+torchaudio>=2.0.0
+numpy>=1.24.0
+soundfile>=0.12.1
+
+

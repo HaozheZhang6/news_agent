@@ -140,9 +140,9 @@ class StreamingVoiceHandler:
             Transcribed text
         """
         if not self._model_loaded or self.sensevoice_model is None:
-            # Fallback: return placeholder text for testing
-            print(f"⚠️ SenseVoice model not loaded, using fallback transcription")
-            return "What's the stock price of AAPL today?"
+            # Fallback: return error message if model not loaded
+            print(f"⚠️ SenseVoice model not loaded, transcription unavailable")
+            raise RuntimeError("Speech recognition model not loaded. Please check model initialization.")
         
         try:
             # Convert compressed audio to WAV if needed
@@ -174,11 +174,11 @@ class StreamingVoiceHandler:
                 print(f"🎤 Transcribed: '{text}'")
                 return text
             else:
-                return "What's the stock price of AAPL today?"
-            
+                raise RuntimeError("Transcription model returned empty result")
+
         except Exception as e:
             print(f"❌ Transcription error: {e}")
-            return "What's the stock price of AAPL today?"
+            raise
     
     async def _convert_to_wav(self, audio_data: bytes, format: str, sample_rate: int = 16000) -> bytes:
         """
@@ -200,26 +200,43 @@ class StreamingVoiceHandler:
         if format.lower() == "wav":
             return audio_data
         
+        input_path = None
+        output_path = None
+
         try:
             # Create temporary files
             with tempfile.NamedTemporaryFile(delete=False, suffix=f".{format}") as input_file:
                 input_file.write(audio_data)
                 input_path = input_file.name
-            
+
+            print(f"📁 Created temp input file: {input_path} ({len(audio_data)} bytes)")
+
+            # DEBUG: Save a copy for inspection
+            debug_path = f"/tmp/debug_audio_{os.path.basename(input_path)}"
+            import shutil
+            shutil.copy(input_path, debug_path)
+            print(f"🐛 DEBUG: Saved copy to {debug_path}")
+
             with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as output_file:
                 output_path = output_file.name
-            
-            # FFmpeg command to convert to WAV
+
+            print(f"📁 Created temp output file: {output_path}")
+
+            # FFmpeg command to convert to WAV with better error handling
             ffmpeg_cmd = [
                 'ffmpeg',
+                '-v', 'error',  # Only show errors
                 '-i', input_path,
                 '-ar', str(sample_rate),
                 '-ac', '1',  # Mono
                 '-f', 'wav',
+                '-acodec', 'pcm_s16le',  # 16-bit PCM
                 '-y',  # Overwrite output
                 output_path
             ]
-            
+
+            print(f"🔧 Running FFmpeg: {' '.join(ffmpeg_cmd)}")
+
             # Run FFmpeg conversion
             result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, check=True)
             
@@ -236,20 +253,22 @@ class StreamingVoiceHandler:
             
         except subprocess.CalledProcessError as e:
             print(f"❌ FFmpeg conversion failed: {e.stderr}")
-            # Fallback: return original data (might work for some formats)
-            return audio_data
+            print(f"   Input file: {input_path} exists={os.path.exists(input_path) if input_path else 'N/A'}")
+            print(f"   Output file: {output_path} exists={os.path.exists(output_path) if output_path else 'N/A'}")
+            # Re-raise error instead of returning bad data
+            raise RuntimeError(f"FFmpeg conversion failed: {e.stderr}")
         except Exception as e:
             print(f"❌ Audio conversion error: {e}")
-            return audio_data
+            raise RuntimeError(f"Audio conversion error: {e}")
         finally:
             # Ensure temp files are cleaned up
             try:
-                if 'input_path' in locals():
+                if input_path and os.path.exists(input_path):
                     os.unlink(input_path)
-                if 'output_path' in locals():
+                if output_path and os.path.exists(output_path):
                     os.unlink(output_path)
-            except:
-                pass
+            except Exception as cleanup_error:
+                print(f"⚠️ Failed to cleanup temp files: {cleanup_error}")
     
     async def process_voice_command(
         self, 

@@ -61,7 +61,7 @@ export function ContinuousVoiceInterface({
   // VAD Configuration (same as src.main: NO_SPEECH_THRESHOLD = 1.0 second)
   const SILENCE_THRESHOLD_MS = 1000; // 1 second of silence triggers send
   const VAD_CHECK_INTERVAL_MS = 100; // Check audio level every 100ms
-  const SPEECH_THRESHOLD = 0.01; // Audio level threshold to detect speech
+  const SPEECH_THRESHOLD = 0.02; // Audio level threshold to detect speech (increased to reduce sensitivity)
 
   /**
    * WebSocket connection management
@@ -136,6 +136,7 @@ export function ContinuousVoiceInterface({
         logger.transcriptionReceived(transcription);
         break;
 
+      case 'voice_response':
       case 'agent_response':
         const response = message.data.text;
         setCurrentResponse(response);
@@ -280,7 +281,12 @@ export function ContinuousVoiceInterface({
       sum += Math.abs(audioData[i]);
     }
     const average = sum / audioData.length;
-    
+
+    // Log audio level every 2 seconds for debugging
+    if (Date.now() % 2000 < 250) {
+      console.log(`🎙️ Audio level: ${average.toFixed(4)} (threshold: ${SPEECH_THRESHOLD})`);
+    }
+
     // Return true if audio level exceeds threshold (user is speaking)
     return average > SPEECH_THRESHOLD;
   }, []);
@@ -323,7 +329,8 @@ export function ContinuousVoiceInterface({
       
       // Start recording
       audioChunksRef.current = [];
-      mediaRecorder.start();
+      lastSpeechTimeRef.current = Date.now(); // Initialize to current time
+      mediaRecorder.start(100); // Request data every 100ms for continuous streaming
       isRecordingRef.current = true;
       console.log("🎤 Recording started with VAD");
       
@@ -342,14 +349,14 @@ export function ContinuousVoiceInterface({
         if (isSpeaking) {
           // User is speaking
           lastSpeechTimeRef.current = Date.now();
-          
+
           // If agent was speaking, interrupt immediately
           if (isPlayingAudioRef.current) {
             console.log("🚨 User started speaking, interrupting agent");
             stopAudioPlayback();
             sendInterruptSignal();
           }
-          
+
           // Clear any pending silence timer
           if (silenceTimerRef.current) {
             clearTimeout(silenceTimerRef.current);
@@ -358,17 +365,22 @@ export function ContinuousVoiceInterface({
         } else {
           // User is silent
           const silenceDuration = Date.now() - lastSpeechTimeRef.current;
-          
-          // If silence exceeds threshold and we haven't already set a timer
-          if (silenceDuration >= SILENCE_THRESHOLD_MS && 
-              !silenceTimerRef.current && 
-              audioChunksRef.current.length > 0) {
-            
-            // Set timer to send audio after silence threshold
-            silenceTimerRef.current = setTimeout(() => {
-              sendAudioToBackend();
-              silenceTimerRef.current = null;
-            }, 100); // Small delay to ensure we captured enough audio
+
+          // Log silence duration every 2 seconds for debugging
+          if (Date.now() % 2000 < 250 && audioChunksRef.current.length > 0) {
+            console.log(`🤐 Silence: ${(silenceDuration / 1000).toFixed(1)}s, chunks: ${audioChunksRef.current.length}`);
+          }
+
+          // If silence exceeds threshold and we have chunks to send
+          if (silenceDuration >= SILENCE_THRESHOLD_MS && audioChunksRef.current.length > 0) {
+
+            console.log(`📤 Silence threshold reached (${silenceDuration}ms), sending ${audioChunksRef.current.length} chunks immediately`);
+
+            // Send immediately when silence threshold is reached
+            sendAudioToBackend();
+
+            // Reset last speech time to prevent multiple sends
+            lastSpeechTimeRef.current = Date.now();
           }
         }
       }, 250); // 4Hz checks to reduce message frequency
