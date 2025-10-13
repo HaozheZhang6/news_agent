@@ -1,5 +1,5 @@
 # Deployment requirements (excludes audio libraries that fail on Render)
-# Generated for Render deployment without pyaudio, soundfile, funasr, librosa, modelscope, webrtcvad
+# Generated for Render deployment without pyaudio, soundfile, librosa, modelscope, webrtcvad
 
 # Core framework
 fastapi>=0.104.0

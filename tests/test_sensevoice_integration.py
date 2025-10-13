@@ -19,14 +19,13 @@ def mock_sensevoice():
 
 
 @pytest.fixture
-def mock_pyaudio():
-    """Mock PyAudio for audio recording."""
-    with patch('pyaudio.PyAudio') as MockPyAudio:
-        mock_instance = MockPyAudio.return_value
+def mock_sounddevice():
+    """Mock SoundDevice for audio recording."""
+    with patch('sounddevice.InputStream') as MockInputStream:
         mock_stream = MagicMock()
         mock_stream.read.return_value = b'\x00' * 1024  # Mock audio data
-        mock_instance.open.return_value = mock_stream
-        yield MockPyAudio
+        MockInputStream.return_value = mock_stream
+        yield MockInputStream
 
 
 @pytest.fixture
@@ -396,7 +395,7 @@ class TestRealTimeInterruption:
     """Test real-time voice interruption during TTS playback."""
     
     @pytest.mark.asyncio
-    async def test_voice_monitoring_interruption(self, mock_pygame, mock_pyaudio, mock_webrtc_vad):
+    async def test_voice_monitoring_interruption(self, mock_pygame, mock_sounddevice, mock_webrtc_vad):
         """Test voice monitoring detecting speech and interrupting TTS."""
         from src.voice_output import voice_monitoring_thread
         
@@ -408,10 +407,10 @@ class TestRealTimeInterruption:
             mock_vad.check_vad_activity.return_value = True
             mock_pygame.music.get_busy.return_value = True
             
-            # Mock pyaudio stream
+            # Mock sounddevice stream
             mock_stream = MagicMock()
             mock_stream.read.return_value = b'\x00' * 1024
-            mock_pyaudio.return_value.open.return_value = mock_stream
+            mock_sounddevice.return_value = mock_stream
             
             # Run monitoring briefly
             monitor_thread = threading.Thread(target=voice_monitoring_thread, daemon=True)
