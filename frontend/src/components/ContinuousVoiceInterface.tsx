@@ -56,6 +56,7 @@ export function ContinuousVoiceInterface({
   const lastSpeechTimeRef = useRef<number>(0);
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const vadCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const shouldStartRecordingRef = useRef(false); // Flag to start recording after connection
   
   // VAD Configuration (same as src.main: NO_SPEECH_THRESHOLD = 1.0 second)
   const SILENCE_THRESHOLD_MS = 1000; // 1 second of silence triggers send
@@ -120,9 +121,12 @@ export function ContinuousVoiceInterface({
       case 'connected':
         sessionIdRef.current = message.data.session_id;
         logger.wsConnected(sessionIdRef.current);
-        // Always start recording after receiving 'connected' event
-        setVoiceState("listening");
-        startRecording();
+        // If user clicked the button while connecting, transition to listening state
+        // The useEffect will handle starting the actual recording
+        if (shouldStartRecordingRef.current) {
+          shouldStartRecordingRef.current = false;
+          setVoiceState("listening");
+        }
         break;
 
       case 'transcription':
@@ -448,9 +452,10 @@ export function ContinuousVoiceInterface({
    * Start voice interaction
    */
   const startVoiceInteraction = useCallback(async () => {
-    // If not connected, just open WS and wait for 'connected' event to start recording
+    // If not connected, open WS and set flag to start recording after connection
     if (!isConnected || !sessionIdRef.current) {
       setVoiceState("connecting");
+      shouldStartRecordingRef.current = true; // Flag to start recording after connection
       connectWebSocket();
       return;
     }
@@ -474,22 +479,49 @@ export function ContinuousVoiceInterface({
   }, [stopRecording, stopAudioPlayback]);
 
   /**
-   * Cleanup on unmount
+   * Handle recording based on voice state
+   */
+  useEffect(() => {
+    if (voiceState === "listening" && !isRecordingRef.current && isConnected) {
+      // Start recording when transitioning to listening state
+      startRecording().catch((error) => {
+        console.error("Failed to start recording:", error);
+        onError?.("Microphone access denied or not available");
+        setVoiceState("idle");
+      });
+    } else if (voiceState !== "listening" && isRecordingRef.current) {
+      // Stop recording when leaving listening state
+      stopRecording();
+    }
+  }, [voiceState, isConnected, onError]);
+
+  /**
+   * Cleanup on unmount ONLY (empty dependency array)
    */
   useEffect(() => {
     return () => {
-      stopRecording();
-      stopAudioPlayback();
-      
+      // Cleanup only on unmount, not on every render
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+      }
+
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+
+      if (isPlayingAudioRef.current && currentAudioSourceRef.current) {
+        currentAudioSourceRef.current.stop();
+      }
+
       if (wsRef.current) {
         wsRef.current.close();
       }
-      
+
       if (audioContextRef.current) {
         audioContextRef.current.close();
       }
     };
-  }, [stopRecording, stopAudioPlayback]);
+  }, []); // Empty dependency array = cleanup only on unmount
 
   /**
    * Helper: Convert base64 to ArrayBuffer
