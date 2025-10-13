@@ -203,55 +203,6 @@ def process_audio_segments(command_queue, interrupt_event, ipc_manager):
         conversation_logger.log_error(f"SenseVoice processing error: {e}")
         segments_to_save.clear()
 
-def fallback_voice_listener_worker(command_queue, interrupt_event, ipc_manager):
-    """Fallback voice listener using speech_recognition library."""
-    try:
-        import speech_recognition as sr
-        conversation_logger.log_system_event("Using fallback speech recognition")
-        
-        recognizer = sr.Recognizer()
-        microphone = sr.Microphone()
-        
-        # Adjust for ambient noise once
-        with microphone as source:
-            recognizer.adjust_for_ambient_noise(source)
-        
-        while True:
-            try:
-                # Listen for speech
-                with microphone as source:
-                    audio = recognizer.listen(source, timeout=1, phrase_time_limit=5)
-                
-                # Fast recognition
-                try:
-                    text = recognizer.recognize_google(audio)
-                    conversation_logger.log_user_input(text)
-                    
-                    # Print to console for visibility
-                    print(f"👤 USER: {text}")
-                    
-                    # Classify and send command immediately  
-                    command = classify_intent(text)
-                    command_queue.put(command)
-                    
-                    # Set interrupt for immediate commands
-                    if command.type.value in ["stop", "deep_dive"]:
-                        interrupt_event.set()
-                        ipc_manager.set_state('interrupt_requested', True)
-                        
-                except sr.UnknownValueError:
-                    pass  # Ignore unrecognized speech
-                    
-            except sr.WaitTimeoutError:
-                pass  # Continue listening
-            except Exception as e:
-                conversation_logger.log_error(f"Fallback listener error: {e}")
-                time.sleep(0.1)
-                
-    except ImportError:
-        conversation_logger.log_error("Neither SenseVoice nor speech_recognition available")
-        return
-
 def voice_listener_worker(command_queue, interrupt_event, ipc_manager):
     """Main worker function for voice listener thread."""
     global recording_active
@@ -259,9 +210,7 @@ def voice_listener_worker(command_queue, interrupt_event, ipc_manager):
     # Check if SenseVoice model exists
     if not os.path.exists(SENSEVOICE_MODEL_PATH):
         conversation_logger.log_error(f"SenseVoice model not found at: {SENSEVOICE_MODEL_PATH}")
-        conversation_logger.log_system_event("Falling back to basic voice listener")
-        # Fall back to original speech recognition
-        fallback_voice_listener_worker(command_queue, interrupt_event, ipc_manager)
+        conversation_logger.log_error("Please run: uv run python scripts/download_sensevoice.py")
         return
     
     recording_active = True
