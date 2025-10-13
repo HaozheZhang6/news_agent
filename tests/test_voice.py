@@ -19,13 +19,12 @@ def mock_sensevoice():
         yield MockAutoModel
 
 @pytest.fixture
-def mock_pyaudio():
-    with patch('pyaudio.PyAudio') as MockPyAudio:
-        mock_instance = MockPyAudio.return_value
+def mock_sounddevice():
+    with patch('sounddevice.InputStream') as MockInputStream:
         mock_stream = MagicMock()
         mock_stream.read.return_value = b'\x00' * 1024  # Mock audio data
-        mock_instance.open.return_value = mock_stream
-        yield MockPyAudio
+        MockInputStream.return_value = mock_stream
+        yield MockInputStream
 
 @pytest.fixture
 def mock_webrtc_vad():
@@ -181,7 +180,7 @@ def test_enhanced_stop_speaking_function(mock_pygame, mock_conversation_logger):
         mock_stop_monitoring.assert_called_once()
         mock_conversation_logger.log_interruption.assert_called_once()
 
-def test_voice_monitoring_thread(mock_pyaudio, mock_webrtc_vad, mock_conversation_logger):
+def test_voice_monitoring_thread(mock_sounddevice, mock_webrtc_vad, mock_conversation_logger):
     from src.voice_output import voice_monitoring_thread, active_speech_monitoring
     
     with patch('src.voice_output.active_speech_monitoring', True), \
@@ -230,7 +229,7 @@ def test_command_classification():
     cmd = classify_intent("weather forecast")
     assert cmd.type == CommandType.WEATHER_REQUEST
 
-def test_sensevoice_integration(mock_sensevoice, mock_pyaudio, mock_webrtc_vad, mock_audio_logger):
+def test_sensevoice_integration(mock_sensevoice, mock_sounddevice, mock_webrtc_vad, mock_audio_logger):
     from src.voice_listener_process import process_audio_segments
     import multiprocessing as mp
     

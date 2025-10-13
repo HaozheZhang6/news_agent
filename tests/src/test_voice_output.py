@@ -143,14 +143,13 @@ class TestVoiceOutput:
         if voice_monitoring_thread is None:
             pytest.skip("Voice output module not available")
         
-        with patch('src.voice_output.pyaudio') as mock_pyaudio:
+        with patch('src.voice_output.sounddevice') as mock_sounddevice:
             with patch('src.voice_output.vad_detector') as mock_vad:
                 with patch('src.voice_output.conversation_logger') as mock_logger:
-                    # Mock PyAudio
-                    mock_p = Mock()
+                    # Mock SoundDevice
                     mock_stream = Mock()
-                    mock_p.open.return_value = mock_stream
-                    mock_pyaudio.PyAudio.return_value = mock_p
+                    mock_stream.read.return_value = b'\x00' * 1024
+                    mock_sounddevice.InputStream.return_value = mock_stream
                     
                     # Mock VAD
                     mock_vad.is_speech.return_value = True
@@ -172,14 +171,13 @@ class TestVoiceOutput:
         if voice_monitoring_thread is None:
             pytest.skip("Voice output module not available")
         
-        with patch('src.voice_output.pyaudio') as mock_pyaudio:
+        with patch('src.voice_output.sounddevice') as mock_sounddevice:
             with patch('src.voice_output.vad_detector') as mock_vad:
                 with patch('src.voice_output.conversation_logger') as mock_logger:
-                    # Mock PyAudio
-                    mock_p = Mock()
+                    # Mock SoundDevice
                     mock_stream = Mock()
-                    mock_p.open.return_value = mock_stream
-                    mock_pyaudio.PyAudio.return_value = mock_p
+                    mock_stream.read.return_value = b'\x00' * 1024
+                    mock_sounddevice.InputStream.return_value = mock_stream
                     
                     # Mock VAD - no speech detected
                     mock_vad.is_speech.return_value = False
@@ -200,10 +198,10 @@ class TestVoiceOutput:
         if voice_monitoring_thread is None:
             pytest.skip("Voice output module not available")
         
-        with patch('src.voice_output.pyaudio') as mock_pyaudio:
+        with patch('src.voice_output.sounddevice') as mock_sounddevice:
             with patch('src.voice_output.conversation_logger') as mock_logger:
-                # Mock PyAudio to raise exception
-                mock_pyaudio.PyAudio.side_effect = Exception("Audio error")
+                # Mock SoundDevice to raise exception
+                mock_sounddevice.InputStream.side_effect = Exception("Audio error")
                 
                 # Should not raise exception
                 voice_monitoring_thread()

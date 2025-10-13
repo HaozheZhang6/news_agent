@@ -360,7 +360,7 @@ flowchart TB
 # Core AI & Voice
 langchain, langchain-openai    # LLM integration
 funasr                         # SenseVoice ASR
-webrtcvad, pyaudio            # Voice activity detection
+webrtcvad, sounddevice            # Voice activity detection
 edge-tts, pygame              # Text-to-speech and audio playback
 
 # Data Sources  
