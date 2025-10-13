@@ -184,7 +184,8 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.accept()
 
         # Extract user ID from query parameters or headers
-        user_id = websocket.query_params.get("user_id", "anonymous")
+        # Use default UUID for anonymous users (Supabase requires valid UUID)
+        user_id = websocket.query_params.get("user_id", "00000000-0000-0000-0000-000000000000")
 
         # Connect WebSocket (this will register the connection and send 'connected')
         session_id = await ws_manager.connect(websocket, user_id)
