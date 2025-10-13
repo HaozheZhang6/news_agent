@@ -11,6 +11,9 @@ services:
       curl -LsSf https://astral.sh/uv/install.sh | sh
       source $HOME/.cargo/env
       uv sync --frozen
+      # Download SenseVoice model for deployment
+      echo "Downloading SenseVoice model..."
+      uv run python scripts/download_sensevoice_deploy.py
     startCommand: |
       uv run uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT --workers 1
     healthCheckPath: /health
@@ -57,3 +60,5 @@ services:
         value: 100
       - key: LOG_LEVEL
         value: INFO
+      - key: SENSEVOICE_MODEL_PATH
+        value: /app/models/SenseVoiceSmall
