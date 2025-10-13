@@ -6,6 +6,121 @@ An advanced voice-activated news recommendation agent with **real-time voice str
 
 **🎯 Current Status:** Backend MVP complete with streaming WebSocket API, ready for Render deployment and iOS integration.
 
+## 2. 🚀 Quick Setup
+
+### Prerequisites
+- Python 3.9+ (3.11 recommended for Render deployment)
+- Virtual environment (we use `uv` for package management)
+- API keys: ZhipuAI, AlphaVantage, Supabase, Upstash Redis
+
+### 2.1. Local Development Setup
+
+**1. Clone and Install:**
+```bash
+git clone <repository_url>
+cd News_agent
+uv sync --frozen
+```
+
+**2. Download SenseVoice Model (for local ASR):**
+```bash
+uv run python scripts/download_sensevoice.py
+```
+
+**3. Configure Environment:**
+```bash
+# Copy example environment files
+cp env_files/env.example env_files/.env
+
+# Edit with your API keys
+# ZHIPUAI_API_KEY, ALPHAVANTAGE_API_KEY, SUPABASE_URL, etc.
+```
+
+**Required Environment Files:**
+```bash
+# Copy the main environment template
+cp env_files/env.example env_files/.env
+
+# Edit the existing environment files with your actual API keys
+# env_files/supabase.env - Database configuration
+# env_files/upstash.env - Redis cache configuration  
+# env_files/render.env - Deployment configuration
+```
+
+**Environment Variables Needed:**
+- **ZhipuAI**: `ZHIPUAI_API_KEY` (for GLM-4-Flash LLM)
+- **AlphaVantage**: `ALPHAVANTAGE_API_KEY` (for news and stock data)
+- **Supabase**: `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SERVICE_KEY` (for database)
+- **Upstash Redis**: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (for caching)
+- **Optional**: `OPENAI_API_KEY` (fallback LLM), `NEWS_API_KEY`, `FINNHUB_API_KEY`
+
+**Quick Setup Commands:**
+```bash
+# 1. Copy environment template
+cp env_files/env.example env_files/.env
+
+# 2. Edit env_files/.env with your API keys
+# 3. Edit env_files/supabase.env with your Supabase credentials
+# 4. Edit env_files/upstash.env with your Redis credentials
+# 5. Edit env_files/render.env for deployment settings
+```
+
+### 2.2. Running Components
+
+**Backend API Server:**
+```bash
+# Start FastAPI server with WebSocket streaming
+uv run uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Or use Makefile
+make run-server
+```
+- API Docs: http://localhost:8000/docs
+- Health Check: http://localhost:8000/health
+
+**Local Voice Agent (src):**
+```bash
+# Standalone voice agent (no backend needed)
+uv run python src/main.py
+
+# Or use Makefile
+make src
+```
+
+**Frontend Development:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+- Frontend: http://localhost:3000
+
+### 2.3. Testing Setup
+```bash
+# Verify local setup
+uv run python scripts/test_local_setup.py
+
+# Run tests
+uv run python -m pytest tests/
+```
+
+### 2.4. Render Deployment
+The project is configured for one-click deployment on Render:
+
+**Deploy Steps:**
+1. Push code to GitHub
+2. Connect Render → New Web Service → Blueprint
+3. Set environment variables in Render dashboard
+4. Deploy! (SenseVoice model downloads automatically)
+
+**Environment Variables for Render:**
+- Set all variables from `env_files/env.example` in Render dashboard
+- Supabase, Upstash Redis, and API keys are required
+- `SENSEVOICE_MODEL_PATH` is automatically set to `/app/models/SenseVoiceSmall`
+
+**Configuration:** See `render.yaml` for deployment settings
+**Documentation:** See `SENSEVOICE_DEPLOYMENT_SETUP.md` for detailed setup
+
 ### 🚀 **Key Innovations**
 - **Real-time Streaming**: WebSocket-based voice streaming with chunked TTS responses
 - **Cloud-Ready Backend**: FastAPI + Supabase + Upstash Redis, deployable on Render free tier
@@ -15,7 +130,7 @@ An advanced voice-activated news recommendation agent with **real-time voice str
 - **SenseVoice Integration**: Multilingual, offline-capable voice recognition (local + API modes)
 - **Comprehensive Logging**: MP3 audio logs + conversation history + analytics
 
-## 2. ✨ Features
+## 3. ✨ Features
 
 ### 🧠 **Smart Conversational Memory**
 - **Context Awareness**: "Tell me more" intelligently refers to recent news items
@@ -62,7 +177,7 @@ An advanced voice-activated news recommendation agent with **real-time voice str
 - **Watchlist Management**: Voice-controlled stock tracking
 - **Preference Learning**: Adapts to user interests over time
 
-## 3. 🏗️ System Architecture
+## 4. 🏗️ System Architecture
 
 Modern **threading-based architecture** with **smart memory** and **priority queue systems**:
 
@@ -140,7 +255,7 @@ flowchart TB
   end
 ```
 
-## 4. 🗓️ Implementation Status
+## 5. 🗓️ Implementation Status
 
 | Feature | Status | Details |
 |---------|--------|----------|
@@ -159,7 +274,7 @@ flowchart TB
 | **🚀 Render Deployment** | ⏳ Pending | Blueprint ready, awaiting manual test |
 | **📱 iOS App** | 🚧 Planned | Voice command API ready for integration |
 
-## 5. 🚀 Latest Updates (v3.0 - Cloud MVP)
+## 6. 🚀 Latest Updates (v3.0 - Cloud MVP)
 
 ### 🌐 **WebSocket Streaming API**
 - **Real-time Communication**: Bidirectional WebSocket for voice streaming
@@ -185,7 +300,7 @@ flowchart TB
 - **Audio Streaming**: Base64-encoded audio chunk support
 - **Example Code**: See reference documentation for integration details
 
-## 6. 📚 Documentation
+## 7. 📚 Documentation
 
 - **[MVP.md](MVP.md)** - Current MVP status, architecture, and deployment guide
 - **[TODO.md](TODO.md)** - Task tracker and roadmap
@@ -199,7 +314,7 @@ flowchart TB
   - Continuous listening with automatic interruption
   - Connect to local backend: `make run-server` then open the HTML file
 
-## 7. 🚀 Previous Enhancements (v2.0)
+## 8. 🚀 Previous Enhancements (v2.0)
 
 ### ✨ **Smart Memory System**
 - **Context Tracking**: Remembers last 10 conversation exchanges
@@ -225,7 +340,7 @@ flowchart TB
 - **Threading Safety**: Voice monitoring with proper synchronization
 - **Multilingual Support**: SenseVoice auto-language detection
 
-## 6. 🔧 Technical Specifications
+## 9. 🔧 Technical Specifications
 
 ### Performance Metrics
 - **Voice Recognition**: 200-500ms (SenseVoice) / 1-3s (Google Speech fallback)
@@ -257,9 +372,9 @@ langid, langdetect           # Language detection
 python-dotenv                # Environment configuration
 ```
 
-## 8. 🚀 Quick Start
+## 10. 🚀 Quick Start
 
-### 8.1. Local Development (Voice Agent)
+### 10.1. Local Development (Voice Agent)
 
 **Prerequisites:**
 - Python 3.9+
@@ -304,7 +419,7 @@ python-dotenv                # Environment configuration
     ```
     Replace `YOUR_ZHIPUAI_API_KEY` and `YOUR_ALPHAVANTAGE_API_KEY` with your actual keys.
 
-### 8.2. Running the Backend API
+### 10.2. Running the Backend API
 
 **Start the FastAPI server with WebSocket streaming:**
 
@@ -324,7 +439,7 @@ python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - Health Check: http://localhost:8000/health
 - WebSocket Test: Open `test_websocket.html` in browser
 
-### 8.3. Running the Local Voice Agent
+### 10.3. Running the Local Voice Agent
 
 To start the standalone voice agent (no backend needed):
 
@@ -338,7 +453,7 @@ Or:
 python -m src.main
 ```
 
-### 8.4. Testing WebSocket Streaming
+### 10.4. Testing WebSocket Streaming
 
 **Browser test (easiest):**
 ```bash
@@ -356,7 +471,7 @@ See reference documentation for WebSocket API details.
 - ⚡ **Priority Commands**: "Actually, I meant..." support
 - 📊 **Complete Logging**: All interactions saved
 
-### 8.5. Voice Commands & WebSocket Events
+### 10.5. Voice Commands & WebSocket Events
 
 Once the agent starts, it will greet you. You can then use the following voice commands:
 
@@ -401,7 +516,7 @@ Once the agent starts, it will greet you. You can then use the following voice c
     *   **"Speak faster/slower"** - Speech speed adjustment
     *   **"Exit"** / **"Quit"** - Graceful shutdown
     
-### 8.6. 📁 Project Structure
+### 10.6. 📁 Project Structure
 
 ```
 News_agent/
@@ -426,9 +541,10 @@ News_agent/
 │   ├── src/                      # Source component tests
 │   └── integration/              # Integration tests
 ├── env_files/                    # Environment variables (gitignored)
-│   ├── supabase.env
-│   ├── upstash.env
-│   └── render.env
+│   ├── env.example               # Main environment template
+│   ├── supabase.env              # Database configuration
+│   ├── upstash.env               # Redis cache configuration
+│   └── render.env                # Deployment configuration
 ├── audio_logs/                   # Voice recordings
 ├── logs/conversations/           # Daily conversation logs
 ├── database/schema.sql           # Supabase schema
@@ -438,7 +554,7 @@ News_agent/
 └── pyproject.toml                # Project metadata (uv)
 ```
 
-### 8.7. 🎯 Example Conversation Flow
+### 10.7. 🎯 Example Conversation Flow
 
 ```
 👤 USER: "Tell me the latest news"
@@ -454,7 +570,7 @@ News_agent/
 🤖 AGENT: "AAPL has been added to your watchlist."
 ```
 
-## 9. 🚀 Deployment
+## 11. 🚀 Deployment
 
 See [MVP.md](MVP.md) for detailed deployment instructions.
 
@@ -473,7 +589,6 @@ See [MVP.md](MVP.md) for detailed deployment instructions.
 ---
 
 *Built with ❤️ using FastAPI, GLM-4-Flash, SenseVoice ASR, Edge-TTS, Supabase, and Upstash Redis*
-
 ## API Overview
 
 ### Profile (preferences and watchlist)

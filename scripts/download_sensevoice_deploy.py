@@ -15,26 +15,23 @@ def download_sensevoice_model_deploy():
     try:
         from modelscope.hub.snapshot_download import snapshot_download
 
-        # For deployment, use /app/models as the base directory
-        # This matches the backend config default path
-        model_dir = Path("/app/models/SenseVoiceSmall")
+        # Use ModelScope's default cache directory which is writable
+        # This avoids the /app read-only issue during build
+        cache_dir = Path.home() / ".cache" / "modelscope" / "hub"
 
         print("=" * 80)
         print("🔽 Downloading SenseVoice Model for Deployment")
         print("=" * 80)
-        print(f"📁 Target directory: {model_dir}")
+        print(f"📁 Cache directory: {cache_dir}")
         print(f"📦 Model: iic/SenseVoiceSmall")
         print(f"🌐 Environment: Production/Deployment")
         print()
 
-        # Create directory
-        model_dir.mkdir(parents=True, exist_ok=True)
-
-        # Download model
+        # Download model to cache directory
         print("⏳ Downloading... (this may take several minutes)")
         model_path = snapshot_download(
             model_id="iic/SenseVoiceSmall",
-            cache_dir=str(model_dir.parent),
+            cache_dir=str(cache_dir),
             revision="master"
         )
 
@@ -61,10 +58,10 @@ def download_sensevoice_model_deploy():
         print()
         print("💡 Configuration:")
         print(f"   SENSEVOICE_MODEL_PATH={model_path}")
-        print("   Backend will use this path automatically")
+        print("   Backend will use this cached model path")
         print()
 
-        return model_path
+        return str(model_path)
 
     except ImportError:
         print("❌ Error: modelscope package not installed")
