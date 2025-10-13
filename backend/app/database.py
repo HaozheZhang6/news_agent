@@ -1,4 +1,5 @@
 """Database connection and management for Supabase."""
+import asyncio
 from typing import Optional, Dict, Any, List
 from supabase import create_client
 from .config import get_settings
@@ -88,13 +89,18 @@ class DatabaseManager:
     async def get_user_preferences(self, user_id: str) -> Optional[Dict[str, Any]]:
         """Get user preferences stored on users table."""
         try:
-            result = (
-                self.client
-                .table('users')
-                .select('preferred_topics, watchlist_stocks')
-                .eq('id', user_id)
-                .execute()
-            )
+            # Wrap synchronous Supabase call in asyncio.to_thread
+            def _fetch():
+                return (
+                    self.client
+                    .table('users')
+                    .select('preferred_topics, watchlist_stocks')
+                    .eq('id', user_id)
+                    .execute()
+                )
+            
+            result = await asyncio.to_thread(_fetch)
+            
             if result.data:
                 row = result.data[0]
                 return {

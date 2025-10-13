@@ -4,6 +4,7 @@ import { cn } from "./ui/utils";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { logger } from "../utils/logger";
+import { useAudioEncoder } from "../utils/audio-encoder";
 
 type VoiceState = "idle" | "listening" | "speaking" | "connecting";
 
@@ -29,6 +30,9 @@ export function ContinuousVoiceInterface({
   onResponse, 
   onError 
 }: ContinuousVoiceInterfaceProps) {
+  // Audio encoder hook
+  const audioEncoder = useAudioEncoder(userId);
+  
   // State management
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
   const [isConnected, setIsConnected] = useState(false);
@@ -417,27 +421,28 @@ export function ContinuousVoiceInterface({
     const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm;codecs=opus' });
     audioChunksRef.current = []; // Clear chunks
     
-    // Convert to base64
-    const reader = new FileReader();
-    reader.readAsDataURL(audioBlob);
-    reader.onloadend = () => {
-      const base64Audio = (reader.result as string).split(',')[1];
+    try {
+      // Use the new audio encoder with compression enabled
+      const encodedMessage = await audioEncoder.encodeBlob(audioBlob, {
+        format: 'webm',
+        sampleRate: 48000,
+        isFinal: true,
+        sessionId: sessionIdRef.current,
+        userId: userId,
+        compress: true, // Enable compression
+        codec: 'opus' // Use Opus for best compression
+      });
       
-      if (wsRef.current?.readyState === WebSocket.OPEN && sessionIdRef.current) {
-        wsRef.current.send(JSON.stringify({
-          event: "audio_chunk",
-          data: {
-            session_id: sessionIdRef.current,
-            audio_chunk: base64Audio,
-            format: "webm",
-            sample_rate: 48000
-          }
-        }));
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify(encodedMessage));
         logger.audioChunkSent(audioBlob.size, sessionIdRef.current);
         logger.wsMessageSent("audio_chunk", sessionIdRef.current);
       }
-    };
-  }, []);
+    } catch (error) {
+      console.error("❌ Error encoding audio:", error);
+      onError?.("Failed to encode audio for transmission");
+    }
+  }, [audioEncoder, userId, onError]);
 
   /**
    * Start voice interaction
