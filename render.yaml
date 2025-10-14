@@ -11,9 +11,8 @@ services:
       curl -LsSf https://astral.sh/uv/install.sh | sh
       source $HOME/.cargo/env
       uv sync --frozen
-      # Download SenseVoice model for deployment
-      echo "Downloading SenseVoice model..."
-      uv run python scripts/download_sensevoice_deploy.py
+      # Skip model download - will lazy-load on first request
+      echo "Build complete. Model will download on first use."
     startCommand: |
       uv run uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT --workers 1
     healthCheckPath: /live
@@ -43,6 +42,8 @@ services:
       - key: ZHIPUAI_API_KEY
         sync: false
       - key: ALPHAVANTAGE_API_KEY
+        sync: false
+      - key: HF_TOKEN
         sync: false
       - key: SECRET_KEY
         generateValue: true

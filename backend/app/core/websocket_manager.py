@@ -44,33 +44,47 @@ class WebSocketManager:
         """Initialize the WebSocket manager."""
         if self._initialized:
             return
-        
+
         self.db = await get_database()
         self.cache = await get_cache()
         self.agent = await get_agent()
         self.streaming_handler = get_streaming_handler()
 
-        # Initialize SenseVoice model for ASR (same as src implementation)
-        # Model downloaded to models/iic/SenseVoiceSmall via ModelScope
-        model_load_start = time.time()
-        model_loaded = await self.streaming_handler.load_sensevoice_model("models/iic/SenseVoiceSmall")
-        model_load_time = (time.time() - model_load_start) * 1000
+        # Initialize SenseVoice model for ASR (non-blocking for Render deployment)
+        # Model will lazy-load on first use if not available
+        import os
+        model_path = "models/iic/SenseVoiceSmall"
 
-        # Log model loading info
-        if model_loaded:
-            self.logger.info("✅ SenseVoice model loaded successfully")
-            self.conversation_logger.log_model_info(
-                "sensevoice",
-                loaded=True,
-                model_path="models/iic/SenseVoiceSmall",
-                loading_time_ms=model_load_time
-            )
+        # Check if model exists before trying to load
+        if os.path.exists(model_path):
+            self.logger.info(f"🔄 Loading SenseVoice model from {model_path}...")
+            model_load_start = time.time()
+            model_loaded = await self.streaming_handler.load_sensevoice_model(model_path)
+            model_load_time = (time.time() - model_load_start) * 1000
+
+            # Log model loading info
+            if model_loaded:
+                self.logger.info("✅ SenseVoice model loaded successfully")
+                self.conversation_logger.log_model_info(
+                    "sensevoice",
+                    loaded=True,
+                    model_path=model_path,
+                    loading_time_ms=model_load_time
+                )
+            else:
+                self.logger.warning("⚠️ SenseVoice model failed to load - using fallback transcription")
+                self.conversation_logger.log_model_info(
+                    "sensevoice",
+                    loaded=False,
+                    error="Model failed to load"
+                )
         else:
-            self.logger.warning(None, "⚠️ SenseVoice model not available - using fallback transcription for testing")
+            self.logger.warning(f"⚠️ SenseVoice model not found at {model_path} - will use fallback transcription")
+            self.logger.warning("   Run 'python scripts/download_sensevoice.py' to download the model")
             self.conversation_logger.log_model_info(
                 "sensevoice",
                 loaded=False,
-                error="Model not available or failed to load"
+                error=f"Model not found at {model_path}"
             )
 
         # Log agent info

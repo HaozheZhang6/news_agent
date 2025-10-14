@@ -125,7 +125,8 @@ with gr.Blocks() as demo:
         out = gr.Textbox(label="Transcript")
 
     btn = gr.Button("Transcribe")
-    btn.click(fn=transcribe_audio, inputs=audio, outputs=out)
+    btn.click(fn=transcribe_audio, inputs=audio, outputs=out, api_name="predict")
+
 
 
 if __name__ == "__main__":

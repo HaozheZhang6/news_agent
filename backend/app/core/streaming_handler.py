@@ -15,15 +15,23 @@ try:
 except ImportError:
     AutoModel = None
 
+try:
+    from .hf_space_asr import get_hf_space_asr
+    HF_SPACE_AVAILABLE = True
+except ImportError:
+    HF_SPACE_AVAILABLE = False
+
 
 class StreamingVoiceHandler:
     """Handle streaming voice input/output."""
-    
+
     def __init__(self):
         self.audio_buffers = {}  # session_id -> buffer
         self.transcription_cache = {}  # session_id -> partial text
         self.sensevoice_model = None
         self._model_loaded = False
+        self.hf_space_asr = None
+        self._hf_space_enabled = True  # Prefer HF Space by default
     
     async def load_sensevoice_model(self, model_path: str = "models/SenseVoiceSmall"):
         """Load SenseVoice model for ASR (same as src implementation)."""
@@ -123,55 +131,82 @@ class StreamingVoiceHandler:
         return None
     
     async def transcribe_chunk(
-        self, 
+        self,
         audio_data: bytes,
         format: str = "wav",
         sample_rate: int = 16000
     ) -> str:
         """
         Transcribe audio chunk with support for compressed formats.
-        
+
+        Uses HuggingFace Space as primary ASR, falls back to local model.
+
         Args:
             audio_data: Raw audio bytes (may be compressed)
             format: Audio format (wav, opus, webm, mp3, etc.)
             sample_rate: Sample rate in Hz
-            
+
         Returns:
             Transcribed text
         """
+        # Try HuggingFace Space first (preferred for production)
+        if self._hf_space_enabled and HF_SPACE_AVAILABLE:
+            try:
+                if self.hf_space_asr is None:
+                    self.hf_space_asr = get_hf_space_asr()
+
+                # Convert to WAV if needed
+                wav_data = await self._convert_to_wav(audio_data, format, sample_rate)
+
+                print(f"🌐 Using HF Space ASR: {len(audio_data)} bytes ({format})")
+
+                # Transcribe using HF Space
+                transcription = await self.hf_space_asr.transcribe_audio_bytes(
+                    wav_data,
+                    sample_rate=sample_rate,
+                    format="wav"
+                )
+
+                print(f"✓ HF Space transcribed: '{transcription}'")
+                return transcription
+
+            except Exception as e:
+                print(f"⚠️ HF Space ASR failed: {e}")
+                print(f"   Falling back to local model...")
+
+        # Fallback to local model
         if not self._model_loaded or self.sensevoice_model is None:
-            # Fallback: return error message if model not loaded
-            print(f"⚠️ SenseVoice model not loaded, transcription unavailable")
-            raise RuntimeError("Speech recognition model not loaded. Please check model initialization.")
-        
+            print(f"❌ No ASR available (HF Space failed, local model not loaded)")
+            raise RuntimeError("Speech recognition unavailable. Please check configuration.")
+
         try:
             # Convert compressed audio to WAV if needed
             wav_data = await self._convert_to_wav(audio_data, format, sample_rate)
-            
+
             # Save audio to temporary file
             import tempfile
             with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
                 tmpfile.write(wav_data)
                 audio_file = tmpfile.name
-            
-            print(f"🎤 Processing audio: {len(audio_data)} bytes ({format}) -> {len(wav_data)} bytes (wav)")
-            
-            # Transcribe with SenseVoice
+
+            print(f"🎤 Using local model: {len(audio_data)} bytes ({format}) -> {len(wav_data)} bytes (wav)")
+
+            # Transcribe with local SenseVoice
             result = self.sensevoice_model.generate(
                 input=audio_file,
                 cache={},
                 language="auto",
                 use_itn=False,
             )
-            
+
             # Clean up temp file
             import os
             os.unlink(audio_file)
-            
+
             if result and len(result) > 0 and 'text' in result[0]:
                 # Extract text (remove language tags)
                 text = result[0]['text'].split(">")[-1].strip()
-                print(f"🎤 Transcribed: '{text}'")
+                print(f"✓ Local model transcribed: '{text}'")
                 return text
             else:
                 raise RuntimeError("Transcription model returned empty result")

@@ -36,6 +36,8 @@ help:
 	@echo "  test-render     Test Render WebSocket deployment"
 	@echo "  test-render-sample Test Render with specific sample"
 	@echo "  test-render-health Test Render health endpoint only"
+	@echo "  test-hf-space   Test Hugging Face Space ASR"
+	@echo "  test-hf-space-sample Test HF Space with specific sample"
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  lint           Run linting checks"
@@ -192,15 +194,11 @@ init:
 	@uv init --no-readme
 	@echo "✅ uv project initialized"
 
-# Test Render deployment
-test-render:
-	@echo "Testing Render WebSocket deployment..."
-	@uv run python scripts/test_render_websocket.py --url https://voice-news-agent-api.onrender.com
+# Test Hugging Face Space
+test-hf-space:
+	@echo "Testing Hugging Face Space ASR..."
+	@uv run python scripts/test_huggingface_space.py --space-url https://huggingface.co/spaces/hz6666/SenseVoiceSmall
 
-test-render-sample:
-	@echo "Testing Render WebSocket with specific sample..."
-	@uv run python scripts/test_render_websocket.py --sample-id news_nvda_latest --url https://voice-news-agent-api.onrender.com
-
-test-render-health:
-	@echo "Testing Render health endpoint only..."
-	@uv run python scripts/test_render_websocket.py --health-only --url https://voice-news-agent-api.onrender.com
+test-hf-space-sample:
+	@echo "Testing Hugging Face Space with specific sample..."
+	@uv run python scripts/test_huggingface_space.py --sample-id analysis_aapl_deeper --space-url https://huggingface.co/spaces/hz6666/SenseVoiceSmall
