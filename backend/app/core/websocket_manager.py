@@ -50,42 +50,54 @@ class WebSocketManager:
         self.agent = await get_agent()
         self.streaming_handler = get_streaming_handler()
 
-        # Initialize SenseVoice model for ASR (non-blocking for Render deployment)
-        # Model will lazy-load on first use if not available
-        import os
-        model_path = "models/iic/SenseVoiceSmall"
+        # Initialize SenseVoice model for ASR (only if USE_LOCAL_ASR=true)
+        # On Render with USE_LOCAL_ASR=false, skip model loading entirely
+        from ..config import get_settings
+        settings = get_settings()
 
-        # Check if model exists before trying to load
-        if os.path.exists(model_path):
-            self.logger.info(f"🔄 Loading SenseVoice model from {model_path}...")
-            model_load_start = time.time()
-            model_loaded = await self.streaming_handler.load_sensevoice_model(model_path)
-            model_load_time = (time.time() - model_load_start) * 1000
-
-            # Log model loading info
-            if model_loaded:
-                self.logger.info("✅ SenseVoice model loaded successfully")
-                self.conversation_logger.log_model_info(
-                    "sensevoice",
-                    loaded=True,
-                    model_path=model_path,
-                    loading_time_ms=model_load_time
-                )
-            else:
-                self.logger.warning("⚠️ SenseVoice model failed to load - using fallback transcription")
-                self.conversation_logger.log_model_info(
-                    "sensevoice",
-                    loaded=False,
-                    error="Model failed to load"
-                )
-        else:
-            self.logger.warning(f"⚠️ SenseVoice model not found at {model_path} - will use fallback transcription")
-            self.logger.warning("   Run 'python scripts/download_sensevoice.py' to download the model")
+        if not settings.use_local_asr:
+            self.logger.info("⚡ Local ASR disabled (USE_LOCAL_ASR=false), using HF Space only")
             self.conversation_logger.log_model_info(
                 "sensevoice",
                 loaded=False,
-                error=f"Model not found at {model_path}"
+                error="Local ASR disabled, using HF Space API"
             )
+        else:
+            # Model will lazy-load on first use if available
+            import os
+            model_path = "models/iic/SenseVoiceSmall"
+
+            # Check if model exists before trying to load
+            if os.path.exists(model_path):
+                self.logger.info(f"🔄 Loading SenseVoice model from {model_path}...")
+                model_load_start = time.time()
+                model_loaded = await self.streaming_handler.load_sensevoice_model(model_path)
+                model_load_time = (time.time() - model_load_start) * 1000
+
+                # Log model loading info
+                if model_loaded:
+                    self.logger.info("✅ SenseVoice model loaded successfully")
+                    self.conversation_logger.log_model_info(
+                        "sensevoice",
+                        loaded=True,
+                        model_path=model_path,
+                        loading_time_ms=model_load_time
+                    )
+                else:
+                    self.logger.warning("⚠️ SenseVoice model failed to load - using fallback transcription")
+                    self.conversation_logger.log_model_info(
+                        "sensevoice",
+                        loaded=False,
+                        error="Model failed to load"
+                    )
+            else:
+                self.logger.warning(f"⚠️ SenseVoice model not found at {model_path} - will use HF Space only")
+                self.logger.warning("   Run 'python scripts/download_sensevoice.py' to download the model for local use")
+                self.conversation_logger.log_model_info(
+                    "sensevoice",
+                    loaded=False,
+                    error=f"Model not found at {model_path}"
+                )
 
         # Log agent info
         self.conversation_logger.log_model_info(

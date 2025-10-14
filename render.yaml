@@ -24,6 +24,8 @@ services:
         value: production
       - key: DEBUG
         value: false
+      - key: USE_LOCAL_ASR
+        value: false
       - key: HOST
         value: 0.0.0.0
       # PORT is automatically provided by Render
