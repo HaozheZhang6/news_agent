@@ -73,28 +73,15 @@ def transcribe_audio(gr_audio) -> str:
     - If a dict with {"name":"...","data":"<base64>"} is posted via /api/predict,
       handle that path too.
     """
-    model = _load_model()
+    try:
+        model = _load_model()
 
-    # Case 1: standard Gradio input: (sample_rate, np.ndarray)
-    if isinstance(gr_audio, tuple) and len(gr_audio) == 2:
-        sr, audio = gr_audio
-        if audio is None or len(audio) == 0:
-            return "No audio received"
-        # funasr expects file path or raw array; we'll save temp wav for simplicity
-        wav_path = "_tmp.wav"
-        sf.write(wav_path, audio, sr)
-        result = model.generate(input=wav_path)
-        text = result[0]["text"] if isinstance(result, list) else str(result)
-        try:
-            os.remove(wav_path)
-        except Exception:
-            pass
-        return text
-
-    # Case 2: API style: dict with base64
-    if isinstance(gr_audio, dict) and "data" in gr_audio:
-        try:
-            audio, sr = _decode_audio_b64(gr_audio["data"])
+        # Case 1: standard Gradio input: (sample_rate, np.ndarray)
+        if isinstance(gr_audio, tuple) and len(gr_audio) == 2:
+            sr, audio = gr_audio
+            if audio is None or len(audio) == 0:
+                return "No audio received"
+            # funasr expects file path or raw array; we'll save temp wav for simplicity
             wav_path = "_tmp.wav"
             sf.write(wav_path, audio, sr)
             result = model.generate(input=wav_path)
@@ -104,10 +91,26 @@ def transcribe_audio(gr_audio) -> str:
             except Exception:
                 pass
             return text
-        except Exception as e:
-            return f"Failed to decode/process audio: {e}"
 
-    return "Unsupported input format"
+        # Case 2: API style: dict with base64
+        if isinstance(gr_audio, dict) and "data" in gr_audio:
+            try:
+                audio, sr = _decode_audio_b64(gr_audio["data"])
+                wav_path = "_tmp.wav"
+                sf.write(wav_path, audio, sr)
+                result = model.generate(input=wav_path)
+                text = result[0]["text"] if isinstance(result, list) else str(result)
+                try:
+                    os.remove(wav_path)
+                except Exception:
+                    pass
+                return text
+            except Exception as e:
+                return f"Failed to decode/process audio: {e}"
+
+        return "Unsupported input format"
+    except Exception as e:
+        return f"Error during transcription: {str(e)}"
 
 
 with gr.Blocks() as demo:
