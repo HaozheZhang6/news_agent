@@ -19,13 +19,25 @@ An advanced voice-activated news recommendation agent with **real-time voice str
 ```bash
 git clone <repository_url>
 cd News_agent
+
+# Install production dependencies only (lightweight, HF Space ASR)
 uv sync --frozen
+
+# OR install with local ASR support (adds torch, funasr - ~2GB)
+uv sync --frozen --extra local-asr
+# Or use: make install-dev
 ```
 
-**2. Download SenseVoice Model (for local ASR):**
+**2. Download SenseVoice Model (optional, for local ASR):**
 ```bash
+# Only needed if you installed with --extra local-asr
 uv run python scripts/download_sensevoice.py
 ```
+
+**Note:**
+- **Production/Render**: Uses HuggingFace Space API only (no local model needed)
+- **Local development**: Can use local SenseVoice model for faster, offline transcription
+- Set `USE_LOCAL_ASR=true` for local model, `USE_LOCAL_ASR=false` for HF Space only
 
 **3. Configure Environment:**
 ```bash
