@@ -58,6 +58,9 @@ class Settings(BaseSettings):
     
     # Voice Services
     sensevoice_model_path: str = Field(default_factory=get_sensevoice_model_path, env="SENSEVOICE_MODEL_PATH")
+    use_local_asr: bool = Field(default=True, env="USE_LOCAL_ASR")  # False on Render (use HF Space only)
+    hf_token: Optional[str] = Field(default=None, env="HF_TOKEN")  # HuggingFace token for Space API
+    hf_space_name: str = Field(default="hz6666/SenseVoiceSmall", env="HF_SPACE_NAME")
     edge_tts_voice: str = Field(default="en-US-AriaNeural", env="EDGE_TTS_VOICE")
     edge_tts_rate: float = Field(default=1.0, env="EDGE_TTS_RATE")
     edge_tts_pitch: float = Field(default=1.0, env="EDGE_TTS_PITCH")

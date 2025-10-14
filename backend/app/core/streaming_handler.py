@@ -32,6 +32,11 @@ class StreamingVoiceHandler:
         self._model_loaded = False
         self.hf_space_asr = None
         self._hf_space_enabled = True  # Prefer HF Space by default
+
+        # Get configuration
+        from ..config import get_settings
+        self.settings = get_settings()
+        self._use_local_asr = self.settings.use_local_asr
     
     async def load_sensevoice_model(self, model_path: str = "models/SenseVoiceSmall"):
         """Load SenseVoice model for ASR (same as src implementation)."""
@@ -172,9 +177,19 @@ class StreamingVoiceHandler:
 
             except Exception as e:
                 print(f"⚠️ HF Space ASR failed: {e}")
+
+                # Only fallback if local ASR is enabled
+                if not self._use_local_asr:
+                    print(f"❌ Local ASR disabled (USE_LOCAL_ASR=false), no fallback available")
+                    raise RuntimeError("HF Space ASR failed and local ASR is disabled")
+
                 print(f"   Falling back to local model...")
 
-        # Fallback to local model
+        # Fallback to local model (only if enabled)
+        if not self._use_local_asr:
+            print(f"❌ Local ASR disabled (USE_LOCAL_ASR=false)")
+            raise RuntimeError("Speech recognition unavailable. HF Space failed and local ASR is disabled.")
+
         if not self._model_loaded or self.sensevoice_model is None:
             print(f"❌ No ASR available (HF Space failed, local model not loaded)")
             raise RuntimeError("Speech recognition unavailable. Please check configuration.")

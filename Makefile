@@ -10,7 +10,7 @@ PYTHON := $(shell command -v python3 || command -v python)
 endif
 endif
 
-.PHONY: help install install-dev install-test run-server src run-tests test-backend test-src test-integration test-coverage test-fast clean lint format check-deps setup-env db-apply schema-apply db-seed upstash-test
+.PHONY: help install install-dev install-test run-server run-server-hf src run-tests test-backend test-src test-integration test-coverage test-fast clean lint format check-deps setup-env db-apply schema-apply db-seed upstash-test stop-servers
 
 # Default target
 help:
@@ -24,7 +24,8 @@ help:
 	@echo "  setup-env      Setup environment files"
 	@echo ""
 	@echo "Development:"
-	@echo "  run-server     Start FastAPI development server"
+	@echo "  run-server     Start FastAPI development server (with local ASR model)"
+	@echo "  run-server-hf  Start FastAPI development server (HF Space ASR only, like Render)"
 	@echo "  run-frontend   Start frontend development server"
 	@echo "  src            Start voice agent (runs python -m src.main)"
 	@echo "  run-tests      Run all tests"
@@ -70,10 +71,18 @@ install-test:
 	@uv sync --extra test
 	@echo "✅ Test dependencies installed"
 
-# Run development server
+# Run development server with local ASR model
 run-server:
-	@echo "Starting FastAPI development server..."
-	@uv run uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+	@echo "Starting FastAPI development server (with local SenseVoice model)..."
+	@echo "Local ASR: ENABLED (USE_LOCAL_ASR=true)"
+	@USE_LOCAL_ASR=true uv run uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Run development server with HF Space ASR only (like Render)
+run-server-hf:
+	@echo "Starting FastAPI development server (HF Space ASR only, no local model)..."
+	@echo "Local ASR: DISABLED (USE_LOCAL_ASR=false)"
+	@echo "This simulates Render production environment"
+	@USE_LOCAL_ASR=false uv run uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 
 # Run frontend development server
 run-frontend:
