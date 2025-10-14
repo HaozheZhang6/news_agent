@@ -1,14 +1,41 @@
 # News Agent Test Suite
 
-Comprehensive testing infrastructure for the News Agent backend.
+Comprehensive testing infrastructure for the News Agent backend and frontend.
 
 ## Overview
 
 This test suite provides:
-1. **Voice Sample Configuration**: JSON-based test case definitions
-2. **Audio Generation**: Automated TTS + OPUS encoding pipeline
-3. **Integration Tests**: Full WebSocket + REST API validation
-4. **Multi-Turn Scenarios**: Complex conversation flow testing
+1. **Organized Test Structure**: Tests organized by environment (local/cloud/mutual) and type
+2. **Voice Sample Configuration**: JSON-based test case definitions
+3. **Audio Generation**: Automated TTS + WAV encoding pipeline
+4. **Integration Tests**: Full WebSocket + REST API validation
+5. **Frontend Tests**: React component and utility tests
+6. **Multi-Turn Scenarios**: Complex conversation flow testing
+
+## Test Organization
+
+```
+tests/
+├── backend/
+│   ├── local/           # Local development tests (requires backend server)
+│   │   ├── websocket/   # WebSocket integration tests
+│   │   ├── api/         # REST API endpoint tests
+│   │   └── core/        # Core business logic tests
+│   ├── cloud/           # Cloud-specific tests
+│   └── mutual/          # Tests that work in both environments
+├── frontend/
+│   ├── local/           # Frontend tests (requires dev server)
+│   │   ├── components/  # React component tests
+│   │   └── utils/       # Utility function tests
+│   ├── cloud/           # E2E cloud tests
+│   └── mutual/          # Environment-agnostic tests
+├── integration/         # Full system integration tests
+├── testing_utils/       # Shared testing utilities
+├── utils/              # Test data generation
+└── voice_samples/      # Voice test data
+```
+
+See [TEST_STRUCTURE.md](./TEST_STRUCTURE.md) for detailed organization guide.
 
 ## Quick Start
 
@@ -19,17 +46,49 @@ This test suite provides:
 make run-server
 ```
 
-### 2. Run Integration Tests
+### 2. Run Backend Tests
+
+```bash
+# All backend local tests
+uv run python -m pytest tests/backend/local/ -v
+
+# WebSocket tests
+uv run python -m pytest tests/backend/local/websocket/ -v
+
+# Specific WebSocket test
+uv run python -m pytest tests/backend/local/websocket/test_websocket_wav_audio.py -v
+
+# API tests
+uv run python -m pytest tests/backend/local/api/ -v
+
+# Core logic tests
+uv run python -m pytest tests/backend/local/core/ -v
+```
+
+### 3. Run Frontend Tests
+
+```bash
+# Open in browser (requires backend running)
+open tests/frontend/local/components/test_continuous_voice_interface.html
+open tests/frontend/local/utils/test_wav_encoder.html
+
+# Or using Python HTTP server
+cd tests/frontend/local/components
+python -m http.server 8080
+# Then open: http://localhost:8080/test_continuous_voice_interface.html
+```
+
+### 4. Run Integration Tests (Voice Samples)
 
 ```bash
 # Single sample test
-uv run python tests/test_backend_websocket_integration.py --sample-id news_nvda_latest
+uv run python tests/backend/local/websocket/test_websocket_integration.py --sample-id news_nvda_latest
 
 # Multi-turn scenario
-uv run python tests/test_backend_websocket_integration.py --scenario scenario_nvda_full_analysis
+uv run python tests/backend/local/websocket/test_websocket_integration.py --scenario scenario_nvda_full_analysis
 
-# Run all pytest tests
-uv run python -m pytest tests/test_backend_websocket_integration.py -v
+# Run all voice sample tests
+uv run python -m pytest tests/backend/local/websocket/test_websocket_integration.py -v
 ```
 
 ## Voice Samples Configuration
@@ -176,25 +235,58 @@ uv run python -m pytest tests/test_backend_websocket_integration.py --cov=backen
 
 ## Test Categories
 
-### Essential Tests (Keep)
+### Backend Tests
 
-These tests are actively maintained and used:
+#### Local WebSocket Tests (`tests/backend/local/websocket/`)
+- **`test_websocket_integration.py`** - Voice sample-based integration tests
+- **`test_websocket_wav_audio.py`** - Comprehensive WAV audio pipeline tests
+  - Connection and session creation
+  - WAV encoding/decoding
+  - Audio streaming
+  - Error handling
+  - Multiple chunks and reconnection
 
-1. **`test_backend_websocket_integration.py`** - Main integration test suite
-2. **`test_agent.py`** - Agent logic tests
-3. **`test_voice.py`** - Voice processing tests
-4. **`test_api_*.py`** - API endpoint tests
-5. **`test_sensevoice_integration.py`** - SenseVoice ASR tests
+#### Local API Tests (`tests/backend/local/api/`)
+- **`test_api_news.py`** - News endpoint tests
+- **`test_api_user.py`** - User management tests
+- **`test_api_voice.py`** - Voice API tests
+- **`test_api_conversation_log.py`** - Conversation logging tests
+- **`test_api_profile.py`** - User profile tests
+
+#### Local Core Tests (`tests/backend/local/core/`)
+- **`test_sensevoice_integration.py`** - SenseVoice ASR tests
+- **`test_voice.py`** - Voice processing tests
+- **`test_core_agent_wrapper.py`** - Agent wrapper tests
+- **`test_core_websocket_manager.py`** - WebSocket manager tests
+
+### Frontend Tests
+
+#### Component Tests (`tests/frontend/local/components/`)
+- **`test_continuous_voice_interface.html`** - Full voice interface test suite
+  - WebSocket connection
+  - Session creation
+  - WAV audio send/receive
+  - VAD simulation
+  - Reconnection handling
+
+#### Utils Tests (`tests/frontend/local/utils/`)
+- **`test_wav_encoder.html`** - WAV encoder utility tests
+  - Header format validation
+  - Sample rate encoding
+  - PCM conversion
+  - File size validation
+  - Clipping and edge cases
 
 ### Archived Tests
 
-Older tests moved to `tests_archive/` for reference:
+Older tests moved to `tests/archive/` for reference:
 
-- `test_audio_pipeline.py`
-- `test_voice_pipeline.py`
-- `test_compressed_audio.py`
-- `test_websocket_simple.py`
-- etc.
+- `test_agent.py` - Legacy agent tests
+- `test_interruption_scenarios.py` - Old interruption tests
+- `test_parallel_communication.py` - Old parallel tests
+- `test_preference_learning.py` - Old preference tests
+- `test_voice_interaction.py` - Old voice interaction tests
+- `old_root_tests/` - Root-level test files from before reorganization
 
 ## Validation Rules
 

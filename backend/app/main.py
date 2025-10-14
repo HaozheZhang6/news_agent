@@ -26,7 +26,7 @@ logger = get_logger()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan manager."""
+    """Application lifespan manager with non-blocking startup."""
     # Startup
     # Setup logging to file and console
     os.makedirs("logs", exist_ok=True)
@@ -42,32 +42,58 @@ async def lifespan(app: FastAPI):
 
     logger.info("🚀 Starting Voice News Agent Backend...")
     
-    try:
-        # Initialize database
-        db = await get_database()
-        await db.initialize()
-        logger.info("✅ Database initialized")
-        
-        # Initialize cache
-        cache = await get_cache()
-        await cache.initialize()
-        logger.info("✅ Cache initialized")
-        
-        # Initialize WebSocket manager
-        ws_manager = await get_websocket_manager()
-        logger.info("✅ WebSocket manager initialized")
-        
-        logger.info("🎉 Backend startup complete!")
-        
-    except Exception as e:
-        logging.getLogger("voice_news_agent").exception(f"❌ Startup failed: {e}")
-        raise
+    # Initialize services with timeouts and graceful degradation
+    async def initialize_services():
+        """Initialize services with timeouts."""
+        try:
+            # Check configuration first
+            if not settings.is_database_configured():
+                logger.warning("⚠️ Database not configured - skipping DB initialization")
+            else:
+                # Initialize database with timeout
+                try:
+                    db = await asyncio.wait_for(get_database(), timeout=10.0)
+                    await asyncio.wait_for(db.initialize(), timeout=10.0)
+                    logger.info("✅ Database initialized")
+                except asyncio.TimeoutError:
+                    logger.warning("⚠️ Database initialization timed out - continuing without DB")
+                except Exception as e:
+                    logger.warning(f"⚠️ Database initialization failed: {e} - continuing without DB")
+            
+            if not settings.is_cache_configured():
+                logger.warning("⚠️ Cache not configured - skipping cache initialization")
+            else:
+                # Initialize cache with timeout
+                try:
+                    cache = await asyncio.wait_for(get_cache(), timeout=10.0)
+                    await asyncio.wait_for(cache.initialize(), timeout=10.0)
+                    logger.info("✅ Cache initialized")
+                except asyncio.TimeoutError:
+                    logger.warning("⚠️ Cache initialization timed out - continuing without cache")
+                except Exception as e:
+                    logger.warning(f"⚠️ Cache initialization failed: {e} - continuing without cache")
+            
+            # Initialize WebSocket manager (this should be fast)
+            try:
+                ws_manager = await get_websocket_manager()
+                logger.info("✅ WebSocket manager initialized")
+            except Exception as e:
+                logger.warning(f"⚠️ WebSocket manager initialization failed: {e}")
+            
+            logger.info("🎉 Backend startup complete!")
+            
+        except Exception as e:
+            logger.error(f"❌ Critical startup error: {e}")
+            # Don't raise - let the app start anyway
+    
+    # Start initialization in background - don't block the app startup
+    asyncio.create_task(initialize_services())
     
     yield
     
     # Shutdown
-    logging.getLogger("voice_news_agent").info("🛑 Shutting down Voice News Agent Backend...")
-    logging.getLogger("voice_news_agent").info("✅ Backend shutdown complete!")
+    logger.info("🛑 Shutting down Voice News Agent Backend...")
+    logger.info("✅ Backend shutdown complete!")
 
 
 # Create FastAPI application
@@ -132,36 +158,61 @@ async def root():
     }
 
 
+@app.get("/live")
+async def live_check():
+    """Ultra-lightweight liveness check for Render port scanning."""
+    return {"status": "alive"}
+
+
 @app.get("/health")
 async def health_check():
-    """Health check endpoint."""
+    """Lightweight health check endpoint for Render port scanning."""
+    return {"status": "ok", "message": "Voice News Agent API is running"}
+
+
+@app.get("/health/detailed")
+async def detailed_health_check():
+    """Detailed health check endpoint with service status."""
     try:
-        # Check database
-        db = await get_database()
-        db_healthy = await db.health_check()
+        # Check database with timeout
+        db_healthy = False
+        try:
+            db = await get_database()
+            db_healthy = await asyncio.wait_for(db.health_check(), timeout=5.0)
+        except Exception as e:
+            logger.warning(f"Database health check failed: {e}")
         
-        # Check cache
-        cache = await get_cache()
-        cache_healthy = await cache.health_check()
+        # Check cache with timeout
+        cache_healthy = False
+        try:
+            cache = await get_cache()
+            cache_healthy = await asyncio.wait_for(cache.health_check(), timeout=5.0)
+        except Exception as e:
+            logger.warning(f"Cache health check failed: {e}")
         
         # Check WebSocket manager
-        ws_manager = await get_websocket_manager()
-        ws_healthy = ws_manager.get_active_connections_count() >= 0
+        ws_healthy = False
+        try:
+            ws_manager = await get_websocket_manager()
+            ws_healthy = ws_manager.get_active_connections_count() >= 0
+        except Exception as e:
+            logger.warning(f"WebSocket health check failed: {e}")
         
         overall_healthy = db_healthy and cache_healthy and ws_healthy
         
         return {
-            "status": "healthy" if overall_healthy else "unhealthy",
+            "status": "healthy" if overall_healthy else "degraded",
             "services": {
                 "database": "healthy" if db_healthy else "unhealthy",
                 "cache": "healthy" if cache_healthy else "unhealthy",
                 "websocket": "healthy" if ws_healthy else "unhealthy"
             },
-            "active_connections": ws_manager.get_active_connections_count(),
+            "active_connections": ws_manager.get_active_connections_count() if ws_healthy else 0,
             "timestamp": "2024-01-01T00:00:00Z"
         }
         
     except Exception as e:
+        logger.error(f"Detailed health check failed: {e}")
         return JSONResponse(
             status_code=500,
             content={

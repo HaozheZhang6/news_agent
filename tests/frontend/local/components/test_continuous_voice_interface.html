@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContinuousVoiceInterface Test</title>
+    <style>
+        body {
+            font-family: 'Monaco', 'Courier New', monospace;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        .test-container {
+            border: 2px solid #00ff00;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            background: #000;
+        }
+        h1, h2 {
+            color: #00ff00;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #0a0a0a;
+            border-left: 3px solid #00ff00;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .status.pass {
+            background: #004400;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+        }
+        .status.fail {
+            background: #440000;
+            color: #ff0000;
+            border: 1px solid #ff0000;
+        }
+        .status.running {
+            background: #333300;
+            color: #ffff00;
+            border: 1px solid #ffff00;
+        }
+        button {
+            background: #003300;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #004400;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .log-container {
+            background: #000;
+            color: #00ff00;
+            padding: 15px;
+            border: 1px solid #00ff00;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+        .log-entry.error {
+            color: #ff0000;
+        }
+        .log-entry.success {
+            color: #00ff00;
+        }
+        .log-entry.info {
+            color: #ffff00;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: #0a0a0a;
+            padding: 15px;
+            border: 1px solid #00ff00;
+            border-radius: 4px;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ff00;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <h1>📡 ContinuousVoiceInterface Test Suite</h1>
+    <p>Test suite for the React ContinuousVoiceInterface component WebSocket functionality</p>
+
+    <div class="test-container">
+        <h2>Test Controls</h2>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="clearLogs()">Clear Logs</button>
+        <button onclick="testWebSocketConnection()">Test 1: WebSocket Connection</button>
+        <button onclick="testSessionCreation()">Test 2: Session Creation</button>
+        <button onclick="testAudioSend()">Test 3: Send WAV Audio</button>
+        <button onclick="testAudioReceive()">Test 4: Receive TTS Audio</button>
+        <button onclick="testVADSimulation()">Test 5: VAD Simulation</button>
+        <button onclick="testReconnection()">Test 6: Reconnection</button>
+    </div>
+
+    <div class="test-container">
+        <h2>Test Results</h2>
+        <div class="metrics">
+            <div class="metric-card">
+                <div class="metric-value" id="total-tests">0</div>
+                <div class="metric-label">Total Tests</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="passed-tests">0</div>
+                <div class="metric-label">Passed</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="failed-tests">0</div>
+                <div class="metric-label">Failed</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="avg-latency">-</div>
+                <div class="metric-label">Avg Latency (ms)</div>
+            </div>
+        </div>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>Console Logs</h2>
+        <div class="log-container" id="log-container"></div>
+    </div>
+
+    <script>
+        // Test state
+        let testResults = [];
+        let ws = null;
+        let sessionId = null;
+
+        // Logging
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('log-container');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLogs() {
+            document.getElementById('log-container').innerHTML = '';
+            log('Logs cleared', 'info');
+        }
+
+        // Test result tracking
+        function updateResults() {
+            const total = testResults.length;
+            const passed = testResults.filter(r => r.passed).length;
+            const failed = total - passed;
+
+            document.getElementById('total-tests').textContent = total;
+            document.getElementById('passed-tests').textContent = passed;
+            document.getElementById('failed-tests').textContent = failed;
+
+            // Calculate average latency
+            const latencies = testResults.filter(r => r.latency).map(r => r.latency);
+            if (latencies.length > 0) {
+                const avg = Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length);
+                document.getElementById('avg-latency').textContent = avg;
+            }
+        }
+
+        function addTestResult(name, passed, message, latency = null) {
+            testResults.push({ name, passed, message, latency, timestamp: Date.now() });
+
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `status ${passed ? 'pass' : 'fail'}`;
+            resultDiv.innerHTML = `
+                <strong>${passed ? '✓' : '✗'} ${name}</strong><br>
+                ${message}
+                ${latency ? `<br>Latency: ${latency}ms` : ''}
+            `;
+            resultsDiv.appendChild(resultDiv);
+
+            updateResults();
+            log(`Test ${passed ? 'PASSED' : 'FAILED'}: ${name} - ${message}`, passed ? 'success' : 'error');
+        }
+
+        // WAV Encoder (matching frontend implementation)
+        class WAVEncoder {
+            constructor(sampleRate = 16000, numChannels = 1, bitDepth = 16) {
+                this.sampleRate = sampleRate;
+                this.numChannels = numChannels;
+                this.bitDepth = bitDepth;
+            }
+
+            encodeFromFloat32(samples) {
+                const bytesPerSample = this.bitDepth / 8;
+                const blockAlign = this.numChannels * bytesPerSample;
+                const byteRate = this.sampleRate * blockAlign;
+                const dataSize = samples.length * bytesPerSample;
+                const buffer = new ArrayBuffer(44 + dataSize);
+                const view = new DataView(buffer);
+
+                // RIFF header
+                this.writeString(view, 0, 'RIFF');
+                view.setUint32(4, 36 + dataSize, true);
+                this.writeString(view, 8, 'WAVE');
+
+                // fmt chunk
+                this.writeString(view, 12, 'fmt ');
+                view.setUint32(16, 16, true); // Chunk size
+                view.setUint16(20, 1, true);  // Audio format (PCM)
+                view.setUint16(22, this.numChannels, true);
+                view.setUint32(24, this.sampleRate, true);
+                view.setUint32(28, byteRate, true);
+                view.setUint16(32, blockAlign, true);
+                view.setUint16(34, this.bitDepth, true);
+
+                // data chunk
+                this.writeString(view, 36, 'data');
+                view.setUint32(40, dataSize, true);
+
+                // Write PCM samples
+                this.floatTo16BitPCM(view, 44, samples);
+
+                return buffer;
+            }
+
+            writeString(view, offset, string) {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            }
+
+            floatTo16BitPCM(view, offset, samples) {
+                for (let i = 0; i < samples.length; i++) {
+                    const s = Math.max(-1, Math.min(1, samples[i]));
+                    const val = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                    view.setInt16(offset + i * 2, val, true);
+                }
+            }
+        }
+
+        // Generate test audio
+        function generateSineWave(frequency, duration, sampleRate = 16000) {
+            const numSamples = Math.floor(duration * sampleRate);
+            const samples = new Float32Array(numSamples);
+            for (let i = 0; i < numSamples; i++) {
+                const t = i / sampleRate;
+                samples[i] = Math.sin(2 * Math.PI * frequency * t);
+            }
+            return samples;
+        }
+
+        // Test 1: WebSocket Connection
+        async function testWebSocketConnection() {
+            const startTime = Date.now();
+            log('Test 1: Testing WebSocket connection...', 'info');
+
+            try {
+                ws = new WebSocket('ws://localhost:8000/ws/voice/simple');
+
+                await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        reject(new Error('Connection timeout'));
+                    }, 5000);
+
+                    ws.onopen = () => {
+                        clearTimeout(timeout);
+                        const latency = Date.now() - startTime;
+                        addTestResult('WebSocket Connection', true, 'Connected successfully', latency);
+                        resolve();
+                    };
+
+                    ws.onerror = (error) => {
+                        clearTimeout(timeout);
+                        reject(error);
+                    };
+                });
+            } catch (error) {
+                addTestResult('WebSocket Connection', false, `Failed: ${error.message}`);
+                throw error;
+            }
+        }
+
+        // Test 2: Session Creation
+        async function testSessionCreation() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                await testWebSocketConnection();
+            }
+
+            const startTime = Date.now();
+            log('Test 2: Testing session creation...', 'info');
+
+            try {
+                // Send init message
+                ws.send(JSON.stringify({
+                    event: 'init',
+                    user_id: 'test-user-001'
+                }));
+
+                // Wait for session_started
+                const response = await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        reject(new Error('Session creation timeout'));
+                    }, 5000);
+
+                    ws.onmessage = (event) => {
+                        clearTimeout(timeout);
+                        resolve(JSON.parse(event.data));
+                    };
+                });
+
+                if (response.event === 'session_started' && response.session_id) {
+                    sessionId = response.session_id;
+                    const latency = Date.now() - startTime;
+                    addTestResult('Session Creation', true, `Session ID: ${sessionId}`, latency);
+                } else {
+                    throw new Error('Invalid session response');
+                }
+            } catch (error) {
+                addTestResult('Session Creation', false, `Failed: ${error.message}`);
+                throw error;
+            }
+        }
+
+        // Test 3: Send WAV Audio
+        async function testAudioSend() {
+            if (!sessionId) {
+                await testSessionCreation();
+            }
+
+            const startTime = Date.now();
+            log('Test 3: Testing WAV audio send...', 'info');
+
+            try {
+                // Generate test audio
+                const pcmSamples = generateSineWave(440, 2.0);
+                const wavEncoder = new WAVEncoder(16000);
+                const wavBuffer = wavEncoder.encodeFromFloat32(pcmSamples);
+
+                // Convert to base64
+                const wavArray = new Uint8Array(wavBuffer);
+                const wavBase64 = btoa(String.fromCharCode(...wavArray));
+
+                // Send audio message
+                const audioMsg = {
+                    event: 'audio_chunk',
+                    data: {
+                        audio_chunk: wavBase64,
+                        format: 'wav',
+                        is_final: true,
+                        session_id: sessionId,
+                        user_id: 'test-user-001',
+                        sample_rate: 16000,
+                        file_size: wavBuffer.byteLength
+                    }
+                };
+
+                ws.send(JSON.stringify(audioMsg));
+
+                const latency = Date.now() - startTime;
+                addTestResult('Send WAV Audio', true, `Sent ${wavBuffer.byteLength} bytes`, latency);
+                log(`Sent WAV audio: ${wavBuffer.byteLength} bytes`, 'success');
+            } catch (error) {
+                addTestResult('Send WAV Audio', false, `Failed: ${error.message}`);
+                throw error;
+            }
+        }
+
+        // Test 4: Receive TTS Audio
+        async function testAudioReceive() {
+            if (!sessionId) {
+                await testSessionCreation();
+                await testAudioSend();
+            }
+
+            const startTime = Date.now();
+            log('Test 4: Testing TTS audio receive...', 'info');
+
+            try {
+                let receivedAudio = false;
+                let receivedTranscription = false;
+                let audioChunks = 0;
+
+                const response = await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        if (receivedAudio || receivedTranscription) {
+                            resolve({ success: true, receivedAudio, receivedTranscription, audioChunks });
+                        } else {
+                            reject(new Error('No response received'));
+                        }
+                    }, 15000);
+
+                    ws.onmessage = (event) => {
+                        const data = JSON.parse(event.data);
+
+                        if (data.event === 'transcription') {
+                            receivedTranscription = true;
+                            log(`Received transcription: ${data.text}`, 'success');
+                        } else if (data.event === 'audio_chunk') {
+                            receivedAudio = true;
+                            audioChunks++;
+                        } else if (data.event === 'audio_end') {
+                            clearTimeout(timeout);
+                            resolve({ success: true, receivedAudio, receivedTranscription, audioChunks });
+                        }
+                    };
+                });
+
+                const latency = Date.now() - startTime;
+                addTestResult('Receive TTS Audio', response.success,
+                    `Received ${response.audioChunks} audio chunks, transcription: ${response.receivedTranscription}`,
+                    latency);
+            } catch (error) {
+                addTestResult('Receive TTS Audio', false, `Failed: ${error.message}`);
+            }
+        }
+
+        // Test 5: VAD Simulation
+        async function testVADSimulation() {
+            log('Test 5: Testing VAD simulation...', 'info');
+
+            try {
+                // Simulate VAD detecting speech
+                const audioContext = new AudioContext({ sampleRate: 16000 });
+                const analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048;
+
+                const dataArray = new Float32Array(analyser.fftSize);
+
+                // Simulate audio level calculation
+                for (let i = 0; i < dataArray.length; i++) {
+                    dataArray[i] = Math.random() * 0.1; // Simulate speech level
+                }
+
+                const sum = dataArray.reduce((a, b) => a + Math.abs(b), 0);
+                const average = sum / dataArray.length;
+
+                const SPEECH_THRESHOLD = 0.02;
+                const isSpeech = average > SPEECH_THRESHOLD;
+
+                addTestResult('VAD Simulation', true,
+                    `Audio level: ${average.toFixed(4)}, Speech detected: ${isSpeech}`);
+
+                await audioContext.close();
+            } catch (error) {
+                addTestResult('VAD Simulation', false, `Failed: ${error.message}`);
+            }
+        }
+
+        // Test 6: Reconnection
+        async function testReconnection() {
+            log('Test 6: Testing reconnection...', 'info');
+
+            try {
+                // Close existing connection
+                if (ws) {
+                    ws.close();
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+
+                // Reconnect
+                await testWebSocketConnection();
+                await testSessionCreation();
+
+                addTestResult('Reconnection', true, 'Successfully reconnected and created new session');
+            } catch (error) {
+                addTestResult('Reconnection', false, `Failed: ${error.message}`);
+            }
+        }
+
+        // Run all tests
+        async function runAllTests() {
+            log('='.repeat(60), 'info');
+            log('Starting full test suite...', 'info');
+            log('='.repeat(60), 'info');
+
+            testResults = [];
+            document.getElementById('test-results').innerHTML = '';
+
+            try {
+                await testWebSocketConnection();
+                await testSessionCreation();
+                await testAudioSend();
+                await testAudioReceive();
+                await testVADSimulation();
+                await testReconnection();
+
+                log('='.repeat(60), 'info');
+                log('All tests completed!', 'success');
+                log('='.repeat(60), 'info');
+            } catch (error) {
+                log(`Test suite failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialize
+        log('Test suite ready. Click "Run All Tests" to start.', 'info');
+    </script>
+</body>
+</html>

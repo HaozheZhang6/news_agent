@@ -122,6 +122,14 @@ class Settings(BaseSettings):
     render: bool = Field(default=False, env="RENDER")
     render_external_url: Optional[str] = Field(default=None, env="RENDER_EXTERNAL_URL")
     
+    def is_database_configured(self) -> bool:
+        """Check if database is properly configured."""
+        return bool(self.supabase_url and self.supabase_key)
+    
+    def is_cache_configured(self) -> bool:
+        """Check if cache is properly configured."""
+        return bool(self.upstash_redis_rest_url and self.upstash_redis_rest_token)
+    
     class Config:
         env_file = ["backend/.env", "env_files/supabase.env", "env_files/upstash.env", "env_files/render.env"]
         env_file_encoding = "utf-8"
