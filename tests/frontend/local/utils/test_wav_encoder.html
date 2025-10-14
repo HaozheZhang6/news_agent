@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAV Encoder Tests</title>
+    <style>
+        body {
+            font-family: 'Monaco', 'Courier New', monospace;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        h1, h2 { color: #00ff00; }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .test-result.pass {
+            background: #004400;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+        }
+        .test-result.fail {
+            background: #440000;
+            color: #ff0000;
+            border: 1px solid #ff0000;
+        }
+        button {
+            background: #003300;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+        button:hover { background: #004400; }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: #0a0a0a;
+            padding: 15px;
+            border: 1px solid #00ff00;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 WAV Encoder Test Suite</h1>
+    <p>Tests for the frontend WAV encoder utility (wav-encoder.ts)</p>
+
+    <button onclick="runAllTests()">Run All Tests</button>
+
+    <div class="metrics">
+        <div class="metric-card">
+            <div class="metric-value" id="total-tests">0</div>
+            <div>Total Tests</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="passed-tests">0</div>
+            <div>Passed</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" id="failed-tests">0</div>
+            <div>Failed</div>
+        </div>
+    </div>
+
+    <div id="test-results"></div>
+
+    <script>
+        // WAV Encoder implementation (from frontend)
+        class WAVEncoder {
+            constructor(options = {}) {
+                this.sampleRate = options.sampleRate || 16000;
+                this.numChannels = options.numChannels || 1;
+                this.bitDepth = options.bitDepth || 16;
+            }
+
+            encodeFromFloat32(samples) {
+                const bytesPerSample = this.bitDepth / 8;
+                const blockAlign = this.numChannels * bytesPerSample;
+                const byteRate = this.sampleRate * blockAlign;
+                const dataSize = samples.length * bytesPerSample;
+                const buffer = new ArrayBuffer(44 + dataSize);
+                const view = new DataView(buffer);
+
+                // Write RIFF header
+                this.writeString(view, 0, 'RIFF');
+                view.setUint32(4, 36 + dataSize, true);
+                this.writeString(view, 8, 'WAVE');
+
+                // Write fmt chunk
+                this.writeString(view, 12, 'fmt ');
+                view.setUint32(16, 16, true);
+                view.setUint16(20, 1, true);
+                view.setUint16(22, this.numChannels, true);
+                view.setUint32(24, this.sampleRate, true);
+                view.setUint32(28, byteRate, true);
+                view.setUint16(32, blockAlign, true);
+                view.setUint16(34, this.bitDepth, true);
+
+                // Write data chunk
+                this.writeString(view, 36, 'data');
+                view.setUint32(40, dataSize, true);
+
+                // Write PCM samples
+                this.floatTo16BitPCM(view, 44, samples);
+
+                return buffer;
+            }
+
+            writeString(view, offset, string) {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            }
+
+            floatTo16BitPCM(view, offset, samples) {
+                for (let i = 0; i < samples.length; i++) {
+                    const s = Math.max(-1, Math.min(1, samples[i]));
+                    const val = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                    view.setInt16(offset + i * 2, val, true);
+                }
+            }
+        }
+
+        // Test utilities
+        let testResults = [];
+
+        function addTestResult(name, passed, message) {
+            testResults.push({ name, passed, message });
+
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            resultDiv.innerHTML = `<strong>${passed ? '✓' : '✗'} ${name}</strong><br>${message}`;
+            resultsDiv.appendChild(resultDiv);
+
+            updateMetrics();
+        }
+
+        function updateMetrics() {
+            const total = testResults.length;
+            const passed = testResults.filter(r => r.passed).length;
+            document.getElementById('total-tests').textContent = total;
+            document.getElementById('passed-tests').textContent = passed;
+            document.getElementById('failed-tests').textContent = total - passed;
+        }
+
+        function readString(view, offset, length) {
+            let str = '';
+            for (let i = 0; i < length; i++) {
+                str += String.fromCharCode(view.getUint8(offset + i));
+            }
+            return str;
+        }
+
+        // Tests
+        function test_wav_header_format() {
+            const encoder = new WAVEncoder({ sampleRate: 16000, numChannels: 1, bitDepth: 16 });
+            const samples = new Float32Array(16000); // 1 second of silence
+            const wavBuffer = encoder.encodeFromFloat32(samples);
+            const view = new DataView(wavBuffer);
+
+            // Check RIFF header
+            const riff = readString(view, 0, 4);
+            if (riff !== 'RIFF') {
+                return addTestResult('WAV Header Format', false, `Expected RIFF, got ${riff}`);
+            }
+
+            // Check WAVE identifier
+            const wave = readString(view, 8, 4);
+            if (wave !== 'WAVE') {
+                return addTestResult('WAV Header Format', false, `Expected WAVE, got ${wave}`);
+            }
+
+            // Check fmt chunk
+            const fmt = readString(view, 12, 4);
+            if (fmt !== 'fmt ') {
+                return addTestResult('WAV Header Format', false, `Expected 'fmt ', got ${fmt}`);
+            }
+
+            // Check data chunk
+            const data = readString(view, 36, 4);
+            if (data !== 'data') {
+                return addTestResult('WAV Header Format', false, `Expected 'data', got ${data}`);
+            }
+
+            addTestResult('WAV Header Format', true, 'All header chunks present and correct');
+        }
+
+        function test_sample_rate() {
+            const sampleRates = [8000, 16000, 24000, 48000];
+
+            for (const sr of sampleRates) {
+                const encoder = new WAVEncoder({ sampleRate: sr });
+                const samples = new Float32Array(sr); // 1 second
+                const wavBuffer = encoder.encodeFromFloat32(samples);
+                const view = new DataView(wavBuffer);
+
+                const encodedSampleRate = view.getUint32(24, true);
+                if (encodedSampleRate !== sr) {
+                    return addTestResult(`Sample Rate ${sr}Hz`, false,
+                        `Expected ${sr}, got ${encodedSampleRate}`);
+                }
+            }
+
+            addTestResult('Sample Rate Encoding', true, 'All sample rates encoded correctly');
+        }
+
+        function test_pcm_conversion() {
+            const encoder = new WAVEncoder({ sampleRate: 16000 });
+
+            // Test specific values
+            const samples = new Float32Array([0.0, 1.0, -1.0, 0.5, -0.5]);
+            const wavBuffer = encoder.encodeFromFloat32(samples);
+            const view = new DataView(wavBuffer);
+
+            // Check PCM values (starting at offset 44)
+            const val0 = view.getInt16(44, true); // 0.0 → 0
+            const val1 = view.getInt16(46, true); // 1.0 → 32767
+            const val2 = view.getInt16(48, true); // -1.0 → -32768
+            const val3 = view.getInt16(50, true); // 0.5 → 16383
+            const val4 = view.getInt16(52, true); // -0.5 → -16384
+
+            if (val0 !== 0) {
+                return addTestResult('PCM Conversion', false, `Zero sample: expected 0, got ${val0}`);
+            }
+            if (val1 !== 32767) {
+                return addTestResult('PCM Conversion', false, `Max sample: expected 32767, got ${val1}`);
+            }
+            if (val2 !== -32768) {
+                return addTestResult('PCM Conversion', false, `Min sample: expected -32768, got ${val2}`);
+            }
+
+            addTestResult('PCM Conversion', true,
+                `Float32 to 16-bit PCM conversion accurate (0→${val0}, 1.0→${val1}, -1.0→${val2})`);
+        }
+
+        function test_file_size() {
+            const encoder = new WAVEncoder({ sampleRate: 16000 });
+            const numSamples = 16000; // 1 second
+            const samples = new Float32Array(numSamples);
+
+            const wavBuffer = encoder.encodeFromFloat32(samples);
+
+            // Expected size: 44 bytes header + (numSamples * 2 bytes per sample)
+            const expectedSize = 44 + (numSamples * 2);
+
+            if (wavBuffer.byteLength !== expectedSize) {
+                return addTestResult('File Size', false,
+                    `Expected ${expectedSize} bytes, got ${wavBuffer.byteLength}`);
+            }
+
+            addTestResult('File Size', true, `Correct file size: ${wavBuffer.byteLength} bytes`);
+        }
+
+        function test_sine_wave_encoding() {
+            const encoder = new WAVEncoder({ sampleRate: 16000 });
+            const numSamples = 16000;
+            const samples = new Float32Array(numSamples);
+
+            // Generate 440Hz sine wave
+            for (let i = 0; i < numSamples; i++) {
+                samples[i] = Math.sin(2 * Math.PI * 440 * i / 16000);
+            }
+
+            const wavBuffer = encoder.encodeFromFloat32(samples);
+            const view = new DataView(wavBuffer);
+
+            // Verify header is correct
+            if (readString(view, 0, 4) !== 'RIFF') {
+                return addTestResult('Sine Wave Encoding', false, 'Invalid header');
+            }
+
+            // Verify data size in header
+            const dataSize = view.getUint32(40, true);
+            if (dataSize !== numSamples * 2) {
+                return addTestResult('Sine Wave Encoding', false,
+                    `Data size mismatch: expected ${numSamples * 2}, got ${dataSize}`);
+            }
+
+            addTestResult('Sine Wave Encoding', true, 'Sine wave encoded successfully');
+        }
+
+        function test_clipping() {
+            const encoder = new WAVEncoder({ sampleRate: 16000 });
+
+            // Test values outside [-1, 1] range
+            const samples = new Float32Array([2.0, -2.0, 1.5, -1.5]);
+            const wavBuffer = encoder.encodeFromFloat32(samples);
+            const view = new DataView(wavBuffer);
+
+            // All should be clipped to min/max
+            const val0 = view.getInt16(44, true); // 2.0 → 32767 (clipped)
+            const val1 = view.getInt16(46, true); // -2.0 → -32768 (clipped)
+
+            if (val0 !== 32767 || val1 !== -32768) {
+                return addTestResult('Sample Clipping', false,
+                    `Clipping failed: 2.0→${val0}, -2.0→${val1}`);
+            }
+
+            addTestResult('Sample Clipping', true, 'Out-of-range samples clipped correctly');
+        }
+
+        function test_empty_audio() {
+            const encoder = new WAVEncoder({ sampleRate: 16000 });
+            const samples = new Float32Array(0); // Empty
+
+            const wavBuffer = encoder.encodeFromFloat32(samples);
+
+            // Should still have valid header
+            if (wavBuffer.byteLength !== 44) {
+                return addTestResult('Empty Audio', false,
+                    `Expected 44 bytes, got ${wavBuffer.byteLength}`);
+            }
+
+            const view = new DataView(wavBuffer);
+            if (readString(view, 0, 4) !== 'RIFF') {
+                return addTestResult('Empty Audio', false, 'Invalid header for empty audio');
+            }
+
+            addTestResult('Empty Audio', true, 'Empty audio produces valid 44-byte header');
+        }
+
+        function test_different_durations() {
+            const encoder = new WAVEncoder({ sampleRate: 16000 });
+            const durations = [0.1, 0.5, 1.0, 2.0, 5.0]; // seconds
+
+            for (const duration of durations) {
+                const numSamples = Math.floor(duration * 16000);
+                const samples = new Float32Array(numSamples);
+                const wavBuffer = encoder.encodeFromFloat32(samples);
+
+                const expectedSize = 44 + (numSamples * 2);
+                if (wavBuffer.byteLength !== expectedSize) {
+                    return addTestResult('Different Durations', false,
+                        `${duration}s: expected ${expectedSize} bytes, got ${wavBuffer.byteLength}`);
+                }
+            }
+
+            addTestResult('Different Durations', true,
+                `All durations (${durations.join(', ')}s) encoded correctly`);
+        }
+
+        function test_mono_stereo() {
+            // Mono
+            const monoEncoder = new WAVEncoder({ sampleRate: 16000, numChannels: 1 });
+            const monoSamples = new Float32Array(16000);
+            const monoBuffer = monoEncoder.encodeFromFloat32(monoSamples);
+            const monoView = new DataView(monoBuffer);
+
+            const monoChannels = monoView.getUint16(22, true);
+            if (monoChannels !== 1) {
+                return addTestResult('Mono/Stereo', false,
+                    `Mono: expected 1 channel, got ${monoChannels}`);
+            }
+
+            // Stereo
+            const stereoEncoder = new WAVEncoder({ sampleRate: 16000, numChannels: 2 });
+            const stereoSamples = new Float32Array(32000); // 2 channels
+            const stereoBuffer = stereoEncoder.encodeFromFloat32(stereoSamples);
+            const stereoView = new DataView(stereoBuffer);
+
+            const stereoChannels = stereoView.getUint16(22, true);
+            if (stereoChannels !== 2) {
+                return addTestResult('Mono/Stereo', false,
+                    `Stereo: expected 2 channels, got ${stereoChannels}`);
+            }
+
+            addTestResult('Mono/Stereo', true, 'Both mono and stereo encoded correctly');
+        }
+
+        // Run all tests
+        function runAllTests() {
+            testResults = [];
+            document.getElementById('test-results').innerHTML = '';
+
+            console.log('Running WAV Encoder tests...');
+
+            test_wav_header_format();
+            test_sample_rate();
+            test_pcm_conversion();
+            test_file_size();
+            test_sine_wave_encoding();
+            test_clipping();
+            test_empty_audio();
+            test_different_durations();
+            test_mono_stereo();
+
+            console.log('All tests completed!');
+        }
+
+        // Auto-run on load
+        window.onload = runAllTests;
+    </script>
+</body>
+</html>

@@ -16,7 +16,7 @@ services:
       uv run python scripts/download_sensevoice_deploy.py
     startCommand: |
       uv run uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT --workers 1
-    healthCheckPath: /health
+    healthCheckPath: /live
     autoDeploy: true
     envVars:
       - key: PYTHON_VERSION

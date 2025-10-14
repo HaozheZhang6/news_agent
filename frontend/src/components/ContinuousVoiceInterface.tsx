@@ -57,10 +57,11 @@ export function ContinuousVoiceInterface({
   const vadCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const shouldStartRecordingRef = useRef(false); // Flag to start recording after connection
   
-  // VAD Configuration (same as src.main: NO_SPEECH_THRESHOLD = 1.0 second)
-  const SILENCE_THRESHOLD_MS = 1000; // 1 second of silence triggers send
-  const VAD_CHECK_INTERVAL_MS = 100; // Check audio level every 100ms
-  const SPEECH_THRESHOLD = 0.02; // Audio level threshold to detect speech (increased to reduce sensitivity)
+  // VAD Configuration - Optimized for lower latency
+  const SILENCE_THRESHOLD_MS = 700; // 700ms of silence triggers send (reduced from 1000ms for faster response)
+  const VAD_CHECK_INTERVAL_MS = 250; // Check audio level every 250ms (4Hz)
+  const SPEECH_THRESHOLD = 0.02; // Audio level threshold to detect speech (0.02 = moderate sensitivity)
+  const MIN_RECORDING_DURATION_MS = 500; // Minimum recording duration before allowing send (prevents accidental sends)
 
   /**
    * WebSocket connection management
@@ -361,10 +362,13 @@ export function ContinuousVoiceInterface({
             console.log(`🤐 Silence: ${(silenceDuration / 1000).toFixed(1)}s, recorded: ${duration.toFixed(2)}s`);
           }
 
-          // If silence exceeds threshold and we have audio recorded
-          if (silenceDuration >= SILENCE_THRESHOLD_MS && pcmRecorderRef.current && pcmRecorderRef.current.getDuration() > 0) {
+          // If silence exceeds threshold and we have enough audio recorded
+          if (silenceDuration >= SILENCE_THRESHOLD_MS &&
+              pcmRecorderRef.current &&
+              pcmRecorderRef.current.getDuration() >= (MIN_RECORDING_DURATION_MS / 1000)) {
 
-            console.log(`📤 Silence threshold reached (${silenceDuration}ms), recorded ${pcmRecorderRef.current.getDuration().toFixed(2)}s audio`);
+            const duration = pcmRecorderRef.current.getDuration();
+            console.log(`📤 Silence threshold reached (${silenceDuration}ms), recorded ${duration.toFixed(2)}s audio`);
 
             // Send immediately when silence threshold is reached
             sendAudioToBackend();
