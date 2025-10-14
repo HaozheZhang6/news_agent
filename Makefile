@@ -18,8 +18,8 @@ help:
 	@echo ""
 	@echo "Setup & Installation:"
 	@echo "  init           Initialize uv project (run once)"
-	@echo "  install        Install production dependencies with uv"
-	@echo "  install-dev    Install development dependencies with uv"
+	@echo "  install        Install production dependencies (lightweight, for Render)"
+	@echo "  install-dev    Install dev dependencies + local ASR (torch, funasr)"
 	@echo "  install-test   Install test dependencies with uv"
 	@echo "  setup-env      Setup environment files"
 	@echo ""
@@ -63,8 +63,8 @@ install:
 
 install-dev:
 	@echo "Installing development dependencies with uv..."
-	@uv sync
-	@echo "✅ Development dependencies installed"
+	@uv sync --extra local-asr
+	@echo "✅ Development dependencies installed (including local ASR)"
 
 install-test:
 	@echo "Installing test dependencies with uv..."
