@@ -7,6 +7,16 @@
         "mcp"
       ]
     },
+    "vercel": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-vercel"
+      ],
+      "env": {
+        "VERCEL_API_TOKEN": "${VERCEL_API_TOKEN}"
+      }
+    },
     "supabase": {
       "command": "npx",
       "args": [
