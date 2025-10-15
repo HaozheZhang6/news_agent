@@ -192,10 +192,20 @@ uv run python -m src.main
 
 ### Frontend Development
 
+**Local Backend (Development):**
 ```bash
+make run-frontend
+# OR manually:
 cd frontend
-npm install
-npm run dev
+VITE_API_URL=http://localhost:8000 npm run dev
+```
+
+**Remote Render Backend (Testing Production):**
+```bash
+make run-frontend-remote
+# OR manually:
+cd frontend
+VITE_API_URL=https://voice-news-agent-api.onrender.com npm run dev
 ```
 
 Access frontend at: http://localhost:3000
@@ -409,6 +419,7 @@ make run-server-hf
 
 ### Environment Variables
 
+**Backend Environment Variables:**
 Create `env_files/.env` with the following:
 
 ```bash
@@ -440,6 +451,24 @@ NEWS_API_KEY=your_newsapi_key             # Alternative news source
 FINNHUB_API_KEY=your_finnhub_key          # Financial data
 ```
 
+**Frontend Environment Variables:**
+The frontend uses Vite environment variables. Set these when running the frontend:
+
+```bash
+# For local backend development
+VITE_API_URL=http://localhost:8000
+
+# For remote Render backend testing
+VITE_API_URL=https://voice-news-agent-api.onrender.com
+
+# Demo user ID (optional, defaults to demo user)
+VITE_DEMO_USER_ID=03f6b167-0c4d-4983-a380-54b8eb42f830
+```
+
+**Makefile Commands Handle Environment Variables:**
+- `make run-frontend` - Automatically sets `VITE_API_URL=http://localhost:8000`
+- `make run-frontend-remote` - Automatically sets `VITE_API_URL=https://voice-news-agent-api.onrender.com`
+
 ### ASR Mode Selection
 
 **Local ASR (Development):**
@@ -468,6 +497,8 @@ make install        # Install production dependencies
 make install-dev    # Install dev dependencies + local ASR
 make run-server     # Start server with local ASR
 make run-server-hf  # Start server with HF Space ASR (production mode)
+make run-frontend   # Start frontend with local backend
+make run-frontend-remote # Start frontend with remote Render backend
 make src            # Run standalone voice agent
 make test-backend   # Run backend tests
 make test-coverage  # Run tests with coverage report

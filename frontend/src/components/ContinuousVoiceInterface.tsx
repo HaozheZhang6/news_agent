@@ -65,7 +65,7 @@ export function ContinuousVoiceInterface({
 
   /**
    * WebSocket connection management
-   * Uses correct URL format: ws://localhost:8000/ws/voice?user_id={userId}
+   * Uses environment variable for API base URL
    */
   const connectWebSocket = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -73,7 +73,10 @@ export function ContinuousVoiceInterface({
     }
 
     setVoiceState("connecting");
-    const wsUrl = `ws://localhost:8000/ws/voice?user_id=${userId}`;
+    const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const wsProtocol = apiBaseUrl.startsWith('https') ? 'wss' : 'ws';
+    const wsHost = apiBaseUrl.replace(/^https?:\/\//, '');
+    const wsUrl = `${wsProtocol}://${wsHost}/ws/voice?user_id=${userId}`;
     logger.wsConnect(wsUrl);
 
     try {
