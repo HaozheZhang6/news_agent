@@ -80,9 +80,23 @@ class VoiceSettings(BaseModel):
     auto_play: bool = Field(default=True, description="Auto-play responses")
     noise_reduction: bool = Field(default=True, description="Noise reduction")
     echo_cancellation: bool = Field(default=True, description="Echo cancellation")
+
+    # VAD Configuration
     voice_activity_detection: bool = Field(default=True, description="Voice activity detection")
-    vad_threshold: float = Field(default=0.5, description="VAD threshold")
-    silence_timeout_ms: int = Field(default=2000, description="Silence timeout")
+    vad_threshold: float = Field(default=0.02, ge=0.01, le=0.1, description="VAD speech threshold (0.01-0.1)")
+    silence_timeout_ms: int = Field(default=700, ge=300, le=2000, description="Silence timeout (300-2000ms)")
+    min_recording_duration_ms: int = Field(default=500, ge=300, le=2000, description="Minimum recording duration (300-2000ms)")
+    vad_check_interval_ms: int = Field(default=250, ge=100, le=500, description="VAD check interval (100-500ms)")
+
+    # Backend VAD Validation
+    backend_vad_enabled: bool = Field(default=True, description="Enable backend WebRTC VAD validation")
+    backend_vad_mode: int = Field(default=3, ge=0, le=3, description="WebRTC VAD aggressiveness (0-3)")
+    backend_energy_threshold: float = Field(default=500.0, description="Backend energy threshold for pre-filtering")
+
+    # Audio Compression
+    use_compression: bool = Field(default=False, description="Enable Opus compression")
+    compression_codec: str = Field(default="opus", description="Compression codec (opus, webm)")
+    compression_bitrate: int = Field(default=64000, description="Compression bitrate in bps")
 
 
 class VoiceCommandRequest(BaseModel):
