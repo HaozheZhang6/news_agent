@@ -21,6 +21,12 @@ try:
 except ImportError:
     HF_SPACE_AVAILABLE = False
 
+try:
+    from .audio_validator import get_audio_validator
+    AUDIO_VALIDATOR_AVAILABLE = True
+except ImportError:
+    AUDIO_VALIDATOR_AVAILABLE = False
+
 
 class StreamingVoiceHandler:
     """Handle streaming voice input/output."""
@@ -32,11 +38,20 @@ class StreamingVoiceHandler:
         self._model_loaded = False
         self.hf_space_asr = None
         self._hf_space_enabled = True  # Prefer HF Space by default
+        self.audio_validator = None
 
         # Get configuration
         from ..config import get_settings
         self.settings = get_settings()
         self._use_local_asr = self.settings.use_local_asr
+
+        # Initialize audio validator
+        if AUDIO_VALIDATOR_AVAILABLE:
+            self.audio_validator = get_audio_validator(
+                energy_threshold=500.0,
+                vad_mode=3,
+                enable_webrtc_vad=True
+            )
     
     async def load_sensevoice_model(self, model_path: str = "models/SenseVoiceSmall"):
         """Load SenseVoice model for ASR (same as src implementation)."""
@@ -139,7 +154,8 @@ class StreamingVoiceHandler:
         self,
         audio_data: bytes,
         format: str = "wav",
-        sample_rate: int = 16000
+        sample_rate: int = 16000,
+        validate_audio: bool = True
     ) -> str:
         """
         Transcribe audio chunk with support for compressed formats.
@@ -150,10 +166,26 @@ class StreamingVoiceHandler:
             audio_data: Raw audio bytes (may be compressed)
             format: Audio format (wav, opus, webm, mp3, etc.)
             sample_rate: Sample rate in Hz
+            validate_audio: Enable audio validation (energy + WebRTC VAD)
 
         Returns:
             Transcribed text
         """
+        # Validate audio quality before processing
+        if validate_audio and self.audio_validator and format in ["wav", "pcm"]:
+            is_valid, validation_info = self.audio_validator.validate_audio(
+                audio_data,
+                sample_rate=sample_rate,
+                format=format
+            )
+
+            if not is_valid:
+                reason = validation_info.get("reason", "unknown")
+                energy = validation_info.get("energy", 0)
+                print(f"⚠️ Audio validation failed: {reason} (energy={energy:.1f})")
+                raise RuntimeError(f"Audio validation failed: {reason}")
+
+
         # Try HuggingFace Space first (preferred for production)
         if self._hf_space_enabled and HF_SPACE_AVAILABLE:
             try:

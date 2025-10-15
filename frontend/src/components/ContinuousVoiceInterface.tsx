@@ -6,6 +6,8 @@ import { Card } from "./ui/card";
 import { logger } from "../utils/logger";
 import { useAudioEncoder } from "../utils/audio-encoder";
 import { PCMAudioRecorder } from "../utils/wav-encoder";
+import { OpusAudioRecorder, OpusUtils } from "../utils/opus-encoder";
+import { useVoiceSettings } from "../hooks/useVoiceSettings";
 
 type VoiceState = "idle" | "listening" | "speaking" | "connecting";
 
@@ -25,22 +27,25 @@ interface ContinuousVoiceInterfaceProps {
  * 3. Real-time interruption: Stops agent audio when user starts talking
  * 4. Continuous listening: Always listening when active
  */
-export function ContinuousVoiceInterface({ 
-  userId, 
-  onTranscription, 
-  onResponse, 
-  onError 
+export function ContinuousVoiceInterface({
+  userId,
+  onTranscription,
+  onResponse,
+  onError
 }: ContinuousVoiceInterfaceProps) {
+  // Voice settings hook (with configurable VAD parameters)
+  const { settings } = useVoiceSettings();
+
   // Audio encoder hook
   const audioEncoder = useAudioEncoder(userId);
-  
+
   // State management
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
   const [isConnected, setIsConnected] = useState(false);
   const [currentTranscription, setCurrentTranscription] = useState("");
   const [currentResponse, setCurrentResponse] = useState("");
   const [isMuted, setIsMuted] = useState(false);
-  
+
   // Refs for WebSocket and audio management
   const wsRef = useRef<WebSocket | null>(null);
   const sessionIdRef = useRef<string | null>(null);
@@ -48,20 +53,24 @@ export function ContinuousVoiceInterface({
   const audioQueueRef = useRef<ArrayBuffer[]>([]);
   const currentAudioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const isPlayingAudioRef = useRef(false);
-  
+
   // Refs for recording and VAD
   const pcmRecorderRef = useRef<PCMAudioRecorder | null>(null);
+  const opusRecorderRef = useRef<OpusAudioRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const isRecordingRef = useRef(false);
   const lastSpeechTimeRef = useRef<number>(0);
   const vadCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const shouldStartRecordingRef = useRef(false); // Flag to start recording after connection
-  
-  // VAD Configuration - Optimized for lower latency
-  const SILENCE_THRESHOLD_MS = 700; // 700ms of silence triggers send (reduced from 1000ms for faster response)
-  const VAD_CHECK_INTERVAL_MS = 250; // Check audio level every 250ms (4Hz)
-  const SPEECH_THRESHOLD = 0.02; // Audio level threshold to detect speech (0.02 = moderate sensitivity)
-  const MIN_RECORDING_DURATION_MS = 500; // Minimum recording duration before allowing send (prevents accidental sends)
+
+  // Audio format selection based on settings
+  const useOpus = settings.use_compression && OpusUtils.isSupported();
+
+  // VAD Configuration - Now configurable via settings
+  const SILENCE_THRESHOLD_MS = settings.silence_timeout_ms;
+  const VAD_CHECK_INTERVAL_MS = settings.vad_check_interval_ms;
+  const SPEECH_THRESHOLD = settings.vad_threshold;
+  const MIN_RECORDING_DURATION_MS = settings.min_recording_duration_ms;
 
   /**
    * WebSocket connection management
@@ -314,10 +323,20 @@ export function ContinuousVoiceInterface({
       
       mediaStreamRef.current = stream;
 
-      // Create PCM recorder for WAV format
-      const pcmRecorder = new PCMAudioRecorder(16000); // 16kHz sample rate
-      await pcmRecorder.start(stream);
-      pcmRecorderRef.current = pcmRecorder;
+      // Create recorder based on compression settings
+      if (useOpus) {
+        // Use Opus compression
+        const opusRecorder = new OpusAudioRecorder(16000, settings.compression_bitrate);
+        await opusRecorder.start(stream);
+        opusRecorderRef.current = opusRecorder;
+        console.log(`🎤 Opus recording started (compressed, ${settings.compression_bitrate}bps)`);
+      } else {
+        // Use WAV (uncompressed)
+        const pcmRecorder = new PCMAudioRecorder(16000);
+        await pcmRecorder.start(stream);
+        pcmRecorderRef.current = pcmRecorder;
+        console.log("🎤 PCM recording started (WAV, uncompressed)");
+      }
 
       // Set up audio analyzer for VAD
       const audioContext = new AudioContext({ sampleRate: 16000 });
@@ -366,11 +385,12 @@ export function ContinuousVoiceInterface({
           }
 
           // If silence exceeds threshold and we have enough audio recorded
+          const recorder = useOpus ? opusRecorderRef.current : pcmRecorderRef.current;
           if (silenceDuration >= SILENCE_THRESHOLD_MS &&
-              pcmRecorderRef.current &&
-              pcmRecorderRef.current.getDuration() >= (MIN_RECORDING_DURATION_MS / 1000)) {
+              recorder &&
+              recorder.getDuration() >= (MIN_RECORDING_DURATION_MS / 1000)) {
 
-            const duration = pcmRecorderRef.current.getDuration();
+            const duration = recorder.getDuration();
             console.log(`📤 Silence threshold reached (${silenceDuration}ms), recorded ${duration.toFixed(2)}s audio`);
 
             // Send immediately when silence threshold is reached
@@ -397,10 +417,14 @@ export function ContinuousVoiceInterface({
       return;
     }
 
-    // Stop PCM recorder (this also stops and encodes the audio)
+    // Stop recorder (PCM or Opus)
     if (pcmRecorderRef.current) {
       pcmRecorderRef.current.stop();
       pcmRecorderRef.current = null;
+    }
+    if (opusRecorderRef.current) {
+      opusRecorderRef.current.stop();
+      opusRecorderRef.current = null;
     }
 
     if (mediaStreamRef.current) {
@@ -414,54 +438,93 @@ export function ContinuousVoiceInterface({
     }
 
     isRecordingRef.current = false;
-    console.log("🔇 PCM recording stopped");
-  }, []);
+    console.log(`🔇 Recording stopped (${useOpus ? 'Opus' : 'WAV'})`);
+  }, [useOpus]);
 
   /**
    * Send recorded audio to backend
-   * Called after detecting 1 second of silence (same as src.main)
+   * Supports both WAV and Opus formats based on settings
    */
   const sendAudioToBackend = useCallback(async () => {
-    if (!pcmRecorderRef.current || !sessionIdRef.current) {
+    if (!sessionIdRef.current) {
       return;
     }
 
     logger.vadSendTriggered();
 
     try {
-      // Stop recording and get WAV data
-      const wavData = pcmRecorderRef.current.stop();
-      if (!wavData) {
-        console.warn("⚠️ No audio data to send");
+      let encodedMessage;
+      let audioSize = 0;
+
+      if (useOpus && opusRecorderRef.current) {
+        // Opus compression enabled
+        const opusBlob = opusRecorderRef.current.stop();
+        if (!opusBlob) {
+          console.warn("⚠️ No Opus audio data to send");
+          return;
+        }
+
+        audioSize = opusBlob.size;
+
+        // Recreate Opus recorder for next utterance
+        if (mediaStreamRef.current) {
+          const newRecorder = new OpusAudioRecorder(16000, settings.compression_bitrate);
+          await newRecorder.start(mediaStreamRef.current);
+          opusRecorderRef.current = newRecorder;
+        }
+
+        // Encode Opus blob to base64 message
+        encodedMessage = await audioEncoder.encodeBlob(opusBlob, {
+          format: 'opus',
+          sampleRate: 16000,
+          isFinal: true,
+          sessionId: sessionIdRef.current,
+          userId: userId,
+          compress: false, // Already compressed
+        });
+
+        console.log(`📤 Sent Opus audio: ${audioSize} bytes (compressed)`);
+      } else if (pcmRecorderRef.current) {
+        // WAV format (uncompressed)
+        const wavData = pcmRecorderRef.current.stop();
+        if (!wavData) {
+          console.warn("⚠️ No WAV audio data to send");
+          return;
+        }
+
+        audioSize = wavData.byteLength;
+
+        // Recreate PCM recorder for next utterance
+        if (mediaStreamRef.current) {
+          const newRecorder = new PCMAudioRecorder(16000);
+          await newRecorder.start(mediaStreamRef.current);
+          pcmRecorderRef.current = newRecorder;
+        }
+
+        // Encode WAV to base64 message
+        encodedMessage = audioEncoder.encodeWAV(wavData, {
+          sampleRate: 16000,
+          isFinal: true,
+          sessionId: sessionIdRef.current,
+          userId: userId
+        });
+
+        console.log(`📤 Sent WAV audio: ${audioSize} bytes (uncompressed)`);
+      } else {
+        console.warn("⚠️ No recorder available");
         return;
       }
 
-      // Recreate PCM recorder for next utterance
-      if (mediaStreamRef.current) {
-        const newRecorder = new PCMAudioRecorder(16000);
-        await newRecorder.start(mediaStreamRef.current);
-        pcmRecorderRef.current = newRecorder;
-      }
-
-      // Encode WAV to base64 message
-      const encodedMessage = audioEncoder.encodeWAV(wavData, {
-        sampleRate: 16000,
-        isFinal: true,
-        sessionId: sessionIdRef.current,
-        userId: userId
-      });
-
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify(encodedMessage));
-        logger.audioChunkSent(wavData.byteLength, sessionIdRef.current);
+        logger.audioChunkSent(audioSize, sessionIdRef.current);
         logger.wsMessageSent("audio_chunk", sessionIdRef.current);
-        console.log(`📤 Sent WAV audio: ${wavData.byteLength} bytes`);
       }
     } catch (error) {
       console.error("❌ Error encoding audio:", error);
       onError?.("Failed to encode audio for transmission");
     }
-  }, [audioEncoder, userId, onError]);
+  }, [audioEncoder, userId, onError, useOpus, settings.compression_bitrate]);
 
   /**
    * Start voice interaction

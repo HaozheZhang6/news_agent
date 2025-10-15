@@ -7,14 +7,13 @@ authors = [
 ]
 readme = "README.md"
 license = {text = "MIT"}
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 keywords = ["voice", "news", "ai", "agent", "real-time"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -23,47 +22,47 @@ classifiers = [
 
 dependencies = [
     # FastAPI and web framework
-    "fastapi>=0.104.1",
-    "uvicorn[standard]>=0.24.0",
-    "websockets>=12.0",
-    "python-multipart>=0.0.6",
+    "fastapi==0.118.2",
+    "uvicorn[standard]==0.37.0",
+    "websockets==15.0.1",
+    "python-multipart==0.0.20",
     # Authentication and security
-    "python-jose[cryptography]>=3.3.0",
-    "passlib[bcrypt]>=1.7.4",
+    "python-jose[cryptography]==3.5.0",
+    "passlib[bcrypt]==1.7.4",
     # Configuration and environment
-    "python-dotenv>=1.0.0",
-    "pydantic-settings>=2.1.0",
+    "python-dotenv==1.1.1",
+    "pydantic-settings==2.11.0",
     # Database and ORM
-    "supabase>=2.22.0",
-    "asyncpg>=0.29.0",
-    "sqlalchemy>=2.0.23",
-    "alembic>=1.13.0",
+    "supabase==2.22.0",
+    "asyncpg==0.30.0",
+    "sqlalchemy==2.0.43",
+    "alembic==1.16.5",
     # Cache
-    "redis>=5.0.1",
-    "upstash-redis>=1.4.0",
+    "redis==6.4.0",
+    "upstash-redis==1.4.0",
     # AI and LLM
-    "langchain>=0.1.0",
-    "langchain-openai>=0.0.5",
-    "openai>=1.3.0",
+    "langchain==0.3.27",
+    "langchain-openai==0.3.35",
+    "openai==2.2.0",
     # Financial data
-    "yfinance>=0.2.28",
-    "alpha-vantage>=2.3.1",
+    "yfinance==0.2.66",
+    "alpha-vantage==3.0.0",
     # Voice and audio (lightweight, production-ready)
-    "edge-tts>=6.1.9",
-    "webrtcvad>=2.0.10",
-    "pydub>=0.25.1",
-    "gradio-client>=1.3.0",  # For HuggingFace Space API
+    "edge-tts==7.2.3",
+    "webrtcvad==2.0.10",
+    "pydub==0.25.1",
+    "gradio-client==1.13.3",  # For HuggingFace Space API
     # Language detection
-    "langid>=1.1.6",
-    "langdetect>=1.0.9",
+    "langid==1.1.6",
+    "langdetect==1.0.9",
     # HTTP and API
-    "httpx>=0.26.0,<0.29.0",
-    "aiofiles>=23.2.1",
-    "pydantic>=2.5.0",
+    "httpx==0.28.1",
+    "aiofiles==24.1.0",
+    "pydantic==2.12.0",
     # Utilities
-    "python-dateutil>=2.8.2",
-    "pytz>=2023.3",
-    "typing-extensions>=4.8.0",
+    "python-dateutil==2.9.0.post0",
+    "pytz==2025.2",
+    "typing-extensions==4.15.0",
 ]
 
 [project.optional-dependencies]
@@ -125,7 +124,7 @@ packages = ["backend", "src"]
 
 [tool.black]
 line-length = 100
-target-version = ['py39', 'py310', 'py311', 'py312', 'py313']
+target-version = ['py310', 'py311', 'py312', 'py313']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -154,7 +153,7 @@ use_parentheses = true
 ensure_newline_before_comments = true
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -219,7 +218,7 @@ exclude_lines = [
 ]
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 line-length = 100
 select = [
     "E",  # pycodestyle errors
