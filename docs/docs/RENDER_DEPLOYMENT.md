@@ -262,21 +262,12 @@ Timed out
 Port scan timeout reached, no open ports detected
 ```
 
-**Cause:** Installing heavy dependencies (torch, funasr)
+**Cause:** Installing heavy dependencies (torch, funasr) or lockfile includes extras
 
-**Solution:**
-```bash
-# Verify pyproject.toml has heavy deps in optional group
-[project.optional-dependencies]
-local-asr = [
-    "funasr>=1.0.0",
-    "torch>=2.8.0",
-    ...
-]
-
-# Verify render.yaml uses: uv sync --frozen
-# (NOT: uv sync --extra local-asr)
-```
+**Solution (pick one):**
+- Keep heavy deps in optional group and ensure `uv sync --frozen` without extras.
+- Use a minimal `requirements-render.txt` for Render builds.
+- Maintain a production `uv-prod.lock` without extras and use it on Render.
 
 #### Import Errors
 
