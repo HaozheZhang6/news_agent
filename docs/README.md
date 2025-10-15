@@ -1,403 +1,685 @@
-# Documentation Index
-
-**Complete documentation for Voice News Agent development, deployment, and maintenance.**
-
-Last Updated: 2025-10-14
-Version: Backend v0.2.1
-
----
-
-## Quick Navigation
-
-| Category | Document | Description |
-|----------|----------|-------------|
-| 🚀 **Setup** | [LOCAL_SETUP.md](LOCAL_SETUP.md) | Complete local development setup guide |
-| ☁️ **Deploy** | [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md) | Render.com cloud deployment guide |
-| 🧪 **Testing** | [TESTING.md](TESTING.md) | Testing strategy and WebSocket tests |
-| 🏗️ **Architecture** | [../reference/SYSTEM_DESIGN_CURRENT.md](../reference/SYSTEM_DESIGN_CURRENT.md) | System architecture and design |
-
----
-
-## Documentation Structure
-
-```
-docs/
-├── README.md                  # This file - documentation index
-├── LOCAL_SETUP.md            # ⭐ Local development setup
-├── RENDER_DEPLOYMENT.md      # ⭐ Cloud deployment guide
-└── TESTING.md                # Testing guide and WebSocket tests
-
-reference/                     # Technical reference docs
-├── SYSTEM_DESIGN_CURRENT.md # Complete architecture
-├── IMPLEMENTATION_SUMMARY.md # Feature implementation details
-├── WAV_IMPLEMENTATION_COMPLETE.md
-├── WEBSOCKET_FIXES.md
-├── VAD_FIXES.md
-└── ... (20+ technical docs)
-
-tests/
-├── README.md                 # Test suite overview
-├── TEST_STRUCTURE.md         # Test organization
-└── testing_utils/
-    └── AUDIO_TESTING_GUIDE.md
-
-database/
-└── README.md                 # Database schema docs
-
-backend/
-└── README.md                 # Backend API overview
-
-frontend/
-└── README.md                 # Frontend setup and architecture
-```
-
----
-
-## Getting Started
-
-### 1. New Developers
-
-**Start here in order:**
-
-1. **Overview** (5 min)
-   - Read: [../README.md](../README.md) - Project overview
-   - Goal: Understand what the system does
-
-2. **Local Setup** (15 min)
-   - Read: [LOCAL_SETUP.md](LOCAL_SETUP.md)
-   - Follow: Quick Start section
-   - Goal: Get the system running locally
-
-3. **Architecture** (30 min)
-   - Read: [../reference/SYSTEM_DESIGN_CURRENT.md](../reference/SYSTEM_DESIGN_CURRENT.md)
-   - Goal: Understand system components and data flow
-
-4. **Testing** (15 min)
-   - Read: [TESTING.md](TESTING.md)
-   - Run: `make test-backend`
-   - Goal: Verify your setup works
-
-**Total Time: ~1 hour to productivity**
-
-### 2. DevOps / Deployment
-
-**Deployment workflow:**
-
-1. **Read Deployment Guide**
-   - [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md)
-   - Understand Render configuration
-   - Review environment variables
-
-2. **Setup Render Account**
-   - Connect GitHub repository
-   - Configure environment variables
-   - Review render.yaml
-
-3. **Deploy**
-   - Push to main branch
-   - Monitor build logs
-   - Verify health checks
-
-### 3. Frontend Developers
-
-**Frontend focus:**
-
-1. [../frontend/README.md](../frontend/README.md) - Frontend setup
-2. [../reference/CONTINUOUS_VOICE_GUIDE.md](../reference/CONTINUOUS_VOICE_GUIDE.md) - Voice interface
-3. [../reference/WAV_IMPLEMENTATION_COMPLETE.md](../reference/WAV_IMPLEMENTATION_COMPLETE.md) - Audio pipeline
-4. [../reference/WEBSOCKET_FIXES.md](../reference/WEBSOCKET_FIXES.md) - WebSocket communication
-
-### 4. Backend Developers
-
-**Backend focus:**
-
-1. [../backend/README.md](../backend/README.md) - Backend overview
-2. [../reference/SYSTEM_DESIGN_CURRENT.md](../reference/SYSTEM_DESIGN_CURRENT.md) - Architecture
-3. [LOCAL_SETUP.md](LOCAL_SETUP.md) - SenseVoice setup
-4. [TESTING.md](TESTING.md) - Backend testing
-
----
-
-## Documentation by Category
-
-### 🚀 Setup & Configuration
-
-| Document | Description | Audience |
-|----------|-------------|----------|
-| [LOCAL_SETUP.md](LOCAL_SETUP.md) | Complete local setup with SenseVoice | All developers |
-| [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md) | Cloud deployment guide | DevOps, Backend |
-| [../reference/SENSEVOICE_DEPLOYMENT_SETUP.md](../reference/SENSEVOICE_DEPLOYMENT_SETUP.md) | SenseVoice model configuration | Backend |
-
-### 🏗️ Architecture & Design
-
-| Document | Description | Audience |
-|----------|-------------|----------|
-| [../reference/SYSTEM_DESIGN_CURRENT.md](../reference/SYSTEM_DESIGN_CURRENT.md) | Complete system architecture | All developers |
-| [../reference/API_DESIGN.md](../reference/API_DESIGN.md) | REST API design | Backend, Frontend |
-| [../reference/IMPLEMENTATION_SUMMARY.md](../reference/IMPLEMENTATION_SUMMARY.md) | Feature implementation details | All developers |
-
-### 🎙️ Audio & Voice
-
-| Document | Description | Audience |
-|----------|-------------|----------|
-| [../reference/WAV_IMPLEMENTATION_COMPLETE.md](../reference/WAV_IMPLEMENTATION_COMPLETE.md) | WAV audio pipeline | Frontend, Backend |
-| [../reference/VAD_FIXES.md](../reference/VAD_FIXES.md) | Voice Activity Detection | Frontend |
-| [../reference/WEBM_CONVERSION_ISSUE.md](../reference/WEBM_CONVERSION_ISSUE.md) | Why WebM failed | Frontend |
-| [../reference/AUDIO_PIPELINE_FIXES.md](../reference/AUDIO_PIPELINE_FIXES.md) | Audio bug fixes | Backend |
-| [../tests/testing_utils/AUDIO_TESTING_GUIDE.md](../tests/testing_utils/AUDIO_TESTING_GUIDE.md) | Audio testing | QA, Backend |
-
-### 🔌 WebSocket & Communication
-
-| Document | Description | Audience |
-|----------|-------------|----------|
-| [../reference/WEBSOCKET_FIXES.md](../reference/WEBSOCKET_FIXES.md) | WebSocket bug fixes | Backend, Frontend |
-| [../reference/FRONTEND_WEBSOCKET_FIX.md](../reference/FRONTEND_WEBSOCKET_FIX.md) | Frontend WS implementation | Frontend |
-| [../reference/FRONTEND_WEBSOCKET_FIXED.md](../reference/FRONTEND_WEBSOCKET_FIXED.md) | Final WS solution | Frontend |
-| [../reference/FRONTEND_WEBSOCKET_ROOT_CAUSE.md](../reference/FRONTEND_WEBSOCKET_ROOT_CAUSE.md) | WS debugging process | Frontend |
-
-### 🧪 Testing
-
-| Document | Description | Audience |
-|----------|-------------|----------|
-| [TESTING.md](TESTING.md) | Complete testing guide | All developers |
-| [../tests/README.md](../tests/README.md) | Test suite overview | All developers |
-| [../tests/TEST_STRUCTURE.md](../tests/TEST_STRUCTURE.md) | Test organization | Backend, QA |
-| [../tests/testing_utils/AUDIO_TESTING_GUIDE.md](../tests/testing_utils/AUDIO_TESTING_GUIDE.md) | Audio testing | QA |
-
-### 🗄️ Database
-
-| Document | Description | Audience |
-|----------|-------------|----------|
-| [../database/README.md](../database/README.md) | Database schema | Backend, DevOps |
-| [../reference/DATABASE_SETUP.md](../reference/DATABASE_SETUP.md) | Database configuration | Backend, DevOps |
-
-### 📊 Performance & Optimization
-
-| Document | Description | Audience |
-|----------|-------------|----------|
-| [../reference/LATENCY_OPTIMIZATION_GUIDE.md](../reference/LATENCY_OPTIMIZATION_GUIDE.md) | Performance tuning | Backend, DevOps |
-
-### 🐛 Troubleshooting & Fixes
-
-| Document | Description | Audience |
-|----------|-------------|----------|
-| [../reference/RENDER_DEPLOYMENT_FIX.md](../reference/RENDER_DEPLOYMENT_FIX.md) | Render timeout fix | DevOps |
-| [../reference/HF_SPACE_MIGRATION_SUMMARY.md](../reference/HF_SPACE_MIGRATION_SUMMARY.md) | HuggingFace Space migration | Backend |
-| [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md#troubleshooting) | Deployment troubleshooting | DevOps |
-| [LOCAL_SETUP.md](LOCAL_SETUP.md#troubleshooting) | Local setup issues | All developers |
-
-### 📝 Logging & Monitoring
-
-| Document | Description | Audience |
-|----------|-------------|----------|
-| [../reference/FRONTEND_LOGGING_GUIDE.md](../reference/FRONTEND_LOGGING_GUIDE.md) | Frontend logging | Frontend |
-| [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md#monitoring--logs) | Production monitoring | DevOps |
-
-### 📚 Reference
-
-| Document | Description | Audience |
-|----------|-------------|----------|
-| [../reference/DOCUMENTATION_INDEX.md](../reference/DOCUMENTATION_INDEX.md) | Detailed doc index | All |
-| [../reference/CONTINUOUS_VOICE_GUIDE.md](../reference/CONTINUOUS_VOICE_GUIDE.md) | Voice interface guide | Frontend |
-| [../reference/STREAMING_AND_DEPLOYMENT.md](../reference/STREAMING_AND_DEPLOYMENT.md) | Streaming architecture | Backend |
-
----
-
-## Key Concepts
-
-### Dual ASR Modes
-
-The system supports two ASR (Automatic Speech Recognition) modes:
-
-**Local ASR Mode (`USE_LOCAL_ASR=true`)**
-- Uses local SenseVoice model
-- Requires ~2.5GB dependencies (PyTorch, FunASR)
-- Fast, offline transcription (~0.5s)
-- Best for local development
-
-**HuggingFace Space Mode (`USE_LOCAL_ASR=false`)**
-- Uses HuggingFace Space API
-- Lightweight dependencies (~500MB)
-- Cloud-based transcription (~1-2s)
-- Best for production (Render)
-
-See: [LOCAL_SETUP.md](LOCAL_SETUP.md#installation-options)
-
-### Audio Pipeline
-
-```
-[Microphone] → [VAD] → [PCM Capture] → [WAV Encoding] → [Base64]
-                ↓
-          [WebSocket] → [Backend] → [ASR] → [LLM] → [TTS]
-                                      ↓
-                                [Audio Response]
-```
-
-See: [../reference/WAV_IMPLEMENTATION_COMPLETE.md](../reference/WAV_IMPLEMENTATION_COMPLETE.md)
-
-### Deployment Modes
-
-```
-┌─────────────────────┬──────────────────────┬──────────────────────┐
-│ Environment         │ Local Development    │ Production (Render)  │
-├─────────────────────┼──────────────────────┼──────────────────────┤
-│ ASR Mode            │ Local or HF Space    │ HF Space only        │
-│ USE_LOCAL_ASR       │ true or false        │ false (required)     │
-│ Dependencies        │ Full or lightweight  │ Lightweight only     │
-│ Install command     │ uv sync --extra...   │ uv sync --frozen     │
-│ Model required      │ Optional             │ No                   │
-│ Startup time        │ 10-30s (with model)  │ <2 min               │
-│ Transcription speed │ ~0.5s (local)        │ ~1-2s (API)          │
-└─────────────────────┴──────────────────────┴──────────────────────┘
-```
-
-See:
-- [LOCAL_SETUP.md](LOCAL_SETUP.md#installation-options)
-- [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md#key-configuration-points)
-
----
-
-## Documentation Standards
-
-### Creating New Documentation
-
-When adding new documentation:
-
-1. **Choose appropriate location:**
-   - Setup/deployment guides → `docs/`
-   - Technical deep-dives → `reference/`
-   - Test documentation → `tests/`
-   - API documentation → `backend/` or `frontend/`
-
-2. **Follow naming conventions:**
-   - Guides: `TOPIC_GUIDE.md` (e.g., `AUDIO_GUIDE.md`)
-   - Fixes: `TOPIC_FIXES.md` (e.g., `WEBSOCKET_FIXES.md`)
-   - Summaries: `TOPIC_SUMMARY.md` (e.g., `MIGRATION_SUMMARY.md`)
-
-3. **Include standard sections:**
-   - Table of contents
-   - Prerequisites
-   - Clear step-by-step instructions
-   - Code examples with syntax highlighting
-   - Troubleshooting section
-   - Links to related docs
-
-4. **Update this index:**
-   - Add entry to appropriate category
-   - Update navigation table if needed
-   - Update "Last Updated" date
-
-### Markdown Style Guide
-
-```markdown
-# Document Title
-
-Brief description (1-2 sentences)
-
-Last Updated: YYYY-MM-DD
-Version: vX.Y.Z
+# Voice-Activated News Agent with Smart Memory & Streaming
+
+[![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/HaozheZhang6/news_agent)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/HaozheZhang6/news_agent)
+
+An advanced voice-activated news recommendation agent with **real-time voice streaming**, **WebSocket API**, and **cloud deployment** capabilities. Built with **FastAPI**, **SenseVoice ASR**, **smart memory systems**, and **streaming TTS** for natural voice interactions across web and mobile platforms.
 
 ---
 
 ## Table of Contents
 
-1. [Section 1](#section-1)
-2. [Section 2](#section-2)
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Quick Start](#quick-start-3-5-minutes)
+- [Installation Options](#installation-options)
+- [Running the Application](#running-the-application)
+- [Testing](#testing)
+- [Project Structure](#project-structure)
+- [Documentation Index](#documentation-index)
+- [Deployment](#deployment)
+- [Configuration](#configuration)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## Section 1
+## Overview
 
-Content here...
+Voice News Agent provides intelligent, context-aware news recommendations through natural voice conversations. The system features dual ASR modes (local SenseVoice vs HuggingFace Space API), real-time WebSocket streaming, and smart memory for contextual interactions.
 
-### Subsection
+**Current Status:** Backend MVP complete with streaming WebSocket API, ready for Render deployment and iOS integration.
 
-More content...
+**Tech Stack:** FastAPI • Supabase • Upstash Redis • SenseVoice ASR • Edge-TTS • GLM-4-Flash
 
-## Code Examples
+---
+
+## Key Features
+
+### Real-Time Voice Interaction
+- **Dual ASR Modes**: Local SenseVoice model (fast, offline) or HuggingFace Space API (lightweight, cloud-ready)
+- **Environment-Based Configuration**: Toggle between local/remote ASR with `USE_LOCAL_ASR` flag
+- **WebSocket Streaming**: Bidirectional voice communication with chunked TTS responses
+- **Configurable VAD**: Adjustable voice activity detection with 3 presets (sensitive/balanced/strict)
+- **WebRTC VAD Validation**: Two-stage backend audio validation (energy + WebRTC VAD) reduces API calls by 40-60%
+- **Opus Compression**: Optional 5x audio compression (WAV → Opus) saves 80% bandwidth
+- **Sub-100ms Interruption**: Instant response to voice during TTS playback
+
+### Smart Conversational Memory
+- **Context Awareness**: "Tell me more" intelligently refers to recent news items
+- **Deep-Dive Detection**: Automatically identifies which news story to elaborate on
+- **Topic Tracking**: Remembers conversation topics (technology, finance, politics, crypto)
+- **Reference Resolution**: "Explain that", "dive deeper", "what about the first one" work naturally
+
+### Priority-Based Command Processing
+- **5-Level Priority System**: Immediate → Refinement → Contextual → Normal → Expired
+- **Command Refinement**: "Actually, I meant..." cancels previous commands and prioritizes new intent
+- **Time-Based Expiry**: Commands older than 5 seconds get lower priority
+- **Smart Interruption**: Context-aware command processing with automatic cleanup
+
+### Audio Compression & Quality
+- **Flexible Audio Formats**: WAV (uncompressed, 94 KB/3s) or Opus (compressed, 18 KB/3s)
+- **80%+ Bandwidth Reduction**: Optional Opus compression with 5.2x ratio
+- **Real-Time Processing**: Client-side encoding → Base64 → WebSocket transmission
+- **WebRTC Standards**: Industry-standard Opus codec (64-128 kbps) for optimal speech quality
+- **Streaming TTS**: Chunked audio responses with base64 encoding for smooth playback
+- **Per-User Settings**: Configurable VAD and compression settings with API persistence
+
+### Cloud-Ready Architecture
+- **FastAPI Backend**: Async WebSocket + REST API endpoints
+- **Supabase PostgreSQL**: User profiles, preferences, conversation history
+- **Upstash Redis**: 5-layer caching (news, AI, sessions, voice, stocks)
+- **Fast Deployment**: Less than 2 minutes on Render free tier
+
+---
+
+## Quick Start (3-5 Minutes)
+
+### Prerequisites
+- Python 3.9+ (3.11 recommended for Render deployment)
+- Virtual environment manager (`uv` recommended)
+- API keys: ZhipuAI, AlphaVantage, Supabase, Upstash Redis
+
+### Step 1: Clone and Install
 
 ```bash
-# Always include comments
-command --flag value
+# Clone repository
+git clone https://github.com/HaozheZhang6/news_agent.git
+cd news_agent
+
+# Install lightweight production dependencies (HF Space ASR only)
+uv sync --frozen
+
+# OR install with local ASR support (adds torch, funasr - ~2GB)
+uv sync --frozen --extra local-asr
 ```
 
-## Links
+### Step 2: Configure Environment
 
-- Use relative paths: [Other Doc](./OTHER_DOC.md)
-- External links: [FastAPI](https://fastapi.tiangolo.com)
-```
-
----
-
-## Frequently Asked Questions
-
-### Q: Which documentation should I read first?
-
-**A:** Start with [../README.md](../README.md), then [LOCAL_SETUP.md](LOCAL_SETUP.md), then [../reference/SYSTEM_DESIGN_CURRENT.md](../reference/SYSTEM_DESIGN_CURRENT.md).
-
-### Q: How do I run the system locally without downloading the 1GB model?
-
-**A:** Use lightweight mode with HuggingFace Space API:
 ```bash
-uv sync --frozen  # No --extra local-asr
-USE_LOCAL_ASR=false make run-server-hf
+# Copy environment template
+cp env_files/env.example env_files/.env
+
+# Edit with your API keys
+# Required: ZHIPUAI_API_KEY, ALPHAVANTAGE_API_KEY, SUPABASE_URL,
+#           SUPABASE_KEY, UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
 ```
 
-See: [LOCAL_SETUP.md](LOCAL_SETUP.md#option-1-lightweight-huggingface-space-asr-only)
+### Step 3: Run the Server
 
-### Q: Where are deployment instructions?
+```bash
+# Start FastAPI server
+make run-server
 
-**A:** See [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md) for complete Render.com deployment guide.
+# OR with HF Space ASR only (like production)
+make run-server-hf
+```
 
-### Q: How do I run tests?
+Access:
+- **API Docs**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health
+- **WebSocket Test**: Open `voice_continuous.html` in browser
 
-**A:** See [TESTING.md](TESTING.md) for comprehensive testing guide.
-
-### Q: Why does my local ASR fail?
-
-**A:** Ensure you have installed with `--extra local-asr` and downloaded the SenseVoice model. See [LOCAL_SETUP.md](LOCAL_SETUP.md#sensevoice-model-setup).
-
-### Q: How do I switch between local and cloud ASR?
-
-**A:** Set the `USE_LOCAL_ASR` environment variable:
-- Local ASR: `USE_LOCAL_ASR=true make run-server`
-- Cloud ASR: `USE_LOCAL_ASR=false make run-server-hf`
+**That's it!** You're ready to start using the voice agent.
 
 ---
 
-## Contributing to Documentation
+## Installation Options
 
-We welcome documentation improvements! Please:
+### Option 1: Lightweight (Production/Render)
+For deployment or if you prefer cloud ASR:
 
-1. **Check existing docs** to avoid duplication
-2. **Follow style guide** above
-3. **Test all commands** and code examples
-4. **Update this index** when adding new docs
-5. **Submit PR** with clear description
+```bash
+uv sync --frozen
+```
+
+**What you get:**
+- HuggingFace Space API for ASR (no local model needed)
+- Edge-TTS for text-to-speech
+- Full backend API and WebSocket streaming
+- ~500MB install size
+
+### Option 2: Full Installation (Local Development)
+For local development with offline ASR:
+
+```bash
+uv sync --frozen --extra local-asr
+```
+
+**What you get:**
+- Local SenseVoice ASR model (fast, offline-capable)
+- All production dependencies
+- ~2.5GB install size (includes PyTorch)
+
+**Download SenseVoice Model (Optional):**
+```bash
+uv run python scripts/download_sensevoice.py
+```
+
+### Option 3: Development with Testing
+For contributors and developers:
+
+```bash
+uv sync --frozen --extra local-asr --extra dev --extra test
+make install-dev
+```
 
 ---
 
-## Support
+## Running the Application
 
-- **Issues**: https://github.com/HaozheZhang6/news_agent/issues
-- **Discussions**: GitHub Discussions
-- **Email**: team@voicenewsagent.com
+### Backend API Server
+
+```bash
+# With local ASR model
+make run-server
+
+# With HF Space ASR only (production mode)
+make run-server-hf
+
+# Manual start
+uv run uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Local Voice Agent (Standalone)
+
+```bash
+# Start standalone voice agent (no backend needed)
+make src
+
+# OR
+uv run python -m src.main
+```
+
+### Frontend Development
+
+**Local Backend (Development):**
+```bash
+make run-frontend
+# OR manually:
+cd frontend
+VITE_API_URL=http://localhost:8000 npm run dev
+```
+
+**Remote Render Backend (Testing Production):**
+```bash
+make run-frontend-remote
+# OR manually:
+cd frontend
+VITE_API_URL=https://voice-news-agent-api.onrender.com npm run dev
+```
+
+Access frontend at: http://localhost:3000
 
 ---
 
-## Document Maintenance
+## Testing
 
-| Task | Frequency | Last Done | Next Due |
-|------|-----------|-----------|----------|
-| Update outdated links | Monthly | 2025-10-14 | 2025-11-14 |
-| Review for accuracy | Quarterly | 2025-10-14 | 2026-01-14 |
-| Update code examples | On version bump | 2025-10-14 | Next release |
-| Add new features | As implemented | 2025-10-14 | Ongoing |
+### Run All Tests
+
+```bash
+make run-tests
+
+# OR specific test suites
+make test-backend        # Backend tests only
+make test-src           # Source component tests only
+make test-integration   # Integration tests only
+make test-fast          # Exclude slow tests
+```
+
+### Test with Coverage
+
+```bash
+make test-coverage
+```
+
+### Manual WebSocket Testing
+
+```bash
+# Start server
+make run-server
+
+# Open browser test client
+open voice_continuous.html
+```
+
+### Test HuggingFace Space ASR
+
+```bash
+make test-hf-space
+```
 
 ---
 
-**Documentation maintained by:** Development Team
-**Last comprehensive review:** 2025-10-14
-**Next scheduled review:** 2025-11-14
+## Project Structure
 
-**All documentation is up-to-date and production-ready.** ✅
+```
+News_agent/
+├── backend/                      # FastAPI backend
+│   ├── app/
+│   │   ├── api/                  # REST & WebSocket endpoints
+│   │   │   ├── profile.py        # User preferences/watchlist
+│   │   │   ├── conversation.py   # Conversation logging
+│   │   │   ├── voice.py          # Voice commands
+│   │   │   └── websocket.py      # WebSocket streaming
+│   │   ├── core/                 # Core business logic
+│   │   │   ├── agent_wrapper.py  # Agent integration
+│   │   │   ├── streaming_handler.py # TTS streaming
+│   │   │   └── websocket_manager.py # Connection management
+│   │   ├── models/               # Pydantic models
+│   │   ├── config.py             # Environment configuration
+│   │   ├── database.py           # Supabase integration
+│   │   ├── cache.py              # Upstash Redis caching
+│   │   └── main.py               # FastAPI application
+│   └── requirements.txt          # Pinned dependencies
+│
+├── src/                          # Local voice agent (standalone)
+│   ├── agent.py                  # News agent logic with GLM-4-Flash
+│   ├── voice_input.py            # SenseVoice ASR integration
+│   ├── voice_output.py           # TTS & audio playback
+│   ├── memory.py                 # Conversation memory system
+│   ├── command_queue.py          # Priority command queue
+│   └── main.py                   # CLI entry point
+│
+├── tests/                        # Comprehensive test suite
+│   ├── backend/                  # Backend API tests
+│   ├── src/                      # Source component tests
+│   └── integration/              # End-to-end tests
+│
+├── docs/                         # Setup documentation
+│   ├── LOCAL_SETUP.md            # Detailed local setup guide
+│   └── RENDER_DEPLOYMENT.md      # Deployment instructions
+│
+├── reference/                    # Technical documentation
+│   ├── API_DESIGN.md             # API specifications
+│   ├── SYSTEM_DESIGN_CURRENT.md  # Architecture overview
+│   ├── IMPLEMENTATION_SUMMARY.md # Feature implementation
+│   ├── DATABASE_SETUP.md         # Database schema
+│   └── [20+ technical guides]    # Detailed references
+│
+├── env_files/                    # Environment configuration (gitignored)
+│   ├── env.example               # Main environment template
+│   ├── supabase.env              # Database config
+│   ├── upstash.env               # Redis cache config
+│   └── render.env                # Deployment config
+│
+├── database/                     # Database schema & setup
+│   ├── schema.sql                # Supabase database schema
+│   └── README.md                 # Database documentation
+│
+├── frontend/                     # React frontend (Next.js)
+│   ├── src/
+│   │   ├── components/           # UI components
+│   │   └── utils/                # Client utilities
+│   └── package.json              # Frontend dependencies
+│
+├── scripts/                      # Utility scripts
+│   ├── download_sensevoice.py    # Download ASR model
+│   └── test_local_setup.py       # Verify local setup
+│
+├── render.yaml                   # Render deployment blueprint
+├── Makefile                      # Development commands
+├── pyproject.toml                # Project metadata (uv)
+└── README.md                     # This file
+```
+
+---
+
+## Documentation Index
+
+### Getting Started
+- **[README.md](README.md)** - This file (quick start, overview)
+- **[docs/LOCAL_SETUP.md](docs/LOCAL_SETUP.md)** - Detailed local setup guide with troubleshooting
+- **[docs/RENDER_DEPLOYMENT.md](docs/RENDER_DEPLOYMENT.md)** - Cloud deployment instructions
+
+### Product & Planning
+- **[PRD.md](PRD.md)** - Product Requirements Document
+- **[MVP.md](MVP.md)** - MVP status, architecture, deployment guide
+- **[TODO.md](TODO.md)** - Task tracker and development roadmap
+- **[VERSION.md](VERSION.md)** - Version history and changelog
+
+### Technical Documentation
+- **[reference/API_DESIGN.md](reference/API_DESIGN.md)** - REST & WebSocket API specifications
+- **[reference/SYSTEM_DESIGN_CURRENT.md](reference/SYSTEM_DESIGN_CURRENT.md)** - System architecture overview
+- **[reference/IMPLEMENTATION_SUMMARY.md](reference/IMPLEMENTATION_SUMMARY.md)** - Feature implementation details
+- **[reference/DATABASE_SETUP.md](reference/DATABASE_SETUP.md)** - Supabase database schema & setup
+- **[reference/STREAMING_AND_DEPLOYMENT.md](reference/STREAMING_AND_DEPLOYMENT.md)** - WebSocket streaming guide
+
+### Specialized Guides
+- **[reference/HF_SPACE_MIGRATION_SUMMARY.md](reference/HF_SPACE_MIGRATION_SUMMARY.md)** - HuggingFace Space ASR integration
+- **[reference/LATENCY_OPTIMIZATION_GUIDE.md](reference/LATENCY_OPTIMIZATION_GUIDE.md)** - Performance optimization
+- **[reference/FRONTEND_LOGGING_GUIDE.md](reference/FRONTEND_LOGGING_GUIDE.md)** - Frontend debugging
+- **[reference/CONTINUOUS_VOICE_GUIDE.md](reference/CONTINUOUS_VOICE_GUIDE.md)** - Voice interaction patterns
+- **[reference/DOCUMENTATION_INDEX.md](reference/DOCUMENTATION_INDEX.md)** - Complete documentation index
+
+### Deployment & Operations
+- **[reference/SENSEVOICE_DEPLOYMENT_SETUP.md](reference/SENSEVOICE_DEPLOYMENT_SETUP.md)** - SenseVoice model deployment
+- **[reference/RENDER_DEPLOYMENT_FIX.md](reference/RENDER_DEPLOYMENT_FIX.md)** - Deployment troubleshooting
+- **[database/README.md](database/README.md)** - Database operations guide
+
+### Troubleshooting & Fixes
+- **[reference/VAD_FIXES.md](reference/VAD_FIXES.md)** - Voice activity detection issues
+- **[reference/WEBSOCKET_FIXES.md](reference/WEBSOCKET_FIXES.md)** - WebSocket connection problems
+- **[reference/AUDIO_PIPELINE_FIXES.md](reference/AUDIO_PIPELINE_FIXES.md)** - Audio processing issues
+- **[reference/FRONTEND_WEBSOCKET_FIX.md](reference/FRONTEND_WEBSOCKET_FIX.md)** - Frontend WebSocket debugging
+
+---
+
+## Deployment
+
+### Render Cloud Deployment (Recommended)
+
+**Deploy in under 2 minutes:**
+
+1. **Push to GitHub**
+   ```bash
+   git push origin main
+   ```
+
+2. **Connect to Render**
+   - Go to [Render Dashboard](https://dashboard.render.com/)
+   - New → Web Service → Connect Repository
+   - Select `news_agent` repository
+
+3. **Configure Blueprint**
+   - Render will auto-detect `render.yaml`
+   - Set environment variables in dashboard:
+     - `ZHIPUAI_API_KEY`
+     - `ALPHAVANTAGE_API_KEY`
+     - `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SERVICE_KEY`
+     - `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
+     - `USE_LOCAL_ASR=false` (use HF Space API)
+     - `HF_SPACE_NAME=hz6666/SenseVoiceSmall`
+
+4. **Deploy!**
+   - Click "Create Web Service"
+   - Render will build and deploy automatically
+   - WebSocket streaming and HTTPS included
+
+**Free Tier Includes:**
+- 512MB RAM
+- WebSocket support
+- Auto-scaling
+- HTTPS/SSL
+- Zero cold start (with background job)
+
+**See [docs/RENDER_DEPLOYMENT.md](docs/RENDER_DEPLOYMENT.md) for detailed instructions.**
+
+### Local Production Mode
+
+```bash
+# Simulate production environment locally
+make run-server-hf
+
+# This runs with USE_LOCAL_ASR=false (HF Space only)
+```
+
+---
+
+## Configuration
+
+### Environment Variables
+
+**Backend Environment Variables:**
+Create `env_files/.env` with the following:
+
+```bash
+# AI Services (Required)
+ZHIPUAI_API_KEY=your_zhipuai_key           # GLM-4-Flash LLM
+ALPHAVANTAGE_API_KEY=your_alphavantage_key # News & stock data
+
+# Database (Required)
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_KEY=your_service_key
+
+# Cache (Required)
+UPSTASH_REDIS_REST_URL=your_redis_url
+UPSTASH_REDIS_REST_TOKEN=your_redis_token
+
+# ASR Configuration
+USE_LOCAL_ASR=true                         # false for cloud/production
+HF_SPACE_NAME=hz6666/SenseVoiceSmall      # HuggingFace Space for remote ASR
+SENSEVOICE_MODEL_PATH=/path/to/model      # Local model path (optional)
+
+# TTS Configuration
+EDGE_TTS_VOICE=en-US-AriaNeural           # Voice for TTS
+EDGE_TTS_RATE=1.0                         # Speech rate multiplier
+
+# Optional Services
+OPENAI_API_KEY=your_openai_key            # Fallback LLM
+NEWS_API_KEY=your_newsapi_key             # Alternative news source
+FINNHUB_API_KEY=your_finnhub_key          # Financial data
+```
+
+**Frontend Environment Variables:**
+The frontend uses Vite environment variables. Set these when running the frontend:
+
+```bash
+# For local backend development
+VITE_API_URL=http://localhost:8000
+
+# For remote Render backend testing
+VITE_API_URL=https://voice-news-agent-api.onrender.com
+
+# Demo user ID (optional, defaults to demo user)
+VITE_DEMO_USER_ID=03f6b167-0c4d-4983-a380-54b8eb42f830
+```
+
+**Makefile Commands Handle Environment Variables:**
+- `make run-frontend` - Automatically sets `VITE_API_URL=http://localhost:8000`
+- `make run-frontend-remote` - Automatically sets `VITE_API_URL=https://voice-news-agent-api.onrender.com`
+
+### ASR Mode Selection
+
+**Local ASR (Development):**
+```bash
+USE_LOCAL_ASR=true
+SENSEVOICE_MODEL_PATH=/app/models/SenseVoiceSmall
+```
+- Fast, offline-capable
+- Requires local model download (~1GB)
+- Best for development and testing
+
+**Remote ASR (Production):**
+```bash
+USE_LOCAL_ASR=false
+HF_SPACE_NAME=hz6666/SenseVoiceSmall
+```
+- Lightweight deployment
+- No model download needed
+- Ideal for Render free tier
+
+### Makefile Commands
+
+```bash
+make help           # Show all available commands
+make install        # Install production dependencies
+make install-dev    # Install dev dependencies + local ASR
+make run-server     # Start server with local ASR
+make run-server-hf  # Start server with HF Space ASR (production mode)
+make run-frontend   # Start frontend with local backend
+make run-frontend-remote # Start frontend with remote Render backend
+make src            # Run standalone voice agent
+make test-backend   # Run backend tests
+make test-coverage  # Run tests with coverage report
+make lint           # Check code quality
+make format         # Format code with black/isort
+make clean          # Clean build artifacts
+```
+
+---
+
+## Voice Commands
+
+### General News
+- "What's the news?"
+- "Tell me what's happening"
+- "Latest headlines"
+
+### Topic-Specific News
+- "Tell me about technology news"
+- "What's happening in finance?"
+- "Any news on the economy?"
+
+### Stock Information
+- "What's the stock price of Apple?"
+- "How much is NVDA?"
+- "Tell me about Tesla stock"
+
+### Smart Contextual Commands
+- **"Tell me more"** - Refers to recent news items
+- **"Dive deeper"** - Context-aware explanations
+- **"Explain that"** - Auto-identifies target from conversation
+- **"What about the first one"** - References specific news items
+
+### Interruption & Correction
+- **"Stop"** - Halt current speech immediately
+- **"Actually, I meant..."** - Cancel previous, prioritize new command
+- **"No, instead..."** - Smart command refinement
+- **"Wait, cancel that"** - Immediate cancellation
+
+### Preference Management
+- "Add technology to my preferred topics"
+- "Remove politics from my preferred topics"
+- "What are my preferred topics?"
+- "Add GOOG to my watchlist"
+- "Remove MSFT from my watchlist"
+- "What's in my watchlist?"
+
+### System Commands
+- "Help" - Show available commands
+- "Volume up/down" - Audio level control
+- "Speak faster/slower" - Speech speed adjustment
+- "Exit" / "Quit" - Graceful shutdown
+
+---
+
+## Example Conversation
+
+```
+USER: "Tell me the latest news"
+AGENT: "Here are today's headlines: 1. Apple announces new AI features..."
+
+USER: "Tell me more about Apple"
+AGENT: "Apple's new AI features include enhanced Siri capabilities..."
+
+USER: "Actually, I meant the stock price"
+AGENT: "The latest stock price for AAPL is $229.35."
+
+USER: "Add it to my watchlist"
+AGENT: "AAPL has been added to your watchlist."
+```
+
+---
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Voice Input Thread                      │
+│   SenseVoice ASR → WebRTC VAD → Command Classification     │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  Smart Priority Queue                        │
+│  IMMEDIATE → REFINEMENT → CONTEXTUAL → NORMAL → EXPIRED    │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Memory System (Supabase)                        │
+│   Context History • News Items • Topic Tracking             │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│            Agent Processing (GLM-4-Flash)                    │
+│   AlphaVantage API • yfinance • Upstash Cache              │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Voice Output Thread (Edge-TTS)                 │
+│   Streaming TTS → Audio Playback → Interruption Monitor    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Key Components:**
+- **Threading Architecture**: Lightweight threading for better performance (60% memory reduction vs multiprocessing)
+- **WebSocket Streaming**: Real-time bidirectional communication
+- **5-Layer Cache**: News, AI responses, sessions, voice, stock data
+- **Smart Memory**: Context-aware conversations with deep-dive detection
+
+---
+
+## Performance Metrics
+
+- **Voice Recognition**: 200-500ms (local) / 1-3s (HF Space)
+- **Command Classification**: <1ms (dictionary-based)
+- **Memory Lookup**: <5ms (context resolution)
+- **Interruption Response**: <100ms (voice detection to TTS stop)
+- **Queue Processing**: <10ms (command prioritization)
+
+**Resource Usage:**
+- **Memory**: 150-300MB (production) / 2-4GB (with local ASR model)
+- **CPU**: Moderate during voice processing, low during idle
+- **Storage**: Audio logs ~1-5MB per conversation (MP3 compressed)
+- **Network**: API calls only for news/stock data (voice processing is local/optional)
+
+---
+
+## Contributing
+
+We welcome contributions! Please follow these guidelines:
+
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/your-feature`
+3. **Make your changes** and add tests
+4. **Run tests**: `make run-tests`
+5. **Format code**: `make format`
+6. **Commit changes**: Follow conventional commit format (see `.cursor/agent-rules/commit.mdc`)
+7. **Push to your fork**: `git push origin feature/your-feature`
+8. **Create a Pull Request**
+
+**Development Setup:**
+```bash
+make install-dev    # Install dev dependencies
+make test-backend   # Run backend tests
+make test-coverage  # Check coverage
+make lint           # Check code quality
+```
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+
+## Acknowledgments
+
+Built with:
+- **FastAPI** - Modern Python web framework
+- **GLM-4-Flash** - Efficient LLM by ZhipuAI
+- **SenseVoice** - Multilingual ASR by Alibaba DAMO Academy
+- **Edge-TTS** - Microsoft Edge's text-to-speech
+- **Supabase** - PostgreSQL database platform
+- **Upstash Redis** - Serverless Redis cache
+
+---
+
+## Support & Contact
+
+- **Issues**: [GitHub Issues](https://github.com/HaozheZhang6/news_agent/issues)
+- **Documentation**: [docs/](docs/) and [reference/](reference/)
+- **Repository**: [https://github.com/HaozheZhang6/news_agent](https://github.com/HaozheZhang6/news_agent)
+
+---
+
+**Built with ❤️ using FastAPI, GLM-4-Flash, SenseVoice ASR, Edge-TTS, Supabase, and Upstash Redis**

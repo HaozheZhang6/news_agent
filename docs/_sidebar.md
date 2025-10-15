@@ -1,0 +1,35 @@
+- Getting Started
+  - [Overview](README.md)
+  - [Local Setup](docs/LOCAL_SETUP.md)
+  - [Architecture Overview](docs/DOCUMENTATION_FRAMEWORK.md#documentation-structure)
+  - [Render Deployment](docs/RENDER_DEPLOYMENT.md)
+  - [Requirements Verification](docs/REQUIREMENTS_VERIFICATION.md)
+
+- Reference
+  - [Reference Hub](docs/reference/README.md)
+  - Setup
+    - [Local Setup](docs/LOCAL_SETUP.md)
+    - [Deployment (Render)](docs/RENDER_DEPLOYMENT.md)
+    - [Testing](docs/TESTING.md)
+  - Architecture
+    - [System Design](docs/reference/SYSTEM_DESIGN_CURRENT.md)
+    - [API Design](docs/reference/API_DESIGN.md)
+    - [Database Setup](docs/reference/DATABASE_SETUP.md)
+  - Guides
+    - [Audio Pipeline](docs/reference/AUDIO_PIPELINE_FIXES.md)
+    - [VAD & Compression](docs/reference/VAD_AND_COMPRESSION_GUIDE.md)
+    - [Streaming & Deployment](docs/reference/STREAMING_AND_DEPLOYMENT.md)
+    - [Continuous Voice Guide](docs/reference/CONTINUOUS_VOICE_GUIDE.md)
+  - Troubleshooting
+    - [WebSocket Fixes](docs/reference/WEBSOCKET_FIXES.md)
+    - [VAD Fixes](docs/reference/VAD_FIXES.md)
+    - [Audio Format (Current)](docs/reference/AUDIO_FORMAT_CURRENT.md)
+    - [WAV Implementation](docs/reference/WAV_IMPLEMENTATION_COMPLETE.md)
+    - [WebM Conversion Issue](docs/reference/WEBM_CONVERSION_ISSUE.md)
+
+- Project
+  - [Version](VERSION.md)
+  - [MVP](MVP.md)
+  - [PRD](PRD.md)
+  - [Implementation Complete](IMPLEMENTATION_COMPLETE.md)
+  - [Flow Log](flow.md)

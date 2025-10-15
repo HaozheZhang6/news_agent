@@ -16,6 +16,15 @@ Three major features have been implemented:
 
 ---
 
+## Quick Start
+- Defaults: `vad_threshold=0.02`, `silence_timeout_ms=700`, backend validation on.
+- Enable compression (mobile recommended): set `use_compression=true` (64 kbps Opus).
+- Presets:
+  - Sensitive (quiet): threshold 0.01, 500ms, VAD mode 0
+  - Balanced (default): threshold 0.02, 700ms, VAD mode 2
+  - Strict (noisy): threshold 0.03, 1000ms, VAD mode 3
+- Test quickly: watch console speech/silence logs; compare WebSocket payload sizes.
+
 ## 1. Configurable VAD Settings
 
 ### Frontend Configuration
@@ -527,6 +536,12 @@ console.log(`Estimated 3s Opus file: ${size3s} bytes`);
 ---
 
 ## Troubleshooting
+
+### Quick Fixes Summary
+- MediaRecorder streaming: start with small timeslice (e.g., 100ms) to emit chunks continuously.
+- Silence detection: initialize `lastSpeechTimeRef` when recording starts.
+- Sensitivity: increase `SPEECH_THRESHOLD` to 0.02 (tune 0.01–0.03 by environment).
+- Debugging: log audio level, silence duration, and send triggers periodically.
 
 ### Issue: Audio Always Rejected by Backend
 
