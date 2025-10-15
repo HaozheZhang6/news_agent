@@ -26,7 +26,8 @@ help:
 	@echo "Development:"
 	@echo "  run-server     Start FastAPI development server (with local ASR model)"
 	@echo "  run-server-hf  Start FastAPI development server (HF Space ASR only, like Render)"
-	@echo "  run-frontend   Start frontend development server"
+	@echo "  run-frontend   Start frontend development server (local backend)"
+	@echo "  run-frontend-remote Start frontend development server (remote Render backend)"
 	@echo "  src            Start voice agent (runs python -m src.main)"
 	@echo "  run-tests      Run all tests"
 	@echo "  test-backend   Run backend tests only"
@@ -84,10 +85,16 @@ run-server-hf:
 	@echo "This simulates Render production environment"
 	@USE_LOCAL_ASR=false uv run uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 
-# Run frontend development server
+# Run frontend development server (local backend)
 run-frontend:
-	@echo "Starting frontend development server..."
-	@cd frontend && npm run dev
+	@echo "Starting frontend development server (local backend)..."
+	@cd frontend && VITE_API_URL=http://localhost:8000 npm run dev
+
+# Run frontend development server (remote Render backend)
+run-frontend-remote:
+	@echo "Starting frontend development server (remote Render backend)..."
+	@echo "Using Render backend: https://voice-news-agent-api.onrender.com"
+	@cd frontend && VITE_API_URL=https://voice-news-agent-api.onrender.com npm run dev
 
 # Supabase and Upstash setup helpers (local-only; do not commit secrets)
 db-apply:
