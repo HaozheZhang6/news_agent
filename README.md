@@ -43,7 +43,9 @@ Voice News Agent provides intelligent, context-aware news recommendations throug
 - **Dual ASR Modes**: Local SenseVoice model (fast, offline) or HuggingFace Space API (lightweight, cloud-ready)
 - **Environment-Based Configuration**: Toggle between local/remote ASR with `USE_LOCAL_ASR` flag
 - **WebSocket Streaming**: Bidirectional voice communication with chunked TTS responses
-- **WebRTC VAD**: Smart voice activity detection with 40% activation threshold
+- **Configurable VAD**: Adjustable voice activity detection with 3 presets (sensitive/balanced/strict)
+- **WebRTC VAD Validation**: Two-stage backend audio validation (energy + WebRTC VAD) reduces API calls by 40-60%
+- **Opus Compression**: Optional 5x audio compression (WAV → Opus) saves 80% bandwidth
 - **Sub-100ms Interruption**: Instant response to voice during TTS playback
 
 ### Smart Conversational Memory
@@ -58,11 +60,13 @@ Voice News Agent provides intelligent, context-aware news recommendations throug
 - **Time-Based Expiry**: Commands older than 5 seconds get lower priority
 - **Smart Interruption**: Context-aware command processing with automatic cleanup
 
-### Audio Compression Pipeline
-- **80%+ Bandwidth Reduction**: Modern Opus/WebM compression achieving 5.5x compression ratio
-- **Real-Time Processing**: Client-side compression → Base64 encoding → WebSocket transmission
-- **WebRTC Standards**: Industry-standard Opus codec for optimal speech quality
+### Audio Compression & Quality
+- **Flexible Audio Formats**: WAV (uncompressed, 94 KB/3s) or Opus (compressed, 18 KB/3s)
+- **80%+ Bandwidth Reduction**: Optional Opus compression with 5.2x ratio
+- **Real-Time Processing**: Client-side encoding → Base64 → WebSocket transmission
+- **WebRTC Standards**: Industry-standard Opus codec (64-128 kbps) for optimal speech quality
 - **Streaming TTS**: Chunked audio responses with base64 encoding for smooth playback
+- **Per-User Settings**: Configurable VAD and compression settings with API persistence
 
 ### Cloud-Ready Architecture
 - **FastAPI Backend**: Async WebSocket + REST API endpoints

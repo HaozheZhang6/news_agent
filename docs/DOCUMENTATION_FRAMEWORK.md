@@ -2,592 +2,519 @@
 
 **Version:** 1.0
 **Last Updated:** 2025-10-15
-**Purpose:** Enable rapid problem diagnosis and maintain organized documentation structure
+**Purpose:** Enable rapid problem diagnosis with tree-based documentation structure
 
 ---
 
 ## Table of Contents
 
-1. [Framework Overview](#framework-overview)
-2. [Tree-Based Architecture](#tree-based-architecture)
-3. [Document Types & Templates](#document-types--templates)
+1. [Overview](#overview)
+2. [Documentation Structure](#documentation-structure)
+3. [Document Types](#document-types)
 4. [Root Cause Analysis System](#root-cause-analysis-system)
-5. [Folder Organization Guidelines](#folder-organization-guidelines)
-6. [Quick Navigation System](#quick-navigation-system)
-7. [Maintenance Guidelines](#maintenance-guidelines)
-
----
-
-## Framework Overview
-
-### Core Principles
-
-1. **Hierarchical Organization**: Tree structure from general to specific
-2. **Fast Searchability**: Clear naming conventions and indexes
-3. **Root Cause Focus**: Every fix documented with problem → diagnosis → solution
-4. **Living Documentation**: Updated with every significant change
-5. **Cross-Referencing**: Linked documents for related information
-
-### Documentation Hierarchy (Docsify-Ready)
-
-```
-docs/                                    # Overview & Getting Started (Docsify root)
-├── README.md                            # Documentation hub & landing page
-├── overview.md                          # System overview & value proposition
-├── getting-started.md                   # Quick start (5-10 min setup)
-├── architecture-overview.md             # High-level architecture diagram
-├── troubleshooting.md                   # Quick troubleshooting reference
-├── faq.md                               # Frequently asked questions
-├── _sidebar.md                          # Docsify sidebar navigation
-├── _navbar.md                           # Docsify top navigation
-├── index.html                           # Docsify entry point
-├── .nojekyll                            # Disable GitHub Jekyll processing
-│
-└── reference/                           # Detailed technical documentation
-    ├── README.md                        # Reference hub & index
-    │
-    ├── setup/                           # Setup & deployment details
-    │   ├── README.md                    # Setup index
-    │   ├── local-setup.md               # Detailed local development setup
-    │   ├── production-deployment.md     # Render/production deployment
-    │   ├── environment-config.md        # Environment variables & config
-    │   └── testing.md                   # Testing setup & execution
-    │
-    ├── architecture/                    # System design deep-dive
-    │   ├── README.md                    # Architecture index
-    │   ├── system-design.md             # Complete system design doc
-    │   ├── api-design.md                # REST & WebSocket API specs
-    │   ├── data-flow.md                 # Data flow diagrams & sequences
-    │   ├── database-schema.md           # Supabase schema & models
-    │   ├── components/                  # Component-level documentation
-    │   │   ├── README.md
-    │   │   ├── frontend.md              # Frontend architecture
-    │   │   ├── backend.md               # Backend architecture
-    │   │   ├── database.md              # Database design
-    │   │   ├── caching.md               # Redis caching strategy
-    │   │   └── websocket.md             # WebSocket implementation
-    │   └── decisions/                   # Architecture Decision Records (ADRs)
-    │       ├── README.md                # ADR index
-    │       ├── adr-001-asr-selection.md
-    │       ├── adr-002-audio-format.md
-    │       └── adr-003-deployment-strategy.md
-    │
-    ├── guides/                          # Implementation & how-to guides
-    │   ├── README.md                    # Guides index
-    │   ├── audio-pipeline.md            # Audio capture → encoding → transfer
-    │   ├── voice-detection.md           # VAD implementation & tuning
-    │   ├── websocket-streaming.md       # Real-time streaming setup
-    │   ├── memory-system.md             # Conversation memory implementation
-    │   ├── command-queue.md             # Priority queue system
-    │   └── testing-guide.md             # Comprehensive testing guide
-    │
-    ├── troubleshooting/                 # Root cause analysis & fixes
-    │   ├── README.md                    # Troubleshooting hub with diagnostic tree
-    │   ├── symptoms/                    # Organized by user-visible symptom
-    │   │   ├── README.md
-    │   │   ├── connection-issues.md     # WebSocket disconnects, timeouts
-    │   │   ├── audio-problems.md        # No audio, distorted audio
-    │   │   ├── performance-issues.md    # Latency, slow response
-    │   │   └── deployment-errors.md     # Render deployment failures
-    │   ├── fixes/                       # Detailed fix documentation (RCA)
-    │   │   ├── README.md
-    │   │   ├── websocket-fixes.md       # WebSocket connection fixes
-    │   │   ├── audio-pipeline-fixes.md  # Audio processing fixes
-    │   │   ├── vad-fixes.md             # Voice detection fixes
-    │   │   └── deployment-fixes.md      # Deployment issue fixes
-    │   └── incidents/                   # Post-mortem incident reports
-    │       ├── README.md                # Incident log & patterns
-    │       ├── 2025-10-13-websocket-disconnect.md
-    │       └── 2025-10-14-vad-threshold.md
-    │
-    ├── api/                             # API reference documentation
-    │   ├── README.md                    # API overview
-    │   ├── rest-endpoints.md            # REST API endpoints
-    │   ├── websocket-protocol.md        # WebSocket message protocol
-    │   ├── models.md                    # Request/response models
-    │   └── errors.md                    # Error codes & handling
-    │
-    └── optimization/                    # Performance & optimization
-        ├── README.md                    # Optimization index
-        ├── latency-optimization.md      # Reducing end-to-end latency
-        ├── caching-strategy.md          # Redis caching patterns
-        ├── resource-usage.md            # Memory & CPU optimization
-        └── monitoring.md                # Monitoring & observability
-```
-
-**Key Principles:**
-- **docs/**: High-level overview docs (≤ 10 pages) for quick understanding
-- **docs/reference/**: Deep-dive technical docs with full implementation details
-- **Naming**: Use kebab-case for Docsify URL compatibility (e.g., `local-setup.md` → `/reference/setup/local-setup`)
-- **Cross-linking**: Relative paths work across both structures
-- **Docsify-ready**: All paths compatible with Docsify's routing
-
----
-
-## Tree-Based Architecture
-
-### Level 1: Root Documentation Hub
-
-**Location:** [`docs/README.md`](README.md)
-
-**Purpose:** Entry point for all documentation
-
-**Contents:**
-- Quick start guide
-- Documentation tree map
-- Common tasks shortcuts
-- Emergency troubleshooting links
-
-### Level 2: Category Indexes
-
-**Locations:**
-- `docs/README.md` - User guides
-- `reference/DOCUMENTATION_INDEX.md` - Technical references
-- `troubleshooting/README.md` - Problem solving
-- `architecture/README.md` - System design
-
-**Purpose:** Navigate to specific topic areas
-
-### Level 3: Topic Documentation
-
-**Examples:**
-- `docs/LOCAL_SETUP.md` - Setup procedures
-- `reference/SYSTEM_DESIGN_CURRENT.md` - Architecture
-- `troubleshooting/symptoms/audio_problems.md` - Diagnosis
-
-**Purpose:** Detailed information on specific topics
-
-### Level 4: Implementation Details
-
-**Examples:**
-- Code files with inline documentation
-- Test files with usage examples
-- Configuration files with comments
-
-**Purpose:** Specific implementation references
-
----
-
-## Document Types & Templates
-
-### 1. FIXES Documents (Root Cause Analysis)
-
-**Template:** `troubleshooting/root_causes/PROBLEM_FIXES.md`
-
-```markdown
-# [Component] Fixes: [Problem Summary]
-
-**Status:** ✅ Fixed | 🚧 In Progress | ⚠️ Workaround
-**Severity:** Critical | High | Medium | Low
-**Date Fixed:** YYYY-MM-DD
-**Affected Versions:** vX.X.X - vX.X.X
-
----
-
-## Symptoms
-
-### User-Facing Symptoms
-- What users experienced
-- Error messages shown
-- Behavior observed
-
-### Technical Symptoms
-- Logs/errors in console
-- Specific failures
-- Reproducible steps
-
----
-
-## Root Cause Analysis
-
-### Investigation Process
-1. Initial hypothesis
-2. Tests performed
-3. Data collected
-4. Actual root cause discovered
-
-### Technical Explanation
-- Why it failed
-- What was wrong
-- System interaction diagram
-
-### Code References
-- File: `path/to/file.ts:line_number`
-- Function: `functionName()`
-- Related components
-
----
-
-## Solution Implemented
-
-### Changes Made
-1. **File:** `path/to/file.ts:lines`
-   - What changed
-   - Why this approach
-
-2. **File:** `other/file.py:lines`
-   - Related changes
-   - Dependencies updated
-
-### Configuration Changes
-- Environment variables
-- Config file updates
-- Feature flags
-
----
-
-## Verification
-
-### Test Cases
-- [ ] Test case 1
-- [ ] Test case 2
-- [ ] Regression test
-
-### Performance Impact
-- Before: [metrics]
-- After: [metrics]
-- Improvement: [percentage]
-
----
-
-## Prevention
-
-### Monitoring Added
-- Logs added at: `file:line`
-- Metrics tracked: [metrics]
-- Alerts configured: [alert conditions]
-
-### Documentation Updated
-- [ ] User guide updated
-- [ ] API docs updated
-- [ ] Troubleshooting guide updated
-
----
-
-## Related Issues
-
-- **Similar Issues:** [#123](link), [#456](link)
-- **Related Docs:** [SYSTEM_DESIGN.md](link)
-- **Follow-up Tasks:** [TODO.md#task](link)
-
----
-
-## Quick Reference
-
-**To diagnose similar issues:**
-1. Check logs at: [location]
-2. Verify config: [settings]
-3. Test with: [test command]
-
-**Emergency rollback:**
-```bash
-git revert [commit-hash]
-make deploy
-```
-```
-
-### 2. GUIDE Documents (Implementation Guides)
-
-**Template:** `reference/FEATURE_GUIDE.md`
-
-```markdown
-# [Feature] Implementation Guide
-
-**Purpose:** [One-line description]
-**Target Audience:** [Frontend/Backend/Full-stack] developers
-**Estimated Time:** [X] hours
-**Prerequisites:** [Required knowledge/setup]
+5. [Navigation & Discovery](#navigation--discovery)
+6. [Implementation Guide](#implementation-guide)
+7. [Maintenance](#maintenance)
 
 ---
 
 ## Overview
 
-### What This Guide Covers
-- Topic 1
-- Topic 2
-- Topic 3
+### Core Principles
 
-### System Context
-- Where this fits in the architecture
-- Related components
-- Dependencies
+1. **Tree-Based Hierarchy**: General overview → Detailed reference
+2. **Fast Root Causing**: Symptom-based troubleshooting index
+3. **Modular Templates**: Reusable document templates
+4. **Docsify Integration**: Clean URLs and navigation
+5. **Traceability**: Every fix linked to root cause analysis
+
+### Quick Reference
+
+| Need | Go To |
+|------|-------|
+| 🚀 Get started quickly | [docs/getting-started.md](getting-started.md) |
+| 🏗️ Understand architecture | [docs/architecture-overview.md](architecture-overview.md) |
+| 🔧 Fix a problem | [docs/troubleshooting.md](troubleshooting.md) |
+| 📚 Deep technical details | [docs/reference/](reference/) |
+| 📝 Write new docs | [Templates](#document-types) |
 
 ---
 
-## Step-by-Step Implementation
+## Documentation Structure
 
-### Step 1: [Task Name]
+### Folder Hierarchy
 
-**What:** Brief description
+```
+docs/                                    # Overview documentation (Docsify root)
+│
+├── README.md                            # Landing page & navigation hub
+├── overview.md                          # System overview (what/why/how)
+├── getting-started.md                   # Quick start guide (5-10 min)
+├── architecture-overview.md             # High-level architecture
+├── troubleshooting.md                   # Common issues quick reference
+├── faq.md                               # Frequently asked questions
+│
+├── _sidebar.md                          # Docsify sidebar (auto-generated)
+├── _navbar.md                           # Docsify navbar (optional)
+├── index.html                           # Docsify config
+├── .nojekyll                            # GitHub Pages compatibility
+│
+└── reference/                           # Detailed technical docs
+    │
+    ├── README.md                        # Reference hub
+    │
+    ├── setup/                           # Setup & deployment
+    │   ├── README.md
+    │   ├── local-setup.md
+    │   ├── production-deployment.md
+    │   ├── environment-config.md
+    │   └── testing.md
+    │
+    ├── architecture/                    # System design
+    │   ├── README.md
+    │   ├── system-design.md
+    │   ├── api-design.md
+    │   ├── data-flow.md
+    │   ├── components/
+    │   │   ├── README.md
+    │   │   ├── frontend.md
+    │   │   ├── backend.md
+    │   │   └── database.md
+    │   └── decisions/                   # ADRs
+    │       ├── README.md
+    │       └── adr-XXX-title.md
+    │
+    ├── guides/                          # How-to guides
+    │   ├── README.md
+    │   ├── audio-pipeline.md
+    │   ├── websocket-streaming.md
+    │   └── voice-detection.md
+    │
+    ├── troubleshooting/                 # Root cause analysis
+    │   ├── README.md                    # Diagnostic hub
+    │   ├── symptoms/
+    │   │   ├── README.md
+    │   │   ├── connection-issues.md
+    │   │   ├── audio-problems.md
+    │   │   └── performance-issues.md
+    │   ├── fixes/                       # Detailed RCA docs
+    │   │   ├── README.md
+    │   │   ├── websocket-fixes.md
+    │   │   └── audio-pipeline-fixes.md
+    │   └── incidents/                   # Post-mortems
+    │       ├── README.md
+    │       └── YYYY-MM-DD-incident.md
+    │
+    ├── api/                             # API reference
+    │   ├── README.md
+    │   ├── rest-endpoints.md
+    │   └── websocket-protocol.md
+    │
+    └── optimization/                    # Performance
+        ├── README.md
+        └── latency-optimization.md
+```
 
+### Design Decisions
+
+**Why this structure?**
+
+1. **docs/**: Quick overview docs (<10 pages) for fast onboarding
+2. **docs/reference/**: Deep technical docs organized by topic
+3. **Kebab-case filenames**: Clean Docsify URLs (`/reference/setup/local-setup`)
+4. **README.md in every folder**: Navigation and context
+5. **Modular templates**: Consistent structure across all docs
+
+---
+
+## Document Types
+
+### 1. Overview Documents (in docs/)
+
+**Location:** `docs/*.md`
+**Purpose:** High-level understanding
+**Max Length:** 300 lines
+**Template:** [templates/overview-template.md](reference/templates/overview-template.md)
+
+**Structure:**
+```markdown
+# [Topic Name]
+
+> Brief one-sentence description
+
+## What is it?
+- Concise explanation (3-5 bullets)
+
+## Why do we need it?
+- Value proposition
+
+## How does it work?
+- High-level flow diagram
+- Key concepts
+
+## Quick Links
+- → [Detailed Guide](reference/guides/topic.md)
+- → [Architecture](reference/architecture/component.md)
+```
+
+**Example:** [docs/overview.md](overview.md)
+
+---
+
+### 2. Reference Documents (in docs/reference/)
+
+**Location:** `docs/reference/guides/*.md`
+**Purpose:** Detailed implementation guides
+**Template:** [templates/guide-template.md](reference/templates/guide-template.md)
+
+**Structure:**
+```markdown
+# [Feature] Implementation Guide
+
+**Purpose:** [One-line]
+**Audience:** [Developer type]
+**Time:** [Estimate]
+**Prerequisites:** [Links]
+
+## Overview
+- What this covers
+- System context
+
+## Implementation Steps
+
+### Step 1: [Task]
+**What:** Description
 **Why:** Rationale
-
-**How:**
-```typescript
-// Code example with comments
-function example() {
-  // Implementation
-}
-```
-
-**Files Modified:**
-- `path/to/file.ts:lines`
-
-**Testing:**
-```bash
-# Test command
-npm test path/to/test
-```
+**How:** Code example
+**Files:** Links with line numbers
+**Test:** Verification commands
 
 ### Step 2: [Next Task]
-[Repeat structure]
-
----
+[Repeat]
 
 ## Configuration
-
-### Environment Variables
-```bash
-VARIABLE_NAME=value  # Description
-```
-
-### Feature Flags
-```typescript
-const config = {
-  featureName: true,  // Enable this feature
-};
-```
-
----
+- Environment variables
+- Feature flags
 
 ## Testing
-
-### Unit Tests
-- Test file: `tests/unit/test_feature.ts`
-- Run: `npm test unit/test_feature`
-
-### Integration Tests
-- Test file: `tests/integration/test_feature_integration.ts`
-- Run: `npm test integration`
-
-### Manual Testing Checklist
-- [ ] Test case 1
-- [ ] Test case 2
-- [ ] Edge case 3
-
----
+- Unit tests
+- Integration tests
+- Manual checklist
 
 ## Troubleshooting
-
-### Common Issues
-
-#### Issue: [Problem description]
-**Symptom:** What you see
-**Cause:** Why it happens
-**Solution:** How to fix
-**Related:** [Link to FIXES doc]
-
----
-
-## Performance Considerations
-
-- Metric 1: [expected value]
-- Metric 2: [expected value]
-- Optimization tips
-
----
+- Common issues → [Link to fixes](../troubleshooting/fixes/)
 
 ## References
-
-- **Architecture:** [SYSTEM_DESIGN.md](link)
-- **API Spec:** [API_DESIGN.md](link)
-- **Related Guides:** [OTHER_GUIDE.md](link)
+- Related docs
 ```
 
-### 3. TROUBLESHOOTING Documents
+**Example:** [reference/guides/audio-pipeline.md](reference/guides/audio-pipeline.md)
 
-**Template:** `troubleshooting/symptoms/SYMPTOM_NAME.md`
+---
 
+### 3. Troubleshooting Documents
+
+#### 3a. Symptom Index
+
+**Location:** `docs/reference/troubleshooting/symptoms/*.md`
+**Purpose:** Quick problem diagnosis
+**Template:** [templates/symptom-template.md](reference/templates/symptom-template.md)
+
+**Structure:**
 ```markdown
 # Troubleshooting: [Symptom Category]
 
-**Quick Links:**
-- [Most Common Issue](#most-common)
-- [Emergency Fixes](#emergency-fixes)
-- [Root Cause Index](#root-causes)
+## Quick Diagnosis
 
----
-
-## Symptom Index
-
-### [Symptom 1]: [Brief Description]
+### Symptom: [Description]
 
 **Indicators:**
-- Error message: `error text`
-- Log entry: `log pattern`
-- User sees: [behavior]
+- Error: `error message`
+- Log: `log pattern`
+- Behavior: [what user sees]
 
 **Quick Check:**
 ```bash
-# Command to diagnose
 make check-something
 ```
 
 **Common Causes:**
-1. **[Root Cause 1]** (70% of cases)
-   - **Solution:** [Quick fix]
-   - **Details:** [Link to FIXES doc]
 
-2. **[Root Cause 2]** (20% of cases)
-   - **Solution:** [Quick fix]
-   - **Details:** [Link to FIXES doc]
-
-3. **[Root Cause 3]** (10% of cases)
-   - **Solution:** [Quick fix]
-   - **Details:** [Link to FIXES doc]
+| Cause | Frequency | Solution | Details |
+|-------|-----------|----------|---------|
+| [Root Cause 1] | 70% | [Quick fix] | [Link to fixes/](../fixes/component-fixes.md#cause-1) |
+| [Root Cause 2] | 20% | [Quick fix] | [Link to fixes/](../fixes/component-fixes.md#cause-2) |
+| [Root Cause 3] | 10% | [Quick fix] | [Link to fixes/](../fixes/component-fixes.md#cause-3) |
 
 **Diagnostic Tree:**
 ```
-Is error X present?
-├─ Yes → Check configuration Y
-│  ├─ Y is correct → Issue: Root Cause 1
-│  └─ Y is incorrect → Fix Y, restart
+Error X present?
+├─ Yes → Check config Y
+│  ├─ Y correct → Root Cause 1
+│  └─ Y wrong → Fix Y, restart
 └─ No → Check logs Z
-   ├─ Z shows error → Issue: Root Cause 2
-   └─ Z is clean → Issue: Root Cause 3
+   ├─ Z shows error → Root Cause 2
+   └─ Z clean → Root Cause 3
 ```
-
----
 
 ## Emergency Fixes
 
 ### Quick Restart
 ```bash
 make restart
-# Fixes: transient connection issues
 ```
 
 ### Clear Cache
 ```bash
 make clean-cache
-# Fixes: stale data issues
 ```
 
-### Reset Configuration
-```bash
-make reset-config
-# Fixes: corrupted config
+## Related
+- [Detailed Fixes](../fixes/component-fixes.md)
+- [Architecture](../../architecture/components/component.md)
 ```
+
+**Example:** [reference/troubleshooting/symptoms/connection-issues.md](reference/troubleshooting/symptoms/connection-issues.md)
 
 ---
 
-## Root Cause Details
+#### 3b. Fix Documents (Root Cause Analysis)
 
-### [Root Cause 1]: [Name]
+**Location:** `docs/reference/troubleshooting/fixes/*.md`
+**Purpose:** Detailed RCA documentation
+**Template:** [templates/rca-template.md](reference/templates/rca-template.md)
 
-**What Happens:**
-- Technical explanation
+**Structure:**
+```markdown
+# [Component] Fixes
 
-**Why It Happens:**
-- Underlying reason
+**Last Updated:** YYYY-MM-DD
+**Total Fixes:** N
 
-**How to Fix:**
-1. Step 1
-2. Step 2
-3. Verify: `test command`
+## Quick Index
 
-**Prevent Future Occurrence:**
-- Monitoring added
-- Configuration validated
-
-**Full Details:** [Link to detailed FIXES doc]
-
----
-
-## Diagnostic Commands
-
-### Check System Health
-```bash
-make health-check
-# Expected output: all services "OK"
-```
-
-### View Recent Errors
-```bash
-make logs-errors
-# Look for: [pattern]
-```
-
-### Test Components
-```bash
-make test-component NAME
-# Tests specific component
-```
+| Fix ID | Issue | Status | Date |
+|--------|-------|--------|------|
+| [FIX-001](#fix-001) | [Brief description] | ✅ Fixed | YYYY-MM-DD |
+| [FIX-002](#fix-002) | [Brief description] | ✅ Fixed | YYYY-MM-DD |
 
 ---
 
-## Getting Help
+## FIX-001: [Problem Summary]
 
-**Still stuck? Follow this order:**
+**Status:** ✅ Fixed | 🚧 In Progress | ⚠️ Workaround
+**Severity:** Critical | High | Medium | Low
+**Date Fixed:** YYYY-MM-DD
+**Affected Versions:** vX.X.X - vX.X.X
+**Related Incident:** [Link if exists](../incidents/YYYY-MM-DD-incident.md)
 
-1. **Check Recent Changes**
-   - `git log --oneline -n 10`
-   - Did a recent commit break it?
+### Symptoms
 
-2. **Verify Environment**
-   - `make verify-env`
-   - Are all variables set?
+**User-Facing:**
+- What users experienced
+- Error messages
 
-3. **Review Related Issues**
-   - [Similar Issue #123](link)
-   - [Similar Issue #456](link)
+**Technical:**
+- Logs/console errors
+- Reproducible steps
 
-4. **Create Debug Report**
+### Root Cause Analysis
+
+**Investigation:**
+1. Initial hypothesis
+2. Tests performed
+3. Data collected
+4. Actual root cause
+
+**Technical Explanation:**
+- Why it failed
+- System interaction
+
+**Code References:**
+- [backend/app/core/websocket_manager.py:145-167](../../../backend/app/core/websocket_manager.py)
+- [frontend/src/components/VoiceInterface.tsx:89](../../../frontend/src/components/VoiceInterface.tsx)
+
+### Solution
+
+**Changes Made:**
+
+1. **File:** [backend/app/core/websocket_manager.py:145-167](../../../backend/app/core/websocket_manager.py)
+   ```python
+   # Before
+   await websocket.send_text(message)
+
+   # After
+   await websocket.send_json({"type": "audio", "data": message})
+   ```
+   **Why:** Standardize message format
+
+2. **Configuration:**
    ```bash
-   make debug-report > debug.txt
-   # Attach to issue
+   # Added to .env
+   WEBSOCKET_PING_INTERVAL=30
    ```
 
+**Verification:**
+- [x] Unit tests pass
+- [x] Integration tests pass
+- [x] Manual verification
+
+**Performance Impact:**
+- Before: 5s latency
+- After: 100ms latency
+- Improvement: 98%
+
+### Prevention
+
+**Monitoring:**
+- Added metrics: `websocket_message_errors`
+- Alert threshold: >10 errors/min
+- Dashboard: [Link]
+
+**Tests Added:**
+- [tests/backend/test_websocket_format.py](../../../tests/backend/test_websocket_format.py)
+
+**Documentation:**
+- [x] User guide updated
+- [x] API docs updated
+- [x] This RCA doc
+
+### Related
+
+- **Similar Issues:** [FIX-003](#fix-003)
+- **Architecture:** [WebSocket Design](../../architecture/components/websocket.md)
+- **API Spec:** [WebSocket Protocol](../../api/websocket-protocol.md)
+
 ---
 
-## Related Documentation
+## FIX-002: [Next Problem]
 
-- **Architecture:** [SYSTEM_DESIGN.md](link)
-- **Detailed Fixes:** [FIXES_INDEX.md](link)
-- **Performance:** [OPTIMIZATION_GUIDE.md](link)
+[Repeat structure]
 ```
 
-### 4. ARCHITECTURE DECISION RECORDS (ADRs)
+**Example:** [reference/troubleshooting/fixes/websocket-fixes.md](reference/troubleshooting/fixes/websocket-fixes.md)
 
-**Template:** `architecture/decisions/ADR-XXX-decision-name.md`
+---
 
+#### 3c. Incident Reports (Post-Mortems)
+
+**Location:** `docs/reference/troubleshooting/incidents/*.md`
+**Purpose:** Learn from production incidents
+**Template:** [templates/incident-template.md](reference/templates/incident-template.md)
+
+**Naming:** `YYYY-MM-DD-brief-description.md`
+
+**Structure:**
+```markdown
+# Incident: [Name]
+
+**Date:** YYYY-MM-DD
+**Duration:** HH:MM
+**Severity:** P0 (Critical) | P1 | P2 | P3
+**Status:** Resolved
+**Impact:** [User-facing description]
+
+## Executive Summary
+
+[2-3 sentences for management]
+
+**Root Cause:** [One sentence]
+**Resolution:** [One sentence]
+**Prevention:** [One sentence]
+
+## Timeline
+
+| Time | Event | Action |
+|------|-------|--------|
+| 14:23 | Incident detected | Alerted team |
+| 14:25 | Investigation started | Logs reviewed |
+| 14:35 | Root cause found | Fix deployed |
+| 14:45 | Service restored | Monitoring confirmed |
+| 15:00 | Post-mortem started | Doc updated |
+
+## Detection
+
+**When:** [Timestamp]
+**How:** Monitoring alert / User report
+**Initial Assessment:** [Quick summary]
+
+## Root Cause
+
+**Component:** [System component]
+**Issue:** [Technical explanation]
+**Why It Happened:** [Underlying cause]
+
+**Details:** [Link to RCA](../fixes/component-fixes.md#fix-xxx)
+
+## Resolution
+
+**Fix Applied:** [What was changed]
+**Verification:** [How we confirmed]
+
+**Details:** [Link to PR/commit]
+
+## Prevention
+
+**Immediate:**
+- [x] Monitoring added
+- [x] Alert configured
+- [x] Tests added
+
+**Follow-up:**
+- [ ] [Task 1] - Owner - Due date
+- [ ] [Task 2] - Owner - Due date
+
+## Lessons Learned
+
+**What Went Well:**
+- Fast detection
+- Quick resolution
+
+**What Could Improve:**
+- Earlier detection
+- Better monitoring
+
+## References
+
+- **RCA Doc:** [websocket-fixes.md](../fixes/websocket-fixes.md#fix-001)
+- **PR:** [#123](https://github.com/user/repo/pull/123)
+- **Related Incidents:** [2025-10-13-similar-issue.md](2025-10-13-similar-issue.md)
+```
+
+**Example:** [reference/troubleshooting/incidents/2025-10-13-websocket-disconnect.md](reference/troubleshooting/incidents/2025-10-13-websocket-disconnect.md)
+
+---
+
+### 4. Architecture Decision Records (ADRs)
+
+**Location:** `docs/reference/architecture/decisions/*.md`
+**Purpose:** Document key technical decisions
+**Template:** [templates/adr-template.md](reference/templates/adr-template.md)
+
+**Naming:** `adr-XXX-decision-title.md` (sequential numbering)
+
+**Structure:**
 ```markdown
 # ADR-XXX: [Decision Title]
 
 **Status:** Accepted | Rejected | Superseded | Deprecated
 **Date:** YYYY-MM-DD
 **Deciders:** [Names]
-**Related ADRs:** [Links]
-
----
+**Related ADRs:** [ADR-001](adr-001-title.md), [ADR-002](adr-002-title.md)
 
 ## Context
 
-What is the issue we're facing?
+What problem are we solving?
 
 - Current situation
 - Constraints
 - Requirements
 
----
-
 ## Decision
 
 What did we decide?
 
-Brief statement of the decision.
-
----
+[Clear statement of decision]
 
 ## Options Considered
 
@@ -601,7 +528,7 @@ Brief statement of the decision.
 - Disadvantage 1
 - Disadvantage 2
 
-**Estimated Effort:** [Time/complexity]
+**Effort:** [Low/Medium/High]
 
 ### Option 2: [Name]
 [Same structure]
@@ -609,577 +536,339 @@ Brief statement of the decision.
 ### Option 3: [Name]
 [Same structure]
 
----
-
 ## Rationale
 
-Why did we choose this option?
+Why this option?
 
 - Key factors
 - Trade-offs accepted
 - Risk mitigation
 
----
-
 ## Consequences
 
-### Positive
+**Positive:**
 - Benefit 1
 - Benefit 2
 
-### Negative
+**Negative:**
 - Trade-off 1
 - Trade-off 2
 
-### Neutral
+**Neutral:**
 - Impact 1
-
----
 
 ## Implementation
 
-### Changes Required
-- Component 1: [changes]
-- Component 2: [changes]
+**Changes Required:**
+- Component 1: [description]
+- Component 2: [description]
 
-### Migration Plan
+**Migration Plan:**
 1. Step 1
 2. Step 2
 3. Rollout strategy
 
-### Success Metrics
-- Metric 1: [target]
-- Metric 2: [target]
-
----
+**Success Metrics:**
+- Metric 1: [target value]
+- Metric 2: [target value]
 
 ## References
 
 - **Technical Spec:** [Link]
-- **Discussion:** [Issue/PR link]
-- **Related Docs:** [Links]
+- **Discussion:** [Issue #123](link)
+- **Related Docs:** [Architecture](../system-design.md)
 ```
+
+**Example:** [reference/architecture/decisions/adr-001-asr-selection.md](reference/architecture/decisions/adr-001-asr-selection.md)
 
 ---
 
 ## Root Cause Analysis System
 
-### RCA Process Framework
+### RCA Process (5 Phases)
 
-#### Phase 1: Detection (Minutes 0-5)
-
-```markdown
-## Incident Detection
-
-**When:** [Timestamp]
-**Detected By:** [Monitoring/User report]
-**Severity:** [Critical/High/Medium/Low]
-**Impact:** [Services/users affected]
-
-### Immediate Actions Taken
-- [ ] Service status checked
-- [ ] Error logs collected
-- [ ] Recent changes reviewed
-- [ ] Incident channel created
+```
+Detection → Triage → Investigation → Resolution → Prevention
+(0-5 min)  (5-15 min)  (15-60 min)   (60-120 min)  (Post-incident)
 ```
 
-#### Phase 2: Triage (Minutes 5-15)
+### Phase Checklist
 
-```markdown
-## Triage
+**1. Detection (0-5 min)**
+- [ ] Incident logged with timestamp
+- [ ] Severity assessed
+- [ ] Team notified
+- [ ] Impact assessed
 
-### Symptoms Observed
-1. [User-facing symptom]
-2. [System-level symptom]
-3. [Metrics deviation]
+**2. Triage (5-15 min)**
+- [ ] Symptoms documented
+- [ ] Initial hypothesis formed
+- [ ] Quick diagnostic tests run
+- [ ] Workaround attempted
 
-### Initial Hypothesis
-- **Primary hypothesis:** [What we think]
-- **Confidence:** High/Medium/Low
-- **Quick test:** [How to verify]
+**3. Investigation (15-60 min)**
+- [ ] Root cause identified
+- [ ] Code/config reviewed
+- [ ] Tests performed
+- [ ] Solution designed
 
-### Workaround Applied
-- **Action:** [What was done]
-- **Status:** [Working/Not working]
-- **ETA for fix:** [Estimate]
-```
+**4. Resolution (60-120 min)**
+- [ ] Fix implemented
+- [ ] Tests pass
+- [ ] Deployed to production
+- [ ] Monitoring confirms fix
 
-#### Phase 3: Investigation (Minutes 15-60)
-
-```markdown
-## Root Cause Investigation
-
-### Investigation Timeline
-
-#### Test 1: [Hypothesis]
-- **Tested:** [What was checked]
-- **Method:** [How it was tested]
-- **Result:** ✅ Confirmed | ❌ Ruled out
-- **Conclusion:** [Finding]
-
-#### Test 2: [Next hypothesis]
-[Same structure]
-
-### Root Cause Identified
-
-**Component:** [System component]
-**File:** `path/to/file:line`
-**Issue:** [Technical explanation]
-**Why it failed:** [Root cause analysis]
-
-### Contributing Factors
-1. Factor 1
-2. Factor 2
-3. Factor 3
-```
-
-#### Phase 4: Resolution (Minutes 60-120)
-
-```markdown
-## Solution Implementation
-
-### Fix Applied
-
-**Changes Made:**
-1. **File:** `path/to/file:lines`
-   ```diff
-   - old code
-   + new code
-   ```
-
-2. **Configuration:**
-   ```
-   VARIABLE=new_value
-   ```
-
-**Deployment:**
-- Commit: [hash]
-- Deploy time: [timestamp]
-- Verification: [test results]
-
-### Verification Steps
-- [ ] Service health check passed
-- [ ] Error rate returned to normal
-- [ ] User functionality restored
-- [ ] Regression tests passed
-```
-
-#### Phase 5: Prevention (Post-incident)
-
-```markdown
-## Prevention Measures
-
-### Monitoring Added
-1. **Metric:** [What to monitor]
-   - **Alert:** [When to alert]
-   - **Runbook:** [How to respond]
-
-2. **Log:** [What to log]
-   - **Location:** [Where]
-   - **Format:** [How]
-
-### Process Improvements
+**5. Prevention (Post-incident)**
+- [ ] RCA document created
+- [ ] Monitoring/alerts added
+- [ ] Tests added
 - [ ] Documentation updated
-- [ ] Test coverage increased
-- [ ] Alert configured
-- [ ] Runbook created
+- [ ] Incident report written
 
-### Follow-up Tasks
-- [ ] [Task 1] - Owner: [Name] - Due: [Date]
-- [ ] [Task 2] - Owner: [Name] - Due: [Date]
+### Document Flow
+
+```
+Incident Occurs
+     ↓
+Create: incidents/YYYY-MM-DD-incident.md (Post-mortem)
+     ↓
+Document RCA: fixes/component-fixes.md (Add FIX-XXX section)
+     ↓
+Update: symptoms/issue-category.md (Add to common causes)
+     ↓
+Update: guides/component-guide.md (Add troubleshooting section)
+     ↓
+Update: architecture/components/component.md (If design changed)
 ```
 
-### RCA Document Template
+---
 
-**File:** `troubleshooting/incidents/YYYY-MM-DD-incident-name.md`
+## Navigation & Discovery
 
+### Primary Entry Points
+
+1. **docs/README.md** - Main documentation hub
+2. **docs/troubleshooting.md** - Problem? Start here
+3. **docs/reference/README.md** - Deep technical docs
+4. **docs/reference/troubleshooting/README.md** - Diagnostic hub
+
+### Search Paths
+
+**By Role:**
+- Developer → [getting-started.md](getting-started.md) → [reference/guides/](reference/guides/)
+- DevOps → [troubleshooting.md](troubleshooting.md) → [reference/troubleshooting/](reference/troubleshooting/)
+- PM/QA → [overview.md](overview.md) → [architecture-overview.md](architecture-overview.md)
+
+**By Task:**
+- Setup → [getting-started.md](getting-started.md)
+- Debug → [troubleshooting.md](troubleshooting.md)
+- Understand → [architecture-overview.md](architecture-overview.md)
+- Implement → [reference/guides/](reference/guides/)
+
+**By Symptom:**
+- Error message → Search in [reference/troubleshooting/symptoms/](reference/troubleshooting/symptoms/)
+- Slow performance → [reference/troubleshooting/symptoms/performance-issues.md](reference/troubleshooting/symptoms/performance-issues.md)
+- Connection fails → [reference/troubleshooting/symptoms/connection-issues.md](reference/troubleshooting/symptoms/connection-issues.md)
+
+### Cross-Reference Standards
+
+**Link Format:**
 ```markdown
-# Incident: [Name] - [Date]
+<!-- Relative links within docs/ -->
+See [Guide](reference/guides/feature.md)
 
-**Status:** Resolved | Investigating | Mitigated
-**Severity:** P0 (Critical) | P1 (High) | P2 (Medium) | P3 (Low)
-**Duration:** [Start] to [End] ([Duration])
-**Impact:** [Description]
+<!-- Links with line numbers (code) -->
+[websocket_manager.py:145-167](../../../backend/app/core/websocket_manager.py)
 
----
-
-## Executive Summary
-
-[2-3 sentence summary for management]
-
-**Root Cause:** [One sentence]
-**Resolution:** [One sentence]
-**Prevention:** [One sentence]
-
----
-
-## Timeline
-
-| Time | Event | Action Taken |
-|------|-------|--------------|
-| 14:23 | Incident detected | Team notified |
-| 14:25 | Investigation started | Logs reviewed |
-| 14:35 | Root cause identified | Fix deployed |
-| 14:45 | Service restored | Monitoring confirmed |
-| 15:00 | Post-mortem started | Documentation updated |
-
----
-
-## Detection
-[Phase 1 content]
-
-## Triage
-[Phase 2 content]
-
-## Investigation
-[Phase 3 content]
-
-## Resolution
-[Phase 4 content]
-
-## Prevention
-[Phase 5 content]
-
----
-
-## Lessons Learned
-
-### What Went Well
-- Item 1
-- Item 2
-
-### What Could Be Improved
-- Item 1
-- Item 2
-
-### Action Items
-- [ ] [Action 1] - Owner - Due date
-- [ ] [Action 2] - Owner - Due date
-
----
-
-## References
-
-- **Related Incidents:** [Links]
-- **Documentation Updated:** [Links]
-- **Code Changes:** [PR links]
+<!-- Links to specific sections -->
+[WebSocket Fixes](reference/troubleshooting/fixes/websocket-fixes.md#fix-001)
 ```
 
----
-
-## Folder Organization Guidelines
-
-### Naming Conventions
-
-#### Files
-
-```
-# Good examples
-SYSTEM_DESIGN_CURRENT.md         # Current state emphasized
-WEBSOCKET_FIXES.md                # Topic + document type
-LOCAL_SETUP.md                    # Clear purpose
-ADR-001-audio-format.md           # Numbered ADR
-
-# Bad examples
-design.md                         # Too vague
-fixes.md                          # No topic specified
-websocket.md                      # Missing document type
-my-notes.md                       # Not descriptive
-```
-
-#### Folders
-
-```
-# Good examples
-troubleshooting/symptoms/         # Organized by symptom
-architecture/components/backend/  # Hierarchical structure
-reference/guides/                 # Clear categorization
-
-# Bad examples
-misc/                             # Catch-all folder
-temp/                             # Unclear purpose
-docs2/                            # Duplicates existing
-```
-
-### Folder Structure Rules
-
-1. **Maximum Depth:** 4 levels
-   ```
-   docs/category/subcategory/specific/file.md  # OK
-   docs/a/b/c/d/e/file.md                      # Too deep
-   ```
-
-2. **README in Every Folder**
-   - Purpose of folder
-   - Index of contents
-   - Quick links to key docs
-
-3. **Related Files Together**
-   ```
-   reference/
-   ├── AUDIO_PIPELINE_FIXES.md
-   ├── AUDIO_FORMAT_CURRENT.md
-   └── AUDIO_TESTING_GUIDE.md
-   ```
-
-4. **No Orphan Files**
-   - Every file referenced in an index
-   - Every file has a clear parent category
-
-### Documentation Inventory
-
-**File:** `.github/docs-inventory.json`
-
-```json
-{
-  "last_audit": "2025-10-15",
-  "total_docs": 87,
-  "by_category": {
-    "user_guides": 12,
-    "technical_reference": 34,
-    "troubleshooting": 15,
-    "architecture": 26
-  },
-  "files": [
-    {
-      "path": "docs/LOCAL_SETUP.md",
-      "category": "user_guides",
-      "status": "up_to_date",
-      "last_updated": "2025-10-15",
-      "owner": "team",
-      "related": ["docs/TESTING.md", "reference/SYSTEM_DESIGN.md"]
-    }
-  ]
-}
-```
+**Bi-directional Links:**
+- Every fix → Links to related incident
+- Every symptom → Links to fixes
+- Every guide → Links to architecture
+- Every component doc → Links to guides
 
 ---
 
-## Quick Navigation System
+## Implementation Guide
 
-### Documentation Hub
-
-**File:** `docs/README.md`
-
-```markdown
-# Documentation Hub
-
-## 🚨 Emergency
-
-**System down?** → [Troubleshooting Index](troubleshooting/README.md)
-**Recent change broke something?** → [Recent Incidents](troubleshooting/incidents/)
-**Need to rollback?** → [Deployment Rollback](docs/DEPLOYMENT.md#rollback)
-
----
-
-## 🎯 Quick Links by Role
-
-### For Developers
-- [Local Setup](docs/LOCAL_SETUP.md) - Get started in 5 minutes
-- [System Architecture](architecture/overview/system_diagram.md)
-- [API Reference](reference/API_DESIGN.md)
-- [Testing Guide](docs/TESTING.md)
-
-### For DevOps
-- [Deployment Guide](docs/RENDER_DEPLOYMENT.md)
-- [Monitoring Setup](reference/MONITORING.md)
-- [Incident Runbooks](troubleshooting/runbooks/)
-
-### For Product/QA
-- [Feature Overview](reference/IMPLEMENTATION_SUMMARY.md)
-- [User Flows](architecture/overview/user_flows.md)
-- [Test Cases](tests/TEST_INDEX.md)
-
----
-
-## 📚 Documentation by Topic
-
-### Setup & Deployment
-- [Local Setup](docs/LOCAL_SETUP.md)
-- [Production Deployment](docs/RENDER_DEPLOYMENT.md)
-- [Environment Configuration](reference/ENV_CONFIG.md)
-
-### Architecture
-- [System Design](architecture/overview/system_diagram.md)
-- [Data Flow](architecture/overview/data_flow.md)
-- [Component Details](architecture/components/)
-- [Design Decisions](architecture/decisions/)
-
-### Implementation Guides
-- [Audio Pipeline](reference/AUDIO_PIPELINE_GUIDE.md)
-- [WebSocket Streaming](reference/STREAMING_GUIDE.md)
-- [Voice Detection](reference/VAD_GUIDE.md)
-
-### Troubleshooting
-- [Connection Issues](troubleshooting/symptoms/connection_issues.md)
-- [Audio Problems](troubleshooting/symptoms/audio_problems.md)
-- [Performance Issues](troubleshooting/symptoms/performance_issues.md)
-- [All Incidents](troubleshooting/incidents/)
-
----
-
-## 🔍 Find Documentation
-
-### By Symptom
-"WebSocket disconnects immediately" → [Connection Issues](troubleshooting/symptoms/connection_issues.md#websocket-disconnect)
-
-"No audio capture" → [Audio Problems](troubleshooting/symptoms/audio_problems.md#no-capture)
-
-"Slow response time" → [Performance Issues](troubleshooting/symptoms/performance_issues.md#latency)
-
-### By Component
-- **Frontend** → [architecture/components/frontend/](architecture/components/frontend/)
-- **Backend** → [architecture/components/backend/](architecture/components/backend/)
-- **Database** → [architecture/components/database/](architecture/components/database/)
-
-### By Task
-- "I want to add a new feature" → [Development Guide](docs/DEVELOPMENT.md)
-- "I need to debug an issue" → [Debugging Guide](docs/DEBUGGING.md)
-- "I'm deploying to production" → [Deployment Checklist](docs/DEPLOYMENT.md#checklist)
-
----
-
-## 📋 Document Index
-
-[Complete alphabetical index with descriptions]
-
----
-
-## 🔧 Maintenance
-
-**Documentation Owner:** Development Team
-**Review Frequency:** Monthly
-**Last Updated:** 2025-10-15
-**Next Review:** 2025-11-15
-```
-
-### Search Helper Script
-
-**File:** `scripts/search-docs.sh`
+### Step 1: Create Folder Structure
 
 ```bash
-#!/bin/bash
-# Quick documentation search
+# Create new folders
+mkdir -p docs/reference/{setup,architecture/components,architecture/decisions,guides,troubleshooting/{symptoms,fixes,incidents},api,optimization,templates}
 
-QUERY="$1"
-DOCS_DIR="$(git rev-parse --show-toplevel)"
+# Create README.md in each folder
+find docs/reference -type d -exec touch {}/README.md \;
 
-if [ -z "$QUERY" ]; then
-  echo "Usage: ./search-docs.sh <search-term>"
-  echo "Example: ./search-docs.sh 'websocket error'"
-  exit 1
-fi
-
-echo "Searching documentation for: $QUERY"
-echo "================================"
-
-# Search in markdown files
-grep -rn --color=always "$QUERY" \
-  "$DOCS_DIR/docs" \
-  "$DOCS_DIR/reference" \
-  "$DOCS_DIR/troubleshooting" \
-  "$DOCS_DIR/architecture" \
-  --include="*.md"
-
-echo ""
-echo "Search complete. Files listed above."
+# Create Docsify files
+touch docs/{index.html,_sidebar.md,_navbar.md,.nojekyll}
 ```
+
+### Step 2: Create Templates
+
+Create modular templates in `docs/reference/templates/`:
+
+```bash
+cd docs/reference/templates
+
+# Create template files
+touch overview-template.md
+touch guide-template.md
+touch symptom-template.md
+touch rca-template.md
+touch incident-template.md
+touch adr-template.md
+```
+
+See [templates/](reference/templates/) folder for full templates.
+
+### Step 3: Migrate Existing Docs
+
+**Migration Priority:**
+
+1. **High Priority** (move to `docs/`):
+   - README.md → Update for Docsify
+   - PRD.md → Convert to overview.md
+   - MVP.md → Part of getting-started.md
+
+2. **Medium Priority** (move to `docs/reference/`):
+   - reference/*.md → Organize by category
+   - Fixes docs → troubleshooting/fixes/
+   - guides → reference/guides/
+
+3. **Low Priority** (archive or remove):
+   - Outdated docs
+   - Duplicate content
+   - Temporary notes
+
+**Migration Checklist:**
+- [ ] Read existing doc
+- [ ] Identify document type
+- [ ] Apply appropriate template
+- [ ] Update links
+- [ ] Add to index
+- [ ] Test links
+
+### Step 4: Setup Docsify
+
+**index.html:**
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Voice News Agent Docs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.$docsify = {
+      name: 'Voice News Agent',
+      repo: 'HaozheZhang6/news_agent',
+      loadSidebar: true,
+      subMaxLevel: 3,
+      auto2top: true,
+      search: {
+        paths: 'auto',
+        placeholder: 'Search docs...',
+        depth: 3
+      }
+    }
+  </script>
+  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
+</body>
+</html>
+```
+
+**_sidebar.md:**
+```markdown
+* Getting Started
+  * [Overview](overview.md)
+  * [Quick Start](getting-started.md)
+  * [Architecture](architecture-overview.md)
+  * [Troubleshooting](troubleshooting.md)
+  * [FAQ](faq.md)
+
+* Reference
+  * [Reference Hub](reference/README.md)
+  * Setup
+    * [Local Setup](reference/setup/local-setup.md)
+    * [Production](reference/setup/production-deployment.md)
+  * Architecture
+    * [System Design](reference/architecture/system-design.md)
+    * [Components](reference/architecture/components/)
+    * [Decisions](reference/architecture/decisions/)
+  * Guides
+    * [Audio Pipeline](reference/guides/audio-pipeline.md)
+    * [WebSocket](reference/guides/websocket-streaming.md)
+  * Troubleshooting
+    * [Symptoms](reference/troubleshooting/symptoms/)
+    * [Fixes](reference/troubleshooting/fixes/)
+    * [Incidents](reference/troubleshooting/incidents/)
+```
+
+**.nojekyll:**
+```
+(empty file - disables Jekyll on GitHub Pages)
+```
+
+### Step 5: Update README.md
+
+Transform root README.md into documentation hub.
 
 ---
 
-## Maintenance Guidelines
+## Maintenance
 
-### Regular Reviews
+### Regular Tasks
 
-#### Weekly Review
-- [ ] Check for outdated "Last Updated" dates
-- [ ] Verify recent code changes reflected in docs
-- [ ] Update status badges (🚧 → ✅)
-- [ ] Review and close resolved issues
+**Weekly:**
+- [ ] Check "Last Updated" dates
+- [ ] Verify recent code changes reflected
+- [ ] Update status badges
 
-#### Monthly Audit
-- [ ] Full documentation inventory
-- [ ] Dead link check
-- [ ] Consistency review (terminology, formatting)
-- [ ] Update statistics (document count, lines, etc.)
-- [ ] Archive outdated incident reports
+**Monthly:**
+- [ ] Full link check
+- [ ] Documentation inventory
+- [ ] Archive old incidents
+- [ ] Update metrics
 
-#### Quarterly Overhaul
-- [ ] Major documentation reorganization if needed
-- [ ] Template updates
-- [ ] Index regeneration
+**Quarterly:**
+- [ ] Template review
+- [ ] Structure review
 - [ ] External link verification
-- [ ] Accessibility check
 
-### Documentation Quality Checklist
+### Quality Checklist
 
-#### New Document Checklist
-- [ ] Clear title and purpose statement
-- [ ] Table of contents (if >300 lines)
+**New Document:**
+- [ ] Uses correct template
+- [ ] Has clear title/purpose
 - [ ] Code examples tested
 - [ ] Links verified
-- [ ] Added to appropriate index
+- [ ] Added to sidebar
 - [ ] Cross-references updated
-- [ ] Peer reviewed
-- [ ] Spellchecked
 
-#### Update Checklist
+**Update:**
 - [ ] "Last Updated" date changed
-- [ ] Version/status updated if relevant
-- [ ] Related docs checked for consistency
-- [ ] Index updated if title/location changed
-- [ ] Git commit follows conventions
+- [ ] Related docs checked
+- [ ] Index updated
+- [ ] Links still valid
 
-### Automated Checks
+### Metrics to Track
 
-**File:** `.github/workflows/docs-check.yml`
-
-```yaml
-name: Documentation Check
-
-on: [push, pull_request]
-
-jobs:
-  check-docs:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Check for broken links
-        run: |
-          npm install -g markdown-link-check
-          find . -name "*.md" -exec markdown-link-check {} \;
-
-      - name: Check for outdated docs
-        run: |
-          # Find docs not updated in >90 days
-          find docs reference troubleshooting architecture \
-            -name "*.md" -mtime +90 \
-            -exec echo "WARNING: {} may be outdated" \;
-
-      - name: Verify index completeness
-        run: |
-          # Check all .md files are in an index
-          python scripts/verify_doc_index.py
-```
-
-### Documentation Metrics
-
-Track these metrics monthly:
-
-```markdown
-## Documentation Health Metrics (2025-10)
-
-| Metric | Value | Target | Status |
-|--------|-------|--------|--------|
-| Total documents | 87 | - | - |
-| Avg age (days) | 45 | <90 | ✅ |
-| Outdated docs | 3 | 0 | ���️ |
-| Broken links | 0 | 0 | ✅ |
-| Incident docs (last 30d) | 2 | - | - |
-| Time to find info (avg) | 2 min | <5 | ✅ |
-| Documentation coverage | 85% | >80% | ✅ |
-```
+| Metric | Target | Check |
+|--------|--------|-------|
+| Docs up-to-date | 100% | Monthly |
+| Avg doc age | <90 days | Monthly |
+| Broken links | 0 | Weekly |
+| Time to find info | <2 min | Quarterly |
+| RCA coverage | 100% | Per incident |
 
 ---
 
@@ -1187,33 +876,31 @@ Track these metrics monthly:
 
 This framework provides:
 
-1. **Tree-Based Structure** - Clear hierarchy from general to specific
-2. **Fast Root Causing** - Symptom-based and RCA-based organization
-3. **Standardized Templates** - Consistent documentation format
-4. **Quick Navigation** - Multiple paths to find information
-5. **Maintenance Process** - Keep documentation up-to-date
+✅ **Tree-based structure**: Overview (docs/) → Details (docs/reference/)
+✅ **Fast root causing**: Symptom → Diagnostic tree → Fix
+✅ **Modular templates**: Consistent, reusable
+✅ **Docsify-ready**: Clean URLs, searchable
+✅ **Full traceability**: Every fix linked to RCA and incident
 
-### Quick Start for New Team Members
+### Next Steps
 
-1. Start at [`docs/README.md`](README.md)
-2. Read [System Architecture](architecture/overview/system_diagram.md)
-3. Follow [Local Setup](docs/LOCAL_SETUP.md)
-4. Bookmark [Troubleshooting Index](troubleshooting/README.md)
-5. Review recent [Incidents](troubleshooting/incidents/)
+1. [ ] Review this framework
+2. [ ] Create folder structure (`mkdir -p ...`)
+3. [ ] Create templates in `docs/reference/templates/`
+4. [ ] Setup Docsify (`index.html`, `_sidebar.md`)
+5. [ ] Migrate existing docs
+6. [ ] Test locally: `npx docsify serve docs`
+7. [ ] Deploy to GitHub Pages
 
-### When Something Breaks
+### Resources
 
-1. Go to [Troubleshooting Hub](troubleshooting/README.md)
-2. Find symptom in index
-3. Follow diagnostic tree
-4. Apply fix from linked FIXES doc
-5. Document as incident if significant
+- **Templates:** [docs/reference/templates/](reference/templates/)
+- **Examples:** See existing docs in [reference/](reference/)
+- **Docsify Docs:** https://docsify.js.org
+- **Markdown Guide:** https://www.markdownguide.org
 
 ---
 
-**Next Steps:**
-1. Review this framework
-2. Create missing folders: `troubleshooting/`, `architecture/`
-3. Migrate existing docs to new structure
-4. Set up automated checks
-5. Schedule first monthly audit
+**Framework Version:** 1.0
+**Maintained by:** Development Team
+**Next Review:** 2025-11-15
