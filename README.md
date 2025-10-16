@@ -112,6 +112,7 @@ cp env_files/env.example env_files/.env
 
 ```bash
 # Start FastAPI server
+make install-dev    # Install dev dependencies (with SenseVoiceSmall model at local env)
 make run-server
 
 # OR with HF Space ASR only (like production)
@@ -648,7 +649,6 @@ We welcome contributions! Please follow these guidelines:
 
 **Development Setup:**
 ```bash
-make install-dev    # Install dev dependencies
 make test-backend   # Run backend tests
 make test-coverage  # Check coverage
 make lint           # Check code quality
@@ -682,4 +682,4 @@ Built with:
 
 ---
 
-**Built with ❤️ using FastAPI, GLM-4-Flash, SenseVoice ASR, Edge-TTS, Supabase, and Upstash Redis**
+**Built with ❤️ using FastAPI, GLM-4-Flash, SenseVoice ASR, Edge-TTS, Supabase, Upstash Redis and Vercel**
