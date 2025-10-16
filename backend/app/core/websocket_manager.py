@@ -84,15 +84,15 @@ class WebSocketManager:
                         loading_time_ms=model_load_time
                     )
                 else:
-                    self.logger.warning("⚠️ SenseVoice model failed to load - using fallback transcription")
+                    self.logger.warning(None, "⚠️ SenseVoice model failed to load - using fallback transcription")
                     self.conversation_logger.log_model_info(
                         "sensevoice",
                         loaded=False,
                         error="Model failed to load"
                     )
             else:
-                self.logger.warning(f"⚠️ SenseVoice model not found at {model_path} - will use HF Space only")
-                self.logger.warning("   Run 'python scripts/download_sensevoice.py' to download the model for local use")
+                self.logger.warning(None, f"⚠️ SenseVoice model not found at {model_path} - will use HF Space only")
+                self.logger.warning(None, "   Run 'python scripts/download_sensevoice.py' to download the model for local use")
                 self.conversation_logger.log_model_info(
                     "sensevoice",
                     loaded=False,
