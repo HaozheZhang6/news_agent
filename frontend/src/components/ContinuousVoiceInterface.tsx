@@ -60,8 +60,9 @@ export function ContinuousVoiceInterface({
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const isRecordingRef = useRef(false);
   const lastSpeechTimeRef = useRef<number>(0);
-  const vadCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasSpeechSinceLastSendRef = useRef(false); // Track if user spoke since last send
+  const vadCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shouldStartRecordingRef = useRef(false); // Flag to start recording after connection
 
   // Audio format selection based on settings
@@ -158,11 +159,17 @@ export function ContinuousVoiceInterface({
         break;
 
       case 'tts_chunk':
+        // Log first TTS chunk (agent starts speaking)
+        if (!isPlayingAudioRef.current) {
+          console.log("🤖 AGENT SPEAKING START");
+          logger.info('agent', 'Agent started speaking');
+        }
         handleTTSChunk(message.data);
         break;
 
       case 'streaming_complete':
-        console.log("✅ TTS streaming complete");
+        console.log("🤖 AGENT SPEAKING END");
+        logger.info('agent', 'Agent finished speaking');
         // Back to listening after agent finishes speaking
         if (voiceState === "speaking") {
           setVoiceState("listening");
@@ -362,6 +369,7 @@ export function ContinuousVoiceInterface({
         if (isSpeaking) {
           // User is speaking
           lastSpeechTimeRef.current = Date.now();
+          hasSpeechSinceLastSendRef.current = true; // Mark that user has spoken
 
           // If agent was speaking, interrupt immediately
           if (isPlayingAudioRef.current) {
@@ -389,7 +397,8 @@ export function ContinuousVoiceInterface({
           const recorder = useOpus ? opusRecorderRef.current : pcmRecorderRef.current;
           if (silenceDuration >= SILENCE_THRESHOLD_MS &&
               recorder &&
-              recorder.getDuration() >= (MIN_RECORDING_DURATION_MS / 1000)) {
+              recorder.getDuration() >= (MIN_RECORDING_DURATION_MS / 1000) &&
+              hasSpeechSinceLastSendRef.current) { // Only send if user has spoken
 
             const duration = recorder.getDuration();
             console.log(`📤 Silence threshold reached (${silenceDuration}ms), recorded ${duration.toFixed(2)}s audio`);
@@ -397,8 +406,9 @@ export function ContinuousVoiceInterface({
             // Send immediately when silence threshold is reached
             sendAudioToBackend();
 
-            // Reset last speech time to prevent multiple sends
+            // Reset flags
             lastSpeechTimeRef.current = Date.now();
+            hasSpeechSinceLastSendRef.current = false; // Reset speech flag after send
           }
         }
       }, VAD_CHECK_INTERVAL_MS); // Use configurable VAD check interval
@@ -559,17 +569,20 @@ export function ContinuousVoiceInterface({
 
   /**
    * Handle recording based on voice state
+   * IMPORTANT: Keep VAD active even when agent is speaking to enable interruptions
    */
   useEffect(() => {
-    if (voiceState === "listening" && !isRecordingRef.current && isConnected) {
-      // Start recording when transitioning to listening state
+    const shouldBeRecording = (voiceState === "listening" || voiceState === "speaking") && isConnected;
+
+    if (shouldBeRecording && !isRecordingRef.current) {
+      // Start recording when in listening or speaking state
       startRecording().catch((error) => {
         console.error("Failed to start recording:", error);
         onError?.("Microphone access denied or not available");
         setVoiceState("idle");
       });
-    } else if (voiceState !== "listening" && isRecordingRef.current) {
-      // Stop recording when leaving listening state
+    } else if (!shouldBeRecording && isRecordingRef.current) {
+      // Only stop recording when idle or connecting
       stopRecording();
     }
   }, [voiceState, isConnected, onError]);

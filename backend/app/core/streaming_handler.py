@@ -45,12 +45,13 @@ class StreamingVoiceHandler:
         self.settings = get_settings()
         self._use_local_asr = self.settings.use_local_asr
 
-        # Initialize audio validator
+        # Initialize audio validator with config settings
         if AUDIO_VALIDATOR_AVAILABLE:
             self.audio_validator = get_audio_validator(
-                energy_threshold=500.0,
-                vad_mode=3,
-                enable_webrtc_vad=True
+                energy_threshold=self.settings.vad_energy_threshold,
+                vad_mode=self.settings.vad_aggressiveness,
+                enable_webrtc_vad=True,
+                speech_ratio_threshold=self.settings.vad_speech_ratio_threshold
             )
     
     async def load_sensevoice_model(self, model_path: str = "models/SenseVoiceSmall"):
@@ -179,11 +180,25 @@ class StreamingVoiceHandler:
                 format=format
             )
 
+            energy = validation_info.get("energy", 0)
+            speech_ratio = validation_info.get("webrtc_speech_ratio", 0)
+
             if not is_valid:
                 reason = validation_info.get("reason", "unknown")
-                energy = validation_info.get("energy", 0)
-                print(f"⚠️ Audio validation failed: {reason} (energy={energy:.1f})")
-                raise RuntimeError(f"Audio validation failed: {reason}")
+
+                # More informative logging for validation failures
+                if reason == "insufficient_energy":
+                    print(f"🚫 VAD REJECTED: No speech detected (energy={energy:.1f}, threshold={self.audio_validator.energy_threshold})")
+                elif reason == "no_speech_detected":
+                    print(f"🚫 VAD REJECTED: WebRTC rejected audio (speech_ratio={speech_ratio:.2f}, threshold={self.audio_validator.speech_ratio_threshold})")
+                else:
+                    print(f"🚫 VAD REJECTED: Audio validation failed: {reason} (energy={energy:.1f})")
+
+                # Don't raise error, just return empty string to indicate no transcription
+                return ""
+            else:
+                # Log successful validation
+                print(f"✅ VAD ACCEPTED: Audio validated (energy={energy:.1f}, speech_ratio={speech_ratio:.2f}, size={len(audio_data)} bytes)")
 
 
         # Try HuggingFace Space first (preferred for production)

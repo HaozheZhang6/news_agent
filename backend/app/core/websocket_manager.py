@@ -407,25 +407,39 @@ class WebSocketManager:
                 transcribed_text = await self.streaming_handler.transcribe_chunk(
                     full_buffer,
                     format=data.get("format", "wav"),
-                    sample_rate=data.get("sample_rate", 16000)
+                    sample_rate=data.get("format", 16000)
                 )
-                
-                # Send partial transcription
-                await self.send_message(session_id, {
-                    "event": "partial_transcription",
-                    "data": {
-                        "text": transcribed_text,
-                        "is_final": is_final,
-                        "session_id": session_id,
-                        "timestamp": datetime.now().isoformat()
-                    }
-                })
-                
-                # If final, process as command
-                if is_final:
-                    await self.handle_voice_command(session_id, {
-                        "command": transcribed_text,
-                        "confidence": 0.90
+
+                # Only send transcription if we got actual text (VAD passed)
+                if transcribed_text:
+                    # Send partial transcription
+                    await self.send_message(session_id, {
+                        "event": "partial_transcription",
+                        "data": {
+                            "text": transcribed_text,
+                            "is_final": is_final,
+                            "session_id": session_id,
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    })
+
+                    # If final, process as command
+                    if is_final:
+                        await self.handle_voice_command(session_id, {
+                            "command": transcribed_text,
+                            "confidence": 0.90
+                        })
+                else:
+                    # VAD rejected the audio (no speech detected)
+                    print(f"🤫 Skipping empty transcription (VAD rejected audio)")
+                    # Don't send error to frontend, just acknowledge
+                    await self.send_message(session_id, {
+                        "event": "audio_received",
+                        "data": {
+                            "session_id": session_id,
+                            "vad_status": "no_speech",
+                            "timestamp": datetime.now().isoformat()
+                        }
                     })
             else:
                 # Just acknowledge receipt for buffering

@@ -71,6 +71,72 @@ class Settings(BaseSettings):
     audio_chunk_size: int = Field(default=1024, env="AUDIO_CHUNK_SIZE")
     vad_mode: int = Field(default=3, env="VAD_MODE")
     no_speech_threshold: float = Field(default=1.0, env="NO_SPEECH_THRESHOLD")
+
+    # Backend VAD (Voice Activity Detection) Configuration
+    # These settings control how the backend validates incoming audio for speech content
+    # before sending to ASR (Automatic Speech Recognition) services.
+
+    # VAD Energy Threshold (RMS - Root Mean Square)
+    # Range: 0.0 - 5000.0, Default: 500.0
+    # Lower values = more sensitive (accepts quieter audio)
+    # Higher values = less sensitive (requires louder audio)
+    # This is the FIRST stage of validation - filters out pure silence and very quiet audio
+    # Example values:
+    #   - 100.0: Very sensitive, accepts whispers
+    #   - 500.0: Normal sensitivity (recommended)
+    #   - 1000.0: High sensitivity, requires clear speech
+    vad_energy_threshold: float = Field(default=500.0, env="VAD_ENERGY_THRESHOLD")
+
+    # VAD Speech Ratio Threshold
+    # Range: 0.01 - 0.50, Default: 0.03
+    # This is the percentage of audio frames that must contain speech (detected by WebRTC VAD)
+    # Lower values = more lenient (accepts audio with longer pauses)
+    # Higher values = more strict (requires higher speech density)
+    # This is the SECOND stage of validation - filters out noise and non-speech audio
+    #
+    # Example scenarios:
+    #   - 0.03 (3%):  Very lenient - accepts audio with 90%+ silence/pauses (RECOMMENDED)
+    #                 Use case: Natural speech with thinking pauses, hesitations
+    #                 Example: User speaks 3s, pauses 27s → ACCEPTED
+    #
+    #   - 0.10 (10%): Lenient - accepts audio with 80%+ silence/pauses
+    #                 Use case: Conversational speech with moderate pauses
+    #                 Example: User speaks 3s, pauses 27s → REJECTED
+    #                          User speaks 5s, pauses 45s → ACCEPTED
+    #
+    #   - 0.15 (15%): Moderate - accepts audio with 70%+ silence/pauses
+    #                 Use case: Clear speech with minimal pauses
+    #                 Example: User speaks 3s, pauses 17s → ACCEPTED
+    #                          User speaks 2s, pauses 18s → REJECTED
+    #
+    #   - 0.30 (30%): Strict - requires high speech density
+    #                 Use case: Continuous speech with minimal pauses (too strict for most cases)
+    #                 Example: User speaks 6s, pauses 14s → ACCEPTED
+    #                          User speaks 5s, pauses 15s → REJECTED
+    #
+    # Why 3% (0.03) is recommended:
+    # - Frontend VAD already detects speech and sends audio chunks
+    # - Users naturally pause while thinking or formulating questions
+    # - Audio chunks include silence before/after actual speech
+    # - Energy threshold already filters pure silence (first stage)
+    # - Too high threshold (15-30%) causes false rejections of valid speech
+    #
+    # Validation Flow:
+    #   Incoming Audio → Stage 1: Energy Check (vad_energy_threshold)
+    #                 → Stage 2: Speech Ratio Check (vad_speech_ratio_threshold)
+    #                 → If both pass: Send to ASR
+    #                 → If either fails: Reject with reason
+    vad_speech_ratio_threshold: float = Field(default=0.03, ge=0.01, le=0.50, env="VAD_SPEECH_RATIO_THRESHOLD")
+
+    # WebRTC VAD Aggressiveness Mode
+    # Range: 0-3, Default: 3
+    # 0 = Least aggressive (most lenient, detects more speech)
+    # 1 = Less aggressive
+    # 2 = Aggressive
+    # 3 = Most aggressive (most strict, requires clearer speech)
+    # Note: This affects how WebRTC VAD classifies individual audio frames as speech/non-speech
+    # Higher mode = more strict frame-level detection, but doesn't change the speech_ratio_threshold
+    vad_aggressiveness: int = Field(default=3, ge=0, le=3, env="VAD_AGGRESSIVENESS")
     
     # CORS Configuration
     cors_origins: List[str] = Field(

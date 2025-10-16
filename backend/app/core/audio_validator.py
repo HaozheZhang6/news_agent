@@ -24,7 +24,8 @@ class AudioValidator:
         self,
         energy_threshold: float = 500.0,
         vad_mode: int = 3,
-        enable_webrtc_vad: bool = True
+        enable_webrtc_vad: bool = True,
+        speech_ratio_threshold: float = 0.03
     ):
         """
         Initialize audio validator.
@@ -33,10 +34,12 @@ class AudioValidator:
             energy_threshold: RMS energy threshold for pre-filtering
             vad_mode: WebRTC VAD aggressiveness (0-3, 3 = most aggressive)
             enable_webrtc_vad: Enable WebRTC VAD validation
+            speech_ratio_threshold: Minimum speech ratio (0.01-0.50, default 0.03)
         """
         self.energy_threshold = energy_threshold
         self.vad_mode = max(0, min(3, vad_mode))  # Clamp to 0-3
         self.enable_webrtc_vad = enable_webrtc_vad and WEBRTC_VAD_AVAILABLE
+        self.speech_ratio_threshold = max(0.01, min(0.50, speech_ratio_threshold))  # Clamp to 0.01-0.50
 
         # Initialize WebRTC VAD if available
         self.vad = None
@@ -136,8 +139,9 @@ class AudioValidator:
             # Calculate speech ratio
             speech_ratio = speech_frames / total_frames
 
-            # Require at least 30% speech frames
-            is_valid = speech_ratio >= 0.3
+            # Use configurable speech ratio threshold
+            # This allows adjustment based on use case (conversational vs. dictation)
+            is_valid = speech_ratio >= self.speech_ratio_threshold
 
             return is_valid, speech_ratio
 
@@ -222,7 +226,8 @@ _audio_validator: Optional[AudioValidator] = None
 def get_audio_validator(
     energy_threshold: float = 500.0,
     vad_mode: int = 3,
-    enable_webrtc_vad: bool = True
+    enable_webrtc_vad: bool = True,
+    speech_ratio_threshold: float = 0.03
 ) -> AudioValidator:
     """Get or create singleton AudioValidator instance."""
     global _audio_validator
@@ -231,7 +236,8 @@ def get_audio_validator(
         _audio_validator = AudioValidator(
             energy_threshold=energy_threshold,
             vad_mode=vad_mode,
-            enable_webrtc_vad=enable_webrtc_vad
+            enable_webrtc_vad=enable_webrtc_vad,
+            speech_ratio_threshold=speech_ratio_threshold
         )
 
     return _audio_validator
@@ -243,7 +249,8 @@ def validate_audio_quality(
     format: str = "wav",
     energy_threshold: float = 500.0,
     vad_mode: int = 3,
-    enable_webrtc_vad: bool = True
+    enable_webrtc_vad: bool = True,
+    speech_ratio_threshold: float = 0.03
 ) -> Tuple[bool, Dict[str, Any]]:
     """
     Convenience function to validate audio quality.
@@ -255,6 +262,7 @@ def validate_audio_quality(
         energy_threshold: RMS energy threshold
         vad_mode: WebRTC VAD aggressiveness (0-3)
         enable_webrtc_vad: Enable WebRTC VAD
+        speech_ratio_threshold: Minimum speech ratio (0.01-0.50)
 
     Returns:
         Tuple of (is_valid, validation_info)
@@ -262,7 +270,8 @@ def validate_audio_quality(
     validator = get_audio_validator(
         energy_threshold=energy_threshold,
         vad_mode=vad_mode,
-        enable_webrtc_vad=enable_webrtc_vad
+        enable_webrtc_vad=enable_webrtc_vad,
+        speech_ratio_threshold=speech_ratio_threshold
     )
 
     return validator.validate_audio(audio_bytes, sample_rate, format)
