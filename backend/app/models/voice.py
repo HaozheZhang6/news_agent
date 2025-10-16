@@ -89,7 +89,7 @@ class VoiceSettings(BaseModel):
     vad_check_interval_ms: int = Field(default=250, ge=100, le=500, description="VAD check interval (100-500ms)")
 
     # Backend VAD Validation
-    backend_vad_enabled: bool = Field(default=True, description="Enable backend WebRTC VAD validation")
+    backend_vad_enabled: bool = Field(default=False, description="Enable backend WebRTC VAD validation")
     backend_vad_mode: int = Field(default=3, ge=0, le=3, description="WebRTC VAD aggressiveness (0-3)")
     backend_energy_threshold: float = Field(default=500.0, description="Backend energy threshold for pre-filtering")
 

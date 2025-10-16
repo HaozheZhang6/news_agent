@@ -61,6 +61,7 @@ export function ContinuousVoiceInterface({
   const isRecordingRef = useRef(false);
   const lastSpeechTimeRef = useRef<number>(0);
   const vadCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const shouldStartRecordingRef = useRef(false); // Flag to start recording after connection
 
   // Audio format selection based on settings
@@ -301,7 +302,7 @@ export function ContinuousVoiceInterface({
 
     // Return true if audio level exceeds threshold (user is speaking)
     return average > SPEECH_THRESHOLD;
-  }, []);
+  }, [SPEECH_THRESHOLD]);
 
   /**
    * Start recording with VAD
@@ -400,14 +401,14 @@ export function ContinuousVoiceInterface({
             lastSpeechTimeRef.current = Date.now();
           }
         }
-      }, 250); // 4Hz checks to reduce message frequency
-      
+      }, VAD_CHECK_INTERVAL_MS); // Use configurable VAD check interval
+
     } catch (error) {
       console.error("❌ Error starting recording:", error);
       onError?.("Microphone access denied or error occurred");
       isRecordingRef.current = false;
     }
-  }, [checkVoiceActivity, stopAudioPlayback, sendInterruptSignal, onError]);
+  }, [checkVoiceActivity, stopAudioPlayback, sendInterruptSignal, onError, VAD_CHECK_INTERVAL_MS, SILENCE_THRESHOLD_MS, MIN_RECORDING_DURATION_MS, useOpus, settings.compression_bitrate]);
 
   /**
    * Stop recording

@@ -43,7 +43,7 @@ export const DEFAULT_VOICE_SETTINGS: VoiceSettings = {
   // VAD Configuration
   voice_activity_detection: true,
   vad_threshold: 0.02,
-  silence_timeout_ms: 700,
+  silence_timeout_ms: 1000,
   min_recording_duration_ms: 500,
   vad_check_interval_ms: 250,
 
