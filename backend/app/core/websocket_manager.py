@@ -607,7 +607,185 @@ class WebSocketManager:
                     "session_id": session_id
                 }
             })
-    
+
+    async def handle_audio_chunk_streaming(self, session_id: str, data: Dict[str, Any]):
+        """
+        Handle audio chunk with streaming LLM and concurrent TTS.
+        This enables faster response by starting TTS as soon as LLM starts generating.
+        """
+        start_time = time.time()
+
+        try:
+            if not self._initialized:
+                await self.initialize()
+
+            user_id = self.session_data.get(session_id, {}).get("user_id")
+
+            if not user_id:
+                await self.send_message(session_id, {
+                    "event": "error",
+                    "data": {
+                        "error_type": "invalid_session",
+                        "message": "Invalid session",
+                        "session_id": session_id
+                    }
+                })
+                return
+
+            # Decode audio chunk
+            audio_chunk = base64.b64decode(data["audio_chunk"])
+            audio_format = data.get("format", "webm")
+            audio_size = len(audio_chunk)
+
+            print(f"🎤 [STREAMING] Processing audio for session {session_id}: {audio_size} bytes ({audio_format})")
+
+            # Reset interrupt flag for this session
+            self.streaming_tasks[session_id] = False
+
+            # Initialize counters
+            chunk_index = 0
+            transcription_text = ""
+            full_response_text = ""
+
+            # Process with streaming handler (ASR -> Streaming LLM -> Concurrent TTS)
+            async for chunk in self.streaming_handler.process_voice_command_streaming(
+                session_id, audio_chunk, audio_format
+            ):
+                # Check for interruption
+                if self.streaming_tasks.get(session_id, False):
+                    print(f"🛑 [STREAMING] Interrupted for session {session_id}")
+                    break
+
+                chunk_type = chunk.get("type")
+
+                if chunk_type == "transcription":
+                    transcription_text = chunk.get("text", "")
+                    print(f"📝 [STREAMING] Transcription: {transcription_text}")
+
+                    # Send transcription to client
+                    await self.send_message(session_id, {
+                        "event": "transcription",
+                        "data": {
+                            "text": transcription_text,
+                            "confidence": 0.95,
+                            "session_id": session_id,
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    })
+
+                elif chunk_type == "text_chunk":
+                    text_chunk = chunk.get("text", "")
+                    full_response_text += text_chunk
+                    print(f"💬 [STREAMING] Text chunk: {text_chunk[:50]}...")
+
+                    # Send text chunk to client for display
+                    await self.send_message(session_id, {
+                        "event": "agent_response_chunk",
+                        "data": {
+                            "text": text_chunk,
+                            "session_id": session_id,
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    })
+
+                elif chunk_type == "audio_chunk":
+                    audio_data = chunk.get("data")
+                    print(f"🔊 [STREAMING] TTS chunk #{chunk_index}")
+
+                    # Send audio chunk to client
+                    await self.send_message(session_id, {
+                        "event": "tts_chunk",
+                        "data": {
+                            "audio_chunk": base64.b64encode(audio_data).decode(),
+                            "chunk_index": chunk_index,
+                            "format": "mp3",
+                            "session_id": session_id,
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    })
+                    chunk_index += 1
+
+                    # Small delay to prevent overwhelming the client
+                    await asyncio.sleep(0.01)
+
+                elif chunk_type == "error":
+                    error_msg = chunk.get("message", "Unknown error")
+                    print(f"❌ [STREAMING] Error: {error_msg}")
+
+                    await self.send_message(session_id, {
+                        "event": "error",
+                        "data": {
+                            "error_type": "streaming_error",
+                            "message": error_msg,
+                            "session_id": session_id
+                        }
+                    })
+                    return
+
+                elif chunk_type == "complete":
+                    print(f"✅ [STREAMING] Complete for session {session_id}")
+
+                    # Send completion message
+                    await self.send_message(session_id, {
+                        "event": "tts_complete",
+                        "data": {
+                            "session_id": session_id,
+                            "total_chunks": chunk_index,
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    })
+
+            # Calculate total processing time
+            processing_time_ms = (time.time() - start_time) * 1000
+
+            # Log the conversation turn
+            self.conversation_logger.log_conversation_turn(
+                session_id=session_id,
+                user_id=user_id,
+                transcription=transcription_text,
+                agent_response=full_response_text,
+                processing_time_ms=processing_time_ms,
+                audio_format=audio_format,
+                audio_size_bytes=audio_size,
+                tts_chunks_sent=chunk_index,
+                metadata={
+                    "streaming": True,
+                    "interrupted": self.streaming_tasks.get(session_id, False)
+                }
+            )
+
+            print(f"📊 [STREAMING] Completed in {processing_time_ms:.0f}ms, {chunk_index} TTS chunks")
+
+        except Exception as e:
+            print(f"❌ [STREAMING] Error handling audio chunk: {e}")
+            import traceback
+            traceback.print_exc()
+
+            # Calculate processing time
+            processing_time_ms = (time.time() - start_time) * 1000
+
+            # Log error turn
+            self.conversation_logger.log_conversation_turn(
+                session_id=session_id,
+                user_id=self.session_data.get(session_id, {}).get("user_id", "unknown"),
+                transcription="",
+                agent_response="",
+                processing_time_ms=processing_time_ms,
+                audio_format=data.get("format", "unknown"),
+                audio_size_bytes=0,
+                tts_chunks_sent=0,
+                error=str(e)
+            )
+
+            await self.send_message(session_id, {
+                "event": "error",
+                "data": {
+                    "error_type": "streaming_processing_failed",
+                    "message": str(e),
+                    "session_id": session_id
+                }
+            })
+
     async def handle_interrupt(self, session_id: str, data: Dict[str, Any]):
         """Handle voice interruption."""
         try:
@@ -689,6 +867,8 @@ class WebSocketManager:
                 await self.handle_voice_data(session_id, data.get("data", {}))
             elif event == "audio_chunk":
                 await self.handle_audio_chunk(session_id, data.get("data", {}))
+            elif event == "audio_chunk_streaming":
+                await self.handle_audio_chunk_streaming(session_id, data.get("data", {}))
             elif event == "interrupt":
                 await self.handle_interrupt(session_id, data.get("data", {}))
             elif event == "start_listening":

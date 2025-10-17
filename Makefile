@@ -151,6 +151,15 @@ test-fast:
 	@echo "Running fast tests only..."
 	@uv run pytest tests/ -v --tb=short -m "not slow" --timeout=15
 
+test-e2e:
+	@echo "Running end-to-end tests (frontend + backend)..."
+	@chmod +x tests/e2e/run_e2e_tests.sh
+	@tests/e2e/run_e2e_tests.sh
+
+test-vad:
+	@echo "Running VAD tests..."
+	@python tests/run_vad_tests.py
+
 # Code quality
 lint:
 	@echo "Running linting checks..."

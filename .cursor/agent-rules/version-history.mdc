@@ -1,0 +1,34 @@
+---
+alwaysApply: true
+---
+
+# Version History
+
+Maintain clear version history and changelog for every significant change.
+
+## Primary Task
+- Update `docs/VERSION.md` with a new entry for this change.
+
+## Entry Template
+```
+### vX.Y.Z - YYYY-MM-DD - <major|minor|patch> Release
+- **Files Modified**: path/a.py, path/b.tsx
+- **Description**: One-line summary of the change
+- **Documentation Updated**: docs/docs/reference/...
+- **Breaking Changes**: Yes/No (+ notes)
+- **New Features**: list
+- **Bug Fixes**: list
+- **Performance Improvements**: list
+- **Migration Notes**: notes or N/A
+```
+
+## Version Bump Rules
+- Breaking/removal/migrations → `major`
+- New feature (backward compatible) → `minor`
+- Fixes/docs/perf/chores → `patch`
+
+## Process
+1. Determine change type (major/minor/patch)
+2. Write entry with accurate file paths
+3. If user maintains a `CHANGELOG.md`, mirror the entry there
+4. Commit docs + code together

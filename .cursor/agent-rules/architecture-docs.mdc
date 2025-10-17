@@ -1,0 +1,52 @@
+---
+alwaysApply: true
+---
+
+# Architecture Docs
+
+Document modular architecture, component responsibilities, and function usage.
+
+## Primary Task
+- Ensure each significant module/function has an overview, parameters, return types, usage examples, and related links in `docs/docs/reference/`.
+
+## Module/Function Doc Template
+```
+## <Module/Function Name>
+
+### Purpose
+What it does and why it exists.
+
+### Parameters
+- name (type): description
+
+### Returns
+- type: description
+
+### Usage
+```python
+# minimal runnable example
+```
+
+### Dependencies
+- list of modules/services
+
+### Related
+- links to other relevant docs or code
+
+### Errors
+- error cases and handling
+```
+
+## Where to Place Docs
+- New module/feature → new `docs/docs/reference/<FEATURE_NAME>_GUIDE.md`
+- Cross-cutting change → update `SYSTEM_DESIGN_CURRENT.md`
+- API-level impact → update `API_DESIGN.md`
+
+## Inquiry Support
+- Add a "FAQ / Usage Inquiry" section with common questions and short answers
+- Include pointers to tests and examples (e.g., `tests/backend/...`)
+
+## Done Criteria
+- [ ] At least one runnable example per major function
+- [ ] Backlinks to related docs
+- [ ] Section added to sidebar if new file created

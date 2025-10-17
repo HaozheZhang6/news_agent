@@ -74,21 +74,21 @@ class StreamingVoiceHandler:
             return False
     
     async def stream_tts_audio(
-        self, 
-        text: str, 
+        self,
+        text: str,
         voice: str = "en-US-AriaNeural",
         rate: str = "+0%",
         chunk_size: int = 4096
     ) -> AsyncGenerator[bytes, None]:
         """
         Stream TTS audio in chunks using Edge-TTS.
-        
+
         Args:
             text: Text to convert to speech
             voice: Voice to use
             rate: Speech rate adjustment
             chunk_size: Size of each chunk in bytes
-            
+
         Yields:
             Audio chunks as bytes
         """
@@ -96,26 +96,40 @@ class StreamingVoiceHandler:
             # Fallback: return empty chunks if edge-tts not available
             print("⚠️ edge-tts not available, skipping TTS streaming")
             return
-        
+
         try:
+            # Create communicate object with SSL context handling
             communicate = edge_tts.Communicate(text, voice, rate=rate)
-            
+
             buffer = bytearray()
             async for chunk in communicate.stream():
                 if chunk["type"] == "audio":
                     buffer.extend(chunk["data"])
-                    
+
                     # Yield chunks of specified size
                     while len(buffer) >= chunk_size:
                         yield bytes(buffer[:chunk_size])
                         buffer = buffer[chunk_size:]
-            
+
             # Yield remaining data
             if buffer:
                 yield bytes(buffer)
-                
+
         except Exception as e:
-            print(f"❌ Error streaming TTS: {e}")
+            error_msg = str(e)
+
+            # Check if it's an SSL certificate error
+            if "SSL" in error_msg or "certificate" in error_msg.lower():
+                print(f"⚠️ TTS SSL certificate error: {error_msg}")
+                print(f"   This is a known issue with edge-tts and api.msedgeservices.com")
+                print(f"   Possible solutions:")
+                print(f"   1. Update certifi: uv pip install --upgrade certifi")
+                print(f"   2. Update edge-tts: uv pip install --upgrade edge-tts")
+                print(f"   3. Check system date/time settings")
+                print(f"   4. Use alternative TTS service (see docs)")
+            else:
+                print(f"❌ Error streaming TTS: {e}")
+
             raise
     
     async def buffer_audio_chunk(
@@ -368,9 +382,9 @@ class StreamingVoiceHandler:
                 print(f"⚠️ Failed to cleanup temp files: {cleanup_error}")
     
     async def process_voice_command(
-        self, 
-        session_id: str, 
-        audio_chunk: bytes, 
+        self,
+        session_id: str,
+        audio_chunk: bytes,
         format: str = "webm"
     ) -> Dict[str, Any]:
         """
@@ -379,29 +393,119 @@ class StreamingVoiceHandler:
         """
         from ..core.agent_wrapper import get_agent # Lazy import to avoid circular dependency
         agent = await get_agent()
-        
+
         try:
             # 1. ASR: Transcribe audio chunk
             transcription = await self.transcribe_chunk(audio_chunk, format)
-            
+
             if not transcription:
                 return {"success": False, "error": "No transcription"}
-            
+
             # 2. LLM: Get agent response
             user_id = "anonymous" # TODO: Get actual user_id from session
             response_result = await agent.process_voice_command(transcription, user_id, session_id)
             response_text = response_result.get("response_text", "I'm sorry, I couldn't process that.")
-            
+
             return {
                 "success": True,
                 "transcription": transcription,
                 "response": response_text,
                 "timestamp": datetime.now().isoformat()
             }
-            
+
         except Exception as e:
             print(f"❌ Error in full voice pipeline: {e}")
             return {"success": False, "error": str(e)}
+
+    async def process_voice_command_streaming(
+        self,
+        session_id: str,
+        audio_chunk: bytes,
+        format: str = "webm"
+    ):
+        """
+        Process voice command with streaming LLM response and concurrent TTS.
+        This yields both transcription and audio chunks as they become available.
+
+        Yields:
+            Dict with either:
+            - {"type": "transcription", "text": str} - The transcribed user input
+            - {"type": "text_chunk", "text": str} - A chunk of LLM response text
+            - {"type": "audio_chunk", "data": bytes} - A chunk of TTS audio
+            - {"type": "error", "message": str} - An error message
+            - {"type": "complete"} - Indicates streaming is complete
+        """
+        from ..core.agent_wrapper import get_agent
+        agent = await get_agent()
+
+        try:
+            # 1. ASR: Transcribe audio chunk
+            print(f"🎤 Starting ASR for session {session_id}")
+            transcription = await self.transcribe_chunk(audio_chunk, format)
+
+            if not transcription:
+                yield {"type": "error", "message": "No transcription"}
+                return
+
+            # Yield transcription
+            print(f"✅ Transcribed: {transcription}")
+            yield {"type": "transcription", "text": transcription}
+
+            # 2. Stream LLM response and do TTS concurrently
+            user_id = "anonymous"  # TODO: Get actual user_id from session
+
+            # Buffer for accumulating text for TTS
+            text_buffer = ""
+            sentence_endings = [".", "!", "?", "\n"]
+
+            print(f"🤖 Starting streaming LLM response for: {transcription}")
+
+            async for text_chunk in agent.stream_voice_response(transcription, user_id, session_id):
+                if not text_chunk:
+                    continue
+
+                # Yield the text chunk for display
+                yield {"type": "text_chunk", "text": text_chunk}
+
+                # Accumulate text for TTS
+                text_buffer += text_chunk
+
+                # Check if we have a complete sentence to speak
+                # This enables faster response by starting TTS before full response completes
+                should_speak = False
+                for ending in sentence_endings:
+                    if ending in text_buffer:
+                        should_speak = True
+                        break
+
+                # Or if buffer is long enough (avoid very long waits)
+                if len(text_buffer) > 100:
+                    should_speak = True
+
+                if should_speak and text_buffer.strip():
+                    # Stream TTS for the accumulated text
+                    print(f"🔊 Starting TTS for: {text_buffer[:50]}...")
+                    async for audio_chunk_data in self.stream_tts_audio(text_buffer.strip()):
+                        yield {"type": "audio_chunk", "data": audio_chunk_data}
+
+                    # Clear buffer after speaking
+                    text_buffer = ""
+
+            # Speak any remaining text
+            if text_buffer.strip():
+                print(f"🔊 Starting TTS for remaining text: {text_buffer[:50]}...")
+                async for audio_chunk_data in self.stream_tts_audio(text_buffer.strip()):
+                    yield {"type": "audio_chunk", "data": audio_chunk_data}
+
+            # Signal completion
+            yield {"type": "complete"}
+            print(f"✅ Completed streaming for session {session_id}")
+
+        except Exception as e:
+            print(f"❌ Error in streaming voice pipeline: {e}")
+            import traceback
+            traceback.print_exc()
+            yield {"type": "error", "message": str(e)}
     
     def clear_session_buffer(self, session_id: str):
         """Clear audio buffer for a session."""

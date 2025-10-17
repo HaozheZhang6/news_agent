@@ -17,6 +17,7 @@ import json
 import base64
 from pathlib import Path
 from unittest.mock import patch, AsyncMock
+from starlette.websockets import WebSocketState
 
 
 # Test audio samples directory
@@ -26,19 +27,6 @@ AUDIO_DIR = TESTS_DIR / "voice_samples" / "wav"
 
 class TestE2EVADInterruption:
     """End-to-end tests for VAD and interruption flow."""
-
-    @pytest.fixture
-    def audio_samples(self):
-        """Load test audio samples."""
-        samples = {}
-        if AUDIO_DIR.exists():
-            for wav_file in list(AUDIO_DIR.glob("*.wav"))[:5]:
-                with open(wav_file, 'rb') as f:
-                    samples[wav_file.stem] = {
-                        "raw": f.read(),
-                        "b64": base64.b64encode(f.read()).decode()
-                    }
-        return samples
 
     @pytest.mark.asyncio
     async def test_complete_voice_interaction(self, audio_samples):
@@ -54,8 +42,7 @@ class TestE2EVADInterruption:
 
         # Create mock WebSocket
         mock_ws = AsyncMock()
-        mock_ws.client_state = Mock()
-        mock_ws.client_state.name = "CONNECTED"
+        mock_ws.client_state = WebSocketState.CONNECTED
         sent_messages = []
 
         async def capture_send(msg):
@@ -104,8 +91,7 @@ class TestE2EVADInterruption:
         await ws_manager.initialize()
 
         mock_ws = AsyncMock()
-        mock_ws.client_state = Mock()
-        mock_ws.client_state.name = "CONNECTED"
+        mock_ws.client_state = WebSocketState.CONNECTED
         sent_messages = []
 
         async def capture_send(msg):
@@ -151,8 +137,7 @@ class TestE2EVADInterruption:
         await ws_manager.initialize()
 
         mock_ws = AsyncMock()
-        mock_ws.client_state = Mock()
-        mock_ws.client_state.name = "CONNECTED"
+        mock_ws.client_state = WebSocketState.CONNECTED
         sent_messages = []
 
         async def capture_send(msg):
@@ -213,8 +198,7 @@ class TestE2EVADInterruption:
         await ws_manager.initialize()
 
         mock_ws = AsyncMock()
-        mock_ws.client_state = Mock()
-        mock_ws.client_state.name = "CONNECTED"
+        mock_ws.client_state = WebSocketState.CONNECTED
 
         session_id = await ws_manager.connect(mock_ws, "test-user")
 
@@ -272,8 +256,7 @@ class TestE2EPerformance:
         await ws_manager.initialize()
 
         mock_ws = AsyncMock()
-        mock_ws.client_state = Mock()
-        mock_ws.client_state.name = "CONNECTED"
+        mock_ws.client_state = WebSocketState.CONNECTED
 
         session_id = await ws_manager.connect(mock_ws, "test-user")
 
@@ -317,8 +300,7 @@ class TestE2EErrorHandling:
         await ws_manager.initialize()
 
         mock_ws = AsyncMock()
-        mock_ws.client_state = Mock()
-        mock_ws.client_state.name = "CONNECTED"
+        mock_ws.client_state = WebSocketState.CONNECTED
         sent_messages = []
 
         async def capture_send(msg):
@@ -353,8 +335,7 @@ class TestE2EErrorHandling:
         await ws_manager.initialize()
 
         mock_ws = AsyncMock()
-        mock_ws.client_state = Mock()
-        mock_ws.client_state.name = "CONNECTED"
+        mock_ws.client_state = WebSocketState.CONNECTED
 
         # Create and immediately disconnect session
         session_id = await ws_manager.connect(mock_ws, "test-user")

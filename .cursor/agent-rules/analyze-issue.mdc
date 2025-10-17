@@ -1,7 +1,7 @@
 ---
+description:  Fetch GitHub issue details and create a comprehensive implementation specification.
 alwaysApply: false
 ---
-
 # Analyze Issue
 
 Fetch GitHub issue details and create a comprehensive implementation specification.

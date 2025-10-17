@@ -127,22 +127,22 @@ class AgentWrapper:
                 "timestamp": datetime.now().isoformat()
             }
     
-    async def process_voice_command(self, command: str, user_id: str, session_id: str, 
+    async def process_voice_command(self, command: str, user_id: str, session_id: str,
                                   audio_url: Optional[str] = None) -> Dict[str, Any]:
         """Process voice command through the agent."""
         try:
             if not self._initialized:
                 await self.initialize()
-            
+
             # Process the command (same as text for now)
             result = await self.process_text_command(command, user_id, session_id)
-            
+
             # Add voice-specific metadata
             result["audio_url"] = audio_url
             result["command_type"] = "voice"
-            
+
             return result
-            
+
         except Exception as e:
             print(f"❌ Error processing voice command: {e}")
             return {
@@ -154,6 +154,48 @@ class AgentWrapper:
                 "command_type": "voice",
                 "timestamp": datetime.now().isoformat()
             }
+
+    async def stream_voice_response(self, command: str, user_id: str, session_id: str):
+        """
+        Stream agent response in real-time for voice commands.
+        This enables concurrent TTS generation while the LLM is still generating.
+
+        Yields:
+            str: Text chunks as they are generated
+        """
+        try:
+            if not self._initialized:
+                await self.initialize()
+
+            start_time = datetime.now()
+
+            if self.agent and hasattr(self.agent, 'get_response_stream'):
+                # Stream response from agent
+                async for text_chunk in self.agent.get_response_stream(command):
+                    yield text_chunk
+            else:
+                # Fallback to non-streaming if agent doesn't support streaming
+                print("⚠️ Agent does not support streaming, falling back to non-streaming")
+                if asyncio.iscoroutinefunction(self.agent.get_response):
+                    response_text = await self.agent.get_response(command)
+                else:
+                    response_text = await asyncio.to_thread(self.agent.get_response, command)
+                yield response_text
+
+            processing_time = (datetime.now() - start_time).total_seconds() * 1000
+
+            # Track user interaction
+            await self.db.track_user_interaction(
+                user_id=user_id,
+                interaction_type="voice_command_stream",
+                target_content=command,
+                success=True,
+                response_time_ms=int(processing_time)
+            )
+
+        except Exception as e:
+            print(f"❌ Error streaming voice response: {e}")
+            yield f"Sorry, I encountered an error processing your request: {str(e)}"
     
     async def get_news_latest(self, topics: List[str] = None, limit: int = 10) -> List[Dict[str, Any]]:
         """Get latest news articles."""

@@ -1,9 +1,7 @@
 ---
-description: Guidelines for creating and maintaining Cursor rules to ensure consistency and effectiveness.
-globs: .cursor/rules/*.mdc
-alwaysApply: true
+globs: description: Clear, one-line description of what the rule enforces   globs: path/to/files/*.ext, other/path/**/*   alwaysApply: boolean
+alwaysApply: false
 ---
-
 - **Required Rule Structure:**
   ```markdown
   ---

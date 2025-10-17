@@ -26,7 +26,8 @@ from pathlib import Path
 import subprocess
 
 # Add project root to path
-project_root = Path(__file__).parent.parent
+SCRIPT_DIR = Path(__file__).parent
+project_root = (SCRIPT_DIR / "..").resolve()
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / "backend"))
 
@@ -178,7 +179,7 @@ def run_quick_tests(args):
     # Run specific quick tests
     test_files = [
         "tests/backend/local/core/test_vad_validation.py::TestVADValidation::test_audio_samples_exist",
-        "tests/backend/local/core/test_vad_validation.py::TestVADValidation::test_speech_ratio_threshold_15_percent",
+        "tests/backend/local/core/test_vad_validation.py::TestVADValidation::test_speech_ratio_threshold_3_percent",
         "tests/backend/local/core/test_interruption_flow.py::TestInterruptionFlow::test_interrupt_signal_handling",
     ]
 

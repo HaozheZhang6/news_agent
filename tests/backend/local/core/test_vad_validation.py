@@ -37,16 +37,6 @@ class TestVADValidation:
             enable_webrtc_vad=True
         )
 
-    @pytest.fixture
-    def audio_samples(self):
-        """Load all WAV test audio samples."""
-        samples = {}
-        if AUDIO_DIR.exists():
-            for wav_file in AUDIO_DIR.glob("*.wav"):
-                with open(wav_file, 'rb') as f:
-                    samples[wav_file.stem] = f.read()
-        return samples
-
     def test_audio_samples_exist(self, audio_samples):
         """Verify test audio samples are available."""
         assert len(audio_samples) > 0, "No audio samples found in tests/voice_samples/wav/"

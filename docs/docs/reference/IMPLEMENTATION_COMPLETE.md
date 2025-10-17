@@ -99,20 +99,20 @@ $ uv run python -m pytest tests/backend/local/core/test_audio_validator.py -v
 
 ### Comprehensive Guides
 
-1. **[VAD_AND_COMPRESSION_GUIDE.md](reference/VAD_AND_COMPRESSION_GUIDE.md)** (21 KB)
+1. **[VAD_AND_COMPRESSION_GUIDE.md](VAD_AND_COMPRESSION_GUIDE.md)** (21 KB)
    - Complete technical guide
    - API reference
    - Performance metrics
    - Troubleshooting
    - Integration examples
 
-2. **[QUICK_START_VAD_COMPRESSION.md](reference/QUICK_START_VAD_COMPRESSION.md)** (11 KB)
+2. **[QUICK_START_VAD_COMPRESSION.md](QUICK_START_VAD_COMPRESSION.md)** (11 KB)
    - 5-minute quick start
    - Common use cases
    - Testing procedures
    - Configuration examples
 
-3. **[AUDIO_FORMAT_CURRENT.md](reference/AUDIO_FORMAT_CURRENT.md)** (15 KB)
+3. **[AUDIO_FORMAT_CURRENT.md](AUDIO_FORMAT_CURRENT.md)** (15 KB)
    - Audio format specifications
    - File size calculations
    - Data flow diagrams
@@ -280,9 +280,9 @@ No database migrations needed. Settings stored in:
 ## Resources
 
 ### Documentation
-- [VAD & Compression Guide](reference/VAD_AND_COMPRESSION_GUIDE.md)
-- [Quick Start Guide](reference/QUICK_START_VAD_COMPRESSION.md)
-- [Audio Format Details](reference/AUDIO_FORMAT_CURRENT.md)
+- [VAD & Compression Guide](VAD_AND_COMPRESSION_GUIDE.md)
+- [Quick Start Guide](QUICK_START_VAD_COMPRESSION.md)
+- [Audio Format Details](AUDIO_FORMAT_CURRENT.md)
 
 ### Code
 - [Audio Validator](backend/app/core/audio_validator.py)

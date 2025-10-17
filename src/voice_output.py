@@ -249,3 +249,110 @@ def is_speaking() -> bool:
         return pygame.mixer.music.get_busy()
     except:
         return False
+
+
+async def stream_tts_audio(text: str, voice: str = "en-US-JennyNeural", rate: str = "+0%", chunk_size: int = 4096):
+    """
+    Stream TTS audio in chunks using Edge-TTS.
+    This enables concurrent TTS generation while LLM is still generating text.
+
+    Args:
+        text: Text to convert to speech
+        voice: Voice to use (default: en-US-JennyNeural)
+        rate: Speech rate adjustment (e.g., "+0%", "+20%", "-10%")
+        chunk_size: Size of each audio chunk in bytes
+
+    Yields:
+        bytes: Audio chunks
+    """
+    try:
+        communicate = edge_tts.Communicate(text, voice, rate=rate)
+
+        buffer = bytearray()
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                buffer.extend(chunk["data"])
+
+                # Yield chunks of specified size
+                while len(buffer) >= chunk_size:
+                    yield bytes(buffer[:chunk_size])
+                    buffer = buffer[chunk_size:]
+
+        # Yield remaining data
+        if buffer:
+            yield bytes(buffer)
+
+        conversation_logger.log_system_event(f"TTS streaming completed for: {text[:50]}...")
+
+    except Exception as e:
+        conversation_logger.log_error(f"TTS streaming error: {e}")
+        raise
+
+
+async def say_streaming(text: str, voice: str = "en-US-JennyNeural", interrupt_event: asyncio.Event = None):
+    """
+    Stream and play TTS audio in real-time.
+    Starts playing audio as soon as first chunk is received.
+
+    Args:
+        text: Text to speak
+        voice: Voice to use
+        interrupt_event: AsyncIO event for interruption
+    """
+    global current_sound
+
+    _ensure_mixer_initialized()
+
+    # Create temporary file for streaming audio
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmpfile:
+        filepath = tmpfile.name
+
+    try:
+        # Stream audio chunks and write to file
+        audio_buffer = bytearray()
+
+        async for chunk in stream_tts_audio(text, voice):
+            # Check for interruption
+            if interrupt_event and interrupt_event.is_set():
+                conversation_logger.log_interruption("Streaming interrupted")
+                break
+
+            audio_buffer.extend(chunk)
+
+        # Write complete audio to file
+        with open(filepath, 'wb') as f:
+            f.write(audio_buffer)
+
+        # Save to audio logger
+        try:
+            saved_audio_path = audio_logger.save_response_audio(filepath)
+        except Exception as e:
+            conversation_logger.log_error(f"Failed to save response audio: {e}")
+            saved_audio_path = None
+
+        conversation_logger.log_agent_response(text, saved_audio_path)
+        print(f"🤖 AGENT: {text}")
+
+        # Play the complete audio
+        pygame.mixer.music.load(filepath)
+        pygame.mixer.music.play()
+
+        # Wait for playback to complete or interruption
+        while pygame.mixer.music.get_busy():
+            if interrupt_event and interrupt_event.is_set():
+                pygame.mixer.music.stop()
+                conversation_logger.log_interruption("Playback interrupted")
+                break
+
+            await asyncio.sleep(0.1)
+
+        conversation_logger.log_system_event(f"TTS playback completed: {text[:50]}...")
+
+    except Exception as e:
+        conversation_logger.log_error(f"Streaming TTS error: {e}")
+    finally:
+        # Cleanup
+        if pygame.mixer.music.get_busy():
+            pygame.mixer.music.stop()
+        if os.path.exists(filepath):
+            os.remove(filepath)

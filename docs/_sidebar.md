@@ -20,9 +20,21 @@
     - [VAD & Compression](docs/reference/VAD_AND_COMPRESSION_GUIDE.md)
     - [Streaming & Deployment](docs/reference/STREAMING_AND_DEPLOYMENT.md)
     - [Continuous Voice Guide](docs/reference/CONTINUOUS_VOICE_GUIDE.md)
+    - [SRC Streaming Guide](docs/reference/SRC_STREAMING_GUIDE.md)
+    - [Streaming Issues Explained](docs/reference/STREAMING_ISSUES_EXPLAINED.md)
+    - [Streaming LLM TTS Summary](docs/reference/STREAMING_LLM_TTS_SUMMARY.md)
+  - Testing
+    - [E2E Testing Guide](docs/reference/E2E_TESTING_GUIDE.md)
+    - [E2E Quick Start](docs/reference/E2E_QUICK_START.md)
+  - Implementation
+    - [Implementation Complete](docs/reference/IMPLEMENTATION_COMPLETE.md)
   - Troubleshooting
     - [WebSocket Fixes](docs/reference/WEBSOCKET_FIXES.md)
     - [VAD Fixes](docs/reference/VAD_FIXES.md)
+    - [VAD Configuration](docs/reference/VAD_CONFIG_GUIDE.md)
+    - [VAD Fixes Summary](docs/reference/VAD_FIXES_SUMMARY.md)
+    - [VAD Threshold Update](docs/reference/VAD_THRESHOLD_UPDATE.md)
+    - [TTS SSL Fix Guide](docs/reference/TTS_SSL_FIX_GUIDE.md)
     - [Audio Format (Current)](docs/reference/AUDIO_FORMAT_CURRENT.md)
     - [WAV Implementation](docs/reference/WAV_IMPLEMENTATION_COMPLETE.md)
     - [WebM Conversion Issue](docs/reference/WEBM_CONVERSION_ISSUE.md)

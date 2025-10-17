@@ -1,0 +1,36 @@
+---
+alwaysApply: true
+---
+
+# Docs Alignment
+
+Ensure all code work aligns with documentation in `docs/` with strong traceability.
+
+## Primary Task
+- Update or create relevant docs in `docs/` BEFORE code changes, then keep docs and code in sync.
+
+## Required Updates (before coding)
+1. Architecture changes → update `docs/docs/reference/SYSTEM_DESIGN_CURRENT.md`
+2. API changes → update `docs/docs/reference/API_DESIGN.md`
+3. Component/module changes → add/update a guide in `docs/docs/reference/`
+4. Testing impact → update `docs/TESTING.md` and (if E2E) `docs/docs/reference/E2E_TESTING_GUIDE.md`
+5. Troubleshooting/known issues → update relevant guide in `docs/docs/reference/`
+
+## Traceability Checklist
+- [ ] Add a version entry in `docs/VERSION.md` (date, change type, files, summary)
+- [ ] Cross-link changed files in the doc (use backticks for paths)
+- [ ] Include a short migration/impact note if behavior changes
+- [ ] Reference related guides (link to `docs/docs/reference/*.md`)
+
+## Commit Guidance
+- Group docs + code in the same commit when feasible
+- Use conventional commit style with a docs scope when docs change
+  - e.g., `docs(streaming): add SRC streaming guide and E2E steps`
+
+## Done Criteria
+All of the following must be true:
+- [ ] Docs updated first and reviewed
+- [ ] Code implemented to match docs
+- [ ] Examples in docs are runnable or clearly marked
+- [ ] `docs/VERSION.md` updated
+- [ ] Sidebar links updated if new guides were added (`docs/_sidebar.md`)
